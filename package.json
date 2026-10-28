@@ -9,6 +9,7 @@
   },
   "scripts": {
     "doctor": "node scripts/doctor.ts",
+    "test": "node --test \"test/**/*.test.ts\"",
     "typecheck": "tsc"
   },
   "dependencies": {
