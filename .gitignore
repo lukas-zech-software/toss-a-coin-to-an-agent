@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+*.log
+
+# Raw camera data & temp captures (large binaries)
+tmp/
+archive/
+*.CR2
+*.cr2
