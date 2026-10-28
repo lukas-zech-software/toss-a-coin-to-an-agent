@@ -16,3 +16,11 @@ test("run times out with ToolError", async () => {
   await assert.rejects(run("sleep", ["5"], { timeoutMs: 100 }), (e: unknown) => e instanceof ToolError && /Zeitüberschreitung/.test(e.output));
 });
 test("killCameraBlockers never throws", async () => { await killCameraBlockers(); });
+test("abort escalates to SIGKILL when the child ignores SIGTERM (nothing hangs)", async () => {
+  const ac = new AbortController();
+  const started = Date.now();
+  const p = run("sh", ["-c", "trap '' TERM; sleep 30"], { signal: ac.signal });
+  setTimeout(() => ac.abort(), 100);
+  await assert.rejects(p, AbortError);
+  assert.ok(Date.now() - started < 8000, "settled well before the child's own 30 s");
+});

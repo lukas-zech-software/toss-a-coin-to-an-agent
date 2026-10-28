@@ -21,11 +21,17 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise
   const { timeoutMs, signal } = opts;
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new AbortError());
+    let done = false;
     let killTimer: NodeJS.Timeout | undefined;
+    const finish = (settle: () => void): void => {
+      if (done) return;
+      done = true;
+      if (killTimer) clearTimeout(killTimer);
+      signal?.removeEventListener("abort", onAbort);
+      settle();
+    };
     const child = execFile(cmd, args, { maxBuffer: 64 * 1024 * 1024, encoding: "utf8", ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}) },
-      (err, stdout, stderr) => {
-        if (killTimer) clearTimeout(killTimer);
-        signal?.removeEventListener("abort", onAbort);
+      (err, stdout, stderr) => finish(() => {
         if (!err) return resolve({ stdout, stderr });
         if (signal?.aborted) return reject(new AbortError());
         const e = err as NodeJS.ErrnoException & { killed?: boolean };
@@ -33,13 +39,19 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise
         if (!output) output = e.message;
         if (e.killed) output = `${output}\nZeitüberschreitung nach ${((timeoutMs ?? 0) / 1000).toFixed(0)} s`.trim();
         reject(new ToolError(cmd, typeof e.code === "number" ? e.code : null, output));
-      });
-    // A child that ignores SIGTERM must not hang the abort: escalate to SIGKILL.
+      }));
+    // Abort: SIGTERM, escalate to SIGKILL after 3 s, and settle as soon as the child is gone. Waiting for the stdio
+    // pipes to close would hang on grandchildren that inherited them.
     function onAbort(): void {
       child.kill("SIGTERM");
       killTimer = setTimeout(() => child.kill("SIGKILL"), 3000);
       killTimer.unref();
     }
+    child.once("exit", () => {
+      if (!signal?.aborted) return;
+      child.stdout?.destroy(); child.stderr?.destroy();
+      finish(() => reject(new AbortError()));
+    });
     signal?.addEventListener("abort", onAbort, { once: true });
   });
 }
