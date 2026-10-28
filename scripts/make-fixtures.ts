@@ -1,9 +1,11 @@
 // Derives the small, committed test fixtures (test/fixtures/*.jpg + fixtures.json) from the camera samples.
+// Identifying EXIF (serial numbers, owner name, MakerNotes) is stripped from every fixture.
 // Usage: node scripts/make-fixtures.ts [--samples <dir>] [--out <dir>]
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import sharp from "sharp";
 import type { Sharp } from "sharp";
+import { stripIdentifyingExif } from "./strip-exif.ts";
 
 const arg = (name: string, fallback: string): string => {
   const i = process.argv.indexOf(name);
@@ -49,6 +51,7 @@ for (const name of NAMES) {
     await encode(synthetic[name]!()).toFile(dst);
     source = "synthetic";
   }
+  await stripIdentifyingExif(dst); // fixtures are committed: no serial numbers, owner or other identifying EXIF
   const m = await sharp(dst).metadata();
   meta[name] = { source, width: m.width!, height: m.height! };
   console.log(`${name.padEnd(12)} ${source.padEnd(9)} ${m.width}x${m.height}`);

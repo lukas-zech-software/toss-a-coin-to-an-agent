@@ -157,7 +157,7 @@ END
 Label: Owner Name
 Readonly: 0
 Type: TEXT
-Current: Lukas
+Current: REDACTED
 END
 /main/settings/artist
 Label: Artist
