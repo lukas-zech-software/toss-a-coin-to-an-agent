@@ -9,6 +9,8 @@
   },
   "scripts": {
     "doctor": "node scripts/doctor.ts",
+    "capture": "node src/cli/capture.ts",
+    "calibrate": "node src/cli/calibrate.ts",
     "test": "node --test \"test/**/*.test.ts\"",
     "typecheck": "tsc",
     "samples:fixtures": "node scripts/make-fixtures.ts"

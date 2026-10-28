@@ -1,10 +1,12 @@
 // Environment check: verifies every external tool and library the pipeline needs.
 // Run with: npm run doctor
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import sharp from "sharp";
 import cvModule from "@techstark/opencv-js";
+import { loadConfig } from "../src/config.ts";
 
-type Check = { name: string; ok: boolean; detail: string };
+type Check = { name: string; ok: boolean; detail: string; warn?: boolean };
 const checks: Check[] = [];
 
 function binary(name: string, args: string[]): void {
@@ -38,5 +40,11 @@ checks.push({
   detail: missing.length === 0 ? `OK (${required.join(", ")})` : `missing: ${missing.join(", ")}`,
 });
 
-for (const c of checks) console.log(`${c.ok ? "✔" : "✘"} ${c.name.padEnd(10)} ${c.detail}`);
+// DJV is optional: the A/B comparison falls back to Preview. A missing DJV warns but never fails the check.
+const djv = loadConfig().paths.djv;
+checks.push(existsSync(djv)
+  ? { name: "djv", ok: true, detail: djv }
+  : { name: "djv", ok: true, warn: true, detail: "nicht gefunden (optional – Vergleich fällt auf Vorschau zurück)" });
+
+for (const c of checks) console.log(`${c.warn ? "⚠" : c.ok ? "✔" : "✘"} ${c.name.padEnd(10)} ${c.detail}`);
 process.exit(checks.every((c) => c.ok) ? 0 : 1);
