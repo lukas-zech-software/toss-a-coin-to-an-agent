@@ -1,3 +1,7 @@
+// Type-only imports: no runtime cycle between types.ts and the modules that import it.
+import type { CameraSettings } from "./camera/settings.ts";
+import type { Finding } from "./check/rules.ts";
+
 export type Side = "av" | "rv";
 export type ShotPaths = { crop: string; original: string; raw: string };
 export type RawCapture = { jpgPath: string; rawPath: string };
@@ -17,3 +21,5 @@ export type ProcessedShot = {
   exif: ExifInfo;
   warnings: string[];
 };
+
+export type AttemptRecord = { n: number; settings: CameraSettings; autofocus: boolean; shot: ProcessedShot; findings: Finding[] };
