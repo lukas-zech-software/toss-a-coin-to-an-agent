@@ -1,0 +1,149 @@
+Label: Aperture
+Readonly: 0
+Type: RADIO
+Current: 8
+Choice: 0 5.6
+Choice: 1 6.7
+Choice: 2 8
+Choice: 3 9.5
+Choice: 4 11
+Choice: 5 13
+Choice: 6 16
+Choice: 7 19
+Choice: 8 22
+Choice: 9 27
+Choice: 10 32
+Choice: 11 38
+END
+Label: ISO Speed
+Readonly: 0
+Type: RADIO
+Current: 100
+Choice: 0 Auto
+Choice: 1 100
+Choice: 2 200
+Choice: 3 400
+Choice: 4 800
+Choice: 5 1600
+Choice: 6 3200
+Choice: 7 6400
+END
+Label: Exposure Compensation
+Readonly: 0
+Type: RADIO
+Current: 0.5
+Choice: 0 -5
+Choice: 1 -4.5
+Choice: 2 -4
+Choice: 3 -3.5
+Choice: 4 -3
+Choice: 5 -2.5
+Choice: 6 -2
+Choice: 7 -1.5
+Choice: 8 -1
+Choice: 9 -0.5
+Choice: 10 0
+Choice: 11 0.5
+Choice: 12 1
+Choice: 13 1.5
+Choice: 14 2
+Choice: 15 2.5
+Choice: 16 3
+Choice: 17 3.5
+Choice: 18 4
+Choice: 19 4.5
+Choice: 20 5
+END
+Label: WhiteBalance
+Readonly: 0
+Type: RADIO
+Current: Manual
+Choice: 0 Auto
+Choice: 1 AWB White
+Choice: 2 Daylight
+Choice: 3 Shadow
+Choice: 4 Cloudy
+Choice: 5 Tungsten
+Choice: 6 Fluorescent
+Choice: 7 Flash
+Choice: 8 Manual
+END
+Label: Picture Style
+Readonly: 0
+Type: RADIO
+Current: Faithful
+Choice: 0 Auto
+Choice: 1 Standard
+Choice: 2 Portrait
+Choice: 3 Landscape
+Choice: 4 Neutral
+Choice: 5 Faithful
+Choice: 6 Monochrome
+Choice: 7 User defined 1
+Choice: 8 User defined 2
+Choice: 9 User defined 3
+END
+Label: Metering Mode
+Readonly: 0
+Type: RADIO
+Current: Partial
+Choice: 0 Evaluative
+Choice: 1 Partial
+Choice: 2 Center-weighted average
+END
+Label: Camera Model
+Readonly: 1
+Type: TEXT
+Current: Canon EOS 1300D
+END
+Label: Lens Name
+Readonly: 1
+Type: TEXT
+Current: EF-S18-135mm f/3.5-5.6 IS STM
+END
+Label: Canon Auto Exposure Mode
+Readonly: 0
+Type: RADIO
+Current: AV
+Choice: 0 P
+Choice: 1 TV
+Choice: 2 AV
+Choice: 3 Manual
+Choice: 4 Bulb
+Choice: 5 A_DEP
+Choice: 6 DEP
+Choice: 7 Custom
+Choice: 8 Lock
+Choice: 9 Green
+Choice: 10 Night Portrait
+Choice: 11 Sports
+Choice: 12 Portrait
+Choice: 13 Landscape
+Choice: 14 Closeup
+Choice: 15 Flash Off
+Choice: 16 C2
+Choice: 17 C3
+Choice: 18 Creative Auto
+Choice: 19 Movie
+Choice: 20 Auto
+Choice: 21 Handheld Night Scene
+Choice: 22 HDR Backlight Control
+Choice: 23 SCN
+Choice: 24 Food
+Choice: 25 Grainy B/W
+Choice: 26 Soft focus
+Choice: 27 Toy camera effect
+Choice: 28 Fish-eye effect
+Choice: 29 Water painting effect
+Choice: 30 Miniature effect
+Choice: 31 HDR art standard
+Choice: 32 HDR art vivid
+Choice: 33 HDR art bold
+Choice: 34 HDR art embossed
+Choice: 35 Panning
+Choice: 36 HDR
+Choice: 37 Self Portrait
+Choice: 38 Hybrid Auto
+Choice: 39 Smooth skin
+Choice: 40 Fv
+END

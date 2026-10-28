@@ -1,0 +1,5 @@
+{
+  "samples": [],
+  "pairs": [],
+  "pending": ["good_av", "good_av_dup", "good_rv", "under", "over", "blurry", "empty", "cut_off", "dark", "shiny", "large", "small", "wide"]
+}

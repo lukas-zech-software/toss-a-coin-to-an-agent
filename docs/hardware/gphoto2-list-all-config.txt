@@ -1,0 +1,766 @@
+/main/actions/syncdatetimeutc
+Label: Synchronize camera date and time with PC (UTC)
+Readonly: 0
+Type: TOGGLE
+Current: 0
+END
+/main/actions/syncdatetime
+Label: Synchronize camera date and time with PC
+Readonly: 0
+Type: TOGGLE
+Current: 0
+END
+/main/actions/uilock
+Label: UI Lock
+Readonly: 0
+Type: TOGGLE
+Current: 2
+END
+/main/actions/popupflash
+Label: Popup Flash
+Readonly: 0
+Type: TOGGLE
+Current: 2
+END
+/main/actions/autofocusdrive
+Label: Drive Canon DSLR Autofocus
+Readonly: 0
+Type: TOGGLE
+Current: 0
+END
+/main/actions/manualfocusdrive
+Label: Drive Canon DSLR Manual focus
+Readonly: 0
+Type: RADIO
+Current: None
+Choice: 0 Near 1
+Choice: 1 Near 2
+Choice: 2 Near 3
+Choice: 3 None
+Choice: 4 Far 1
+Choice: 5 Far 2
+Choice: 6 Far 3
+END
+/main/actions/cancelautofocus
+Label: Cancel Canon DSLR Autofocus
+Readonly: 0
+Type: TOGGLE
+Current: 0
+END
+/main/actions/eoszoom
+Label: Canon EOS Zoom
+Readonly: 0
+Type: TEXT
+Current: 0
+END
+/main/actions/eoszoomposition
+Label: Canon EOS Zoom Position
+Readonly: 0
+Type: TEXT
+Current: 0,0
+END
+/main/actions/viewfinder
+Label: Canon EOS Viewfinder
+Readonly: 0
+Type: TOGGLE
+Current: 0
+END
+/main/actions/eosremoterelease
+Label: Canon EOS Remote Release
+Readonly: 0
+Type: RADIO
+Current: None
+Choice: 0 None
+Choice: 1 Press Half AF
+Choice: 2 Press Full AF
+Choice: 3 Press Half MF
+Choice: 4 Press Full MF
+Choice: 5 Release Half
+Choice: 6 Release Full
+Choice: 7 Release
+END
+/main/actions/eosmoviemode
+Label: Movie Mode
+Readonly: 0
+Type: TOGGLE
+Current: 2
+END
+/main/actions/opcode
+Label: PTP Opcode
+Readonly: 0
+Type: TEXT
+Current: 0x1001,0xparam1,0xparam2
+END
+/main/settings/datetimeutc
+Label: Camera Date and Time
+Readonly: 0
+Type: DATE
+Current: 1793181049
+Printable: Wed Oct 28 10:50:49 2026
+Help: Use 'now' as the current time when setting.
+
+END
+/main/settings/datetime
+Label: Camera Date and Time
+Readonly: 0
+Type: DATE
+Current: 1793181049
+Printable: Wed Oct 28 10:50:49 2026
+Help: Use 'now' as the current time when setting.
+
+END
+/main/settings/reviewtime
+Label: Quick Review Time
+Readonly: 0
+Type: RADIO
+Current: 4 seconds
+Choice: 0 None
+Choice: 1 2 seconds
+Choice: 2 4 seconds
+Choice: 3 8 seconds
+Choice: 4 Hold
+END
+/main/settings/output
+Label: Camera Output
+Readonly: 0
+Type: RADIO
+Current: Off
+Choice: 0 TFT
+Choice: 1 PC
+Choice: 2 TFT + PC
+Choice: 3 MOBILE
+Choice: 4 TFT + MOBILE
+Choice: 5 PC + MOBILE
+Choice: 6 TFT + PC + MOBILE
+Choice: 7 MOBILE2
+Choice: 8 TFT + MOBILE2
+Choice: 9 PC + MOBILE2
+Choice: 10 TFT + PC + MOBILE2
+Choice: 11 Off
+END
+/main/settings/movierecordtarget
+Label: Recording Destination
+Readonly: 0
+Type: RADIO
+Current: None
+Choice: 0 None
+END
+/main/settings/evfmode
+Label: EVF Mode
+Readonly: 0
+Type: RADIO
+Current: 1
+Choice: 0 1
+Choice: 1 0
+END
+/main/settings/ownername
+Label: Owner Name
+Readonly: 0
+Type: TEXT
+Current: Lukas
+END
+/main/settings/artist
+Label: Artist
+Readonly: 0
+Type: TEXT
+Current: 
+END
+/main/settings/copyright
+Label: Copyright
+Readonly: 0
+Type: TEXT
+Current: 
+END
+/main/settings/customfuncex
+Label: Custom Functions Ex
+Readonly: 0
+Type: TEXT
+Current: bad length
+END
+/main/settings/focusinfo
+Label: Focus Info
+Readonly: 1
+Type: TEXT
+Current: {}
+END
+/main/settings/strobofiring
+Label: Strobo Firing
+Readonly: 1
+Type: RADIO
+Current: 1
+Choice: 0 0
+Choice: 1 1
+Choice: 2 2
+END
+/main/settings/flashcharged
+Label: Flash Charging State
+Readonly: 1
+Type: TEXT
+Current: 0
+END
+/main/settings/autopoweroff
+Label: Auto Power Off
+Readonly: 0
+Type: TEXT
+Current: 0
+END
+/main/settings/depthoffield
+Label: Depth of Field
+Readonly: 0
+Type: TEXT
+Current: 0
+END
+/main/settings/capturetarget
+Label: Capture Target
+Readonly: 0
+Type: RADIO
+Current: Internal RAM
+Choice: 0 Internal RAM
+Choice: 1 Memory card
+END
+/main/settings/capture
+Label: Capture
+Readonly: 0
+Type: TOGGLE
+Current: 0
+END
+/main/settings/remotemode
+Label: Remote Mode
+Readonly: 0
+Type: TEXT
+Current: 1
+END
+/main/settings/eventmode
+Label: Event Mode
+Readonly: 0
+Type: TEXT
+Current: 0
+END
+/main/settings/testolc
+Label: Test OLC
+Readonly: 0
+Type: TOGGLE
+Current: 2
+END
+/main/status/serialnumber
+Label: Serial Number
+Readonly: 1
+Type: TEXT
+Current: REDACTED
+END
+/main/status/manufacturer
+Label: Camera Manufacturer
+Readonly: 1
+Type: TEXT
+Current: Canon Inc.
+END
+/main/status/cameramodel
+Label: Camera Model
+Readonly: 1
+Type: TEXT
+Current: Canon EOS 1300D
+END
+/main/status/deviceversion
+Label: Device Version
+Readonly: 1
+Type: TEXT
+Current: 3-1.2.0
+END
+/main/status/vendorextension
+Label: Vendor Extension
+Readonly: 1
+Type: TEXT
+Current: 
+END
+/main/status/model
+Label: Camera Model
+Readonly: 1
+Type: TEXT
+Current: 2147484676
+END
+/main/status/ptpversion
+Label: PTP Version
+Readonly: 1
+Type: TEXT
+Current: 256
+END
+/main/status/batterylevel
+Label: Battery Level
+Readonly: 1
+Type: TEXT
+Current: 100%
+END
+/main/status/batterylevel
+Label: Battery Level
+Readonly: 1
+Type: TEXT
+Current: 100%
+END
+/main/status/mirrorlockstatus
+Label: Mirror Lock Status
+Readonly: 1
+Type: TEXT
+Current: 0
+END
+/main/status/mirrordownstatus
+Label: Mirror Down Status
+Readonly: 1
+Type: TEXT
+Current: 0
+END
+/main/status/lensname
+Label: Lens Name
+Readonly: 1
+Type: TEXT
+Current: EF-S18-135mm f/3.5-5.6 IS STM
+END
+/main/status/eosserialnumber
+Label: Serial Number
+Readonly: 1
+Type: TEXT
+Current: REDACTED
+END
+/main/status/shuttercounter
+Label: Shutter Counter
+Readonly: 1
+Type: TEXT
+Current: 2792
+END
+/main/status/availableshots
+Label: Available Shots
+Readonly: 1
+Type: TEXT
+Current: 32638
+END
+/main/status/eosmovieswitch
+Label: Movie Switch
+Readonly: 1
+Type: TEXT
+Current: 0
+END
+/main/imgsettings/imageformat
+Label: Image Format
+Readonly: 0
+Type: RADIO
+Current: RAW + L
+Choice: 0 L
+Choice: 1 cL
+Choice: 2 M
+Choice: 3 cM
+Choice: 4 S1
+Choice: 5 cS1
+Choice: 6 S2
+Choice: 7 S3
+Choice: 8 RAW + L
+Choice: 9 RAW
+END
+/main/imgsettings/imageformatsd
+Label: Image Format SD
+Readonly: 0
+Type: RADIO
+Current: RAW + L
+Choice: 0 L
+Choice: 1 cL
+Choice: 2 M
+Choice: 3 cM
+Choice: 4 S1
+Choice: 5 cS1
+Choice: 6 S2
+Choice: 7 S3
+Choice: 8 RAW + L
+Choice: 9 RAW
+END
+/main/imgsettings/iso
+Label: ISO Speed
+Readonly: 0
+Type: RADIO
+Current: 100
+Choice: 0 Auto
+Choice: 1 100
+Choice: 2 200
+Choice: 3 400
+Choice: 4 800
+Choice: 5 1600
+Choice: 6 3200
+Choice: 7 6400
+END
+/main/imgsettings/whitebalance
+Label: WhiteBalance
+Readonly: 0
+Type: RADIO
+Current: Manual
+Choice: 0 Auto
+Choice: 1 AWB White
+Choice: 2 Daylight
+Choice: 3 Shadow
+Choice: 4 Cloudy
+Choice: 5 Tungsten
+Choice: 6 Fluorescent
+Choice: 7 Flash
+Choice: 8 Manual
+END
+/main/imgsettings/whitebalanceadjusta
+Label: WhiteBalance Adjust A
+Readonly: 0
+Type: RADIO
+Current: 0
+Choice: 0 -9
+Choice: 1 -8
+Choice: 2 -7
+Choice: 3 -6
+Choice: 4 -5
+Choice: 5 -4
+Choice: 6 -3
+Choice: 7 -2
+Choice: 8 -1
+Choice: 9 0
+Choice: 10 1
+Choice: 11 2
+Choice: 12 3
+Choice: 13 4
+Choice: 14 5
+Choice: 15 6
+Choice: 16 7
+Choice: 17 8
+Choice: 18 9
+END
+/main/imgsettings/whitebalanceadjustb
+Label: WhiteBalance Adjust B
+Readonly: 0
+Type: RADIO
+Current: 0
+Choice: 0 -9
+Choice: 1 -8
+Choice: 2 -7
+Choice: 3 -6
+Choice: 4 -5
+Choice: 5 -4
+Choice: 6 -3
+Choice: 7 -2
+Choice: 8 -1
+Choice: 9 0
+Choice: 10 1
+Choice: 11 2
+Choice: 12 3
+Choice: 13 4
+Choice: 14 5
+Choice: 15 6
+Choice: 16 7
+Choice: 17 8
+Choice: 18 9
+END
+/main/imgsettings/whitebalancexa
+Label: WhiteBalance X A
+Readonly: 1
+Type: RADIO
+Current: 0
+Choice: 0 0
+Choice: 1 1
+Choice: 2 2
+Choice: 3 3
+END
+/main/imgsettings/whitebalancexb
+Label: WhiteBalance X B
+Readonly: 1
+Type: RADIO
+Current: 0
+Choice: 0 0
+Choice: 1 1
+Choice: 2 2
+Choice: 3 3
+END
+/main/imgsettings/colorspace
+Label: Color Space
+Readonly: 0
+Type: RADIO
+Current: sRGB
+Choice: 0 sRGB
+Choice: 1 AdobeRGB
+END
+/main/capturesettings/exposurecompensation
+Label: Exposure Compensation
+Readonly: 0
+Type: RADIO
+Current: 0.5
+Choice: 0 -5
+Choice: 1 -4.5
+Choice: 2 -4
+Choice: 3 -3.5
+Choice: 4 -3
+Choice: 5 -2.5
+Choice: 6 -2
+Choice: 7 -1.5
+Choice: 8 -1
+Choice: 9 -0.5
+Choice: 10 0
+Choice: 11 0.5
+Choice: 12 1
+Choice: 13 1.5
+Choice: 14 2
+Choice: 15 2.5
+Choice: 16 3
+Choice: 17 3.5
+Choice: 18 4
+Choice: 19 4.5
+Choice: 20 5
+END
+/main/capturesettings/focusmode
+Label: Focus Mode
+Readonly: 0
+Type: RADIO
+Current: One Shot
+Choice: 0 One Shot
+Choice: 1 AI Focus
+Choice: 2 AI Servo
+END
+/main/capturesettings/aspectratio
+Label: Aspect Ratio
+Readonly: 0
+Type: RADIO
+Current: 16:9
+Choice: 0 3:2
+Choice: 1 4:3
+Choice: 2 16:9
+Choice: 3 1:1
+END
+/main/capturesettings/afmethod
+Label: AF Method
+Readonly: 0
+Type: RADIO
+Current: Live
+Choice: 0 Live
+Choice: 1 LiveFace
+Choice: 2 Quick
+END
+/main/capturesettings/storageid
+Label: Storage Device
+Readonly: 0
+Type: TEXT
+Current: 00020001
+END
+/main/capturesettings/autoexposuremode
+Label: Canon Auto Exposure Mode
+Readonly: 0
+Type: RADIO
+Current: AV
+Choice: 0 P
+Choice: 1 TV
+Choice: 2 AV
+Choice: 3 Manual
+Choice: 4 Bulb
+Choice: 5 A_DEP
+Choice: 6 DEP
+Choice: 7 Custom
+Choice: 8 Lock
+Choice: 9 Green
+Choice: 10 Night Portrait
+Choice: 11 Sports
+Choice: 12 Portrait
+Choice: 13 Landscape
+Choice: 14 Closeup
+Choice: 15 Flash Off
+Choice: 16 C2
+Choice: 17 C3
+Choice: 18 Creative Auto
+Choice: 19 Movie
+Choice: 20 Auto
+Choice: 21 Handheld Night Scene
+Choice: 22 HDR Backlight Control
+Choice: 23 SCN
+Choice: 24 Food
+Choice: 25 Grainy B/W
+Choice: 26 Soft focus
+Choice: 27 Toy camera effect
+Choice: 28 Fish-eye effect
+Choice: 29 Water painting effect
+Choice: 30 Miniature effect
+Choice: 31 HDR art standard
+Choice: 32 HDR art vivid
+Choice: 33 HDR art bold
+Choice: 34 HDR art embossed
+Choice: 35 Panning
+Choice: 36 HDR
+Choice: 37 Self Portrait
+Choice: 38 Hybrid Auto
+Choice: 39 Smooth skin
+Choice: 40 Fv
+END
+/main/capturesettings/autoexposuremodedial
+Label: Canon Auto Exposure Mode Dial
+Readonly: 0
+Type: RADIO
+Current: AV
+Choice: 0 P
+Choice: 1 TV
+Choice: 2 AV
+Choice: 3 Manual
+Choice: 4 Bulb
+Choice: 5 A_DEP
+Choice: 6 DEP
+Choice: 7 Custom
+Choice: 8 Lock
+Choice: 9 Green
+Choice: 10 Night Portrait
+Choice: 11 Sports
+Choice: 12 Portrait
+Choice: 13 Landscape
+Choice: 14 Closeup
+Choice: 15 Flash Off
+Choice: 16 C2
+Choice: 17 C3
+Choice: 18 Creative Auto
+Choice: 19 Movie
+Choice: 20 Auto
+Choice: 21 Handheld Night Scene
+Choice: 22 HDR Backlight Control
+Choice: 23 SCN
+Choice: 24 Food
+Choice: 25 Grainy B/W
+Choice: 26 Soft focus
+Choice: 27 Toy camera effect
+Choice: 28 Fish-eye effect
+Choice: 29 Water painting effect
+Choice: 30 Miniature effect
+Choice: 31 HDR art standard
+Choice: 32 HDR art vivid
+Choice: 33 HDR art bold
+Choice: 34 HDR art embossed
+Choice: 35 Panning
+Choice: 36 HDR
+Choice: 37 Self Portrait
+Choice: 38 Hybrid Auto
+Choice: 39 Smooth skin
+Choice: 40 Fv
+END
+/main/capturesettings/drivemode
+Label: Drive Mode
+Readonly: 0
+Type: RADIO
+Current: Single
+Choice: 0 Single
+Choice: 1 Continuous
+Choice: 2 Timer 10 sec
+Choice: 3 Timer 2 sec
+Choice: 4 Continuous timer
+END
+/main/capturesettings/picturestyle
+Label: Picture Style
+Readonly: 0
+Type: RADIO
+Current: Faithful
+Choice: 0 Auto
+Choice: 1 Standard
+Choice: 2 Portrait
+Choice: 3 Landscape
+Choice: 4 Neutral
+Choice: 5 Faithful
+Choice: 6 Monochrome
+Choice: 7 User defined 1
+Choice: 8 User defined 2
+Choice: 9 User defined 3
+END
+/main/capturesettings/aperture
+Label: Aperture
+Readonly: 0
+Type: RADIO
+Current: 8
+Choice: 0 5.6
+Choice: 1 6.7
+Choice: 2 8
+Choice: 3 9.5
+Choice: 4 11
+Choice: 5 13
+Choice: 6 16
+Choice: 7 19
+Choice: 8 22
+Choice: 9 27
+Choice: 10 32
+Choice: 11 38
+END
+/main/capturesettings/shutterspeed
+Label: Shutter Speed
+Readonly: 0
+Type: RADIO
+Current: auto
+Choice: 0 auto
+END
+/main/capturesettings/meteringmode
+Label: Metering Mode
+Readonly: 0
+Type: RADIO
+Current: Partial
+Choice: 0 Evaluative
+Choice: 1 Partial
+Choice: 2 Center-weighted average
+END
+/main/capturesettings/liveviewsize
+Label: Live View Size
+Readonly: 0
+Type: RADIO
+Current: val 0
+Choice: 0 Large
+Choice: 1 Medium
+Choice: 2 Small
+END
+/main/capturesettings/bracketmode
+Label: Bracket Mode
+Readonly: 0
+Type: RADIO
+Current: Unknown value 0000
+Choice: 0 Unknown value 0000
+END
+/main/capturesettings/aeb
+Label: Auto Exposure Bracketing
+Readonly: 0
+Type: RADIO
+Current: off
+Choice: 0 off
+Choice: 1 +/- 1/2
+Choice: 2 +/- 1
+Choice: 3 +/- 1 1/2
+Choice: 4 +/- 2
+END
+/main/capturesettings/alomode
+Label: Auto Lighting Optimization
+Readonly: 0
+Type: RADIO
+Current: x3
+Choice: 0 Standard (disabled in manual exposure)
+Choice: 1 x1
+Choice: 2 x2
+Choice: 3 x3
+END
+/main/other/d402
+Label: Friendly Device Name
+Readonly: 1
+Type: TEXT
+Current: Canon EOS 1300D
+END
+/main/other/d407
+Label: Perceived Device Type
+Readonly: 1
+Type: TEXT
+Current: 1
+END
+/main/other/d406
+Label: Session Initiator Info
+Readonly: 0
+Type: TEXT
+Current: Unknown Initiator
+END
+/main/other/d303
+Label: PTP Property 0xd303
+Readonly: 1
+Type: TEXT
+Current: 1
+END
+/main/other/5001
+Label: Battery Level
+Readonly: 1
+Type: MENU
+Current: 100
+Choice: 0 100
+Choice: 1 0
+Choice: 2 75
+Choice: 3 50
+END

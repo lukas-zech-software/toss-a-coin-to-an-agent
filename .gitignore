@@ -7,3 +7,6 @@ tmp/
 archive/
 *.CR2
 *.cr2
+coins/
+samples/*
+!samples/manifest.json
