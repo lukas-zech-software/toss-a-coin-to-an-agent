@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -31,4 +32,10 @@ export const LENIENT_THRESHOLDS = { minBrightness: 0, maxClippingRatio: 1, minSh
 export async function renderSvg(svg: string, format: "png" | "jpeg" = "png"): Promise<Buffer> {
   const img = sharp(Buffer.from(svg));
   return format === "png" ? img.png().toBuffer() : img.jpeg({ quality: 95, chromaSubsampling: "4:2:0" }).toBuffer();
+}
+
+/** node:test `skip` value: a reason while real-camera fixtures are missing (Task 2 + npm run samples:fixtures), else false. */
+export function skipUnlessFixtures(...names: string[]): string | false {
+  const missing = names.filter((n) => !existsSync(fixture(n)));
+  return missing.length ? `Fixture fehlt: ${missing.join(", ")} (Task 2 + npm run samples:fixtures)` : false;
 }
