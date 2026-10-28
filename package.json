@@ -13,7 +13,8 @@
     "calibrate": "node src/cli/calibrate.ts",
     "test": "node --test \"test/**/*.test.ts\"",
     "typecheck": "tsc",
-    "samples:fixtures": "node scripts/make-fixtures.ts"
+    "samples:fixtures": "node scripts/make-fixtures.ts",
+    "samples:measure": "node scripts/measure-samples.ts"
   },
   "dependencies": {
     "@techstark/opencv-js": "^5.0.0-release.1",
