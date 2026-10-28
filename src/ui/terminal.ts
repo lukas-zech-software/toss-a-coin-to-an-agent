@@ -38,7 +38,8 @@ export class TerminalUi implements Ui {
     } else {
       this.rl = createInterface({ input: this.input, terminal: false });
       this.rl.on("line", (l) => this.onLine(l));
-      this.rl.on("close", () => { this.eof = true; this.abort(); });
+      // EOF only aborts once a read finds nothing left: buffered lines (e.g. `printf "q\n" | …`) must still be delivered.
+      this.rl.on("close", () => { this.eof = true; if (this.waiter) this.abort(); });
     }
   }
 
@@ -131,7 +132,8 @@ export class TerminalUi implements Ui {
   private nextLine(): Promise<string> {
     const buffered = this.lines.shift();
     if (buffered !== undefined) return Promise.resolve(buffered);
-    if (this.eof || this.signal.aborted) return Promise.reject(new AbortError());
+    if (this.eof) this.abort();
+    if (this.signal.aborted) return Promise.reject(new AbortError());
     return new Promise<string>((resolve, reject) => { this.waiter = { reject, onLine: resolve }; });
   }
 

@@ -64,3 +64,14 @@ test("non-TTY: EOF aborts a pending key", async () => {
   await assert.rejects(p, AbortError);
   ui.close();
 });
+test("non-TTY: lines that arrived before EOF are still delivered, then reads abort", async () => {
+  const input = new PassThrough();
+  const ui = new TerminalUi({ input: input as never, output: new PassThrough() as never });
+  input.end("q\n");                                  // like `printf 'q\n' | npm run capture`: EOF follows the data immediately
+  await new Promise((r) => setTimeout(r, 30));       // the session is busy elsewhere (camera calls) while EOF arrives
+  assert.ok(!ui.signal.aborted, "EOF alone must not abort while input is still buffered");
+  assert.equal(await ui.key("p", ["q"]), "q");
+  await assert.rejects(ui.key("again", ["q"]), AbortError);
+  assert.ok(ui.signal.aborted);
+  ui.close();
+});
