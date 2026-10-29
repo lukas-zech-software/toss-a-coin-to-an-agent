@@ -13,7 +13,8 @@ const arg = (name: string, fallback: string): string => {
 };
 const SAMPLES = resolve(arg("--samples", "samples"));
 const OUT = resolve(arg("--out", "test/fixtures"));
-const W = 1296, H = 864; // 1/4 linear resolution of 5184x3456; multiples of 16 (jpegtran -perfect)
+const W = 1296,
+  H = 864; // 1/4 linear resolution of 5184x3456; multiples of 16 (jpegtran -perfect)
 
 const goodSrc = join(SAMPLES, "good_av.jpg");
 if (!existsSync(goodSrc)) {
@@ -22,7 +23,8 @@ if (!existsSync(goodSrc)) {
 }
 mkdirSync(OUT, { recursive: true });
 
-const encode = (img: Sharp) => img.keepExif().jpeg({ quality: 92, chromaSubsampling: "4:2:0" });
+const encode = (img: Sharp) =>
+  img.keepExif().jpeg({ quality: 92, chromaSubsampling: "4:2:0" });
 const small = () => sharp(goodSrc).resize(W, H);
 // name -> how to build it when no real sample exists
 const synthetic: Record<string, () => Sharp> = {
@@ -34,14 +36,27 @@ const synthetic: Record<string, () => Sharp> = {
   cut_off: () => small().extract({ left: 0, top: 0, width: W, height: 576 }),
 };
 
-const NAMES = ["good_av", "good_av_dup", "good_rv", "under", "over", "blurry", "empty", "cut_off"];
-const meta: Record<string, { source: "real" | "synthetic"; width: number; height: number }> = {};
+const NAMES = [
+  "good_av",
+  "good_av_dup",
+  "good_rv",
+  "under",
+  "over",
+  "blurry",
+  "empty",
+  "cut_off",
+];
+const meta: Record<
+  string,
+  { source: "real" | "synthetic"; width: number; height: number }
+> = {};
 for (const name of NAMES) {
   const dst = join(OUT, `${name}.jpg`);
   const real = join(SAMPLES, `${name}.jpg`);
   let source: "real" | "synthetic";
   if (name === "good_av_dup" && !existsSync(real)) {
-    if (!meta.good_av) throw new Error("good_av muss vor good_av_dup entstehen");
+    if (!meta.good_av)
+      throw new Error("good_av muss vor good_av_dup entstehen");
     copyFileSync(join(OUT, "good_av.jpg"), dst); // unchanged copy of the good_av output
     source = "synthetic";
   } else if (existsSync(real)) {

@@ -17,7 +17,11 @@ export class ToolError extends Error {
 export type RunOptions = { timeoutMs?: number; signal?: AbortSignal };
 
 /** Runs a command without a shell. Non-zero exit and timeout -> ToolError, aborted signal -> AbortError. */
-export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise<{ stdout: string; stderr: string }> {
+export function run(
+  cmd: string,
+  args: string[],
+  opts: RunOptions = {},
+): Promise<{ stdout: string; stderr: string }> {
   const { timeoutMs, signal } = opts;
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new AbortError());
@@ -30,16 +34,33 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise
       signal?.removeEventListener("abort", onAbort);
       settle();
     };
-    const child = execFile(cmd, args, { maxBuffer: 64 * 1024 * 1024, encoding: "utf8", ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}) },
-      (err, stdout, stderr) => finish(() => {
-        if (!err) return resolve({ stdout, stderr });
-        if (signal?.aborted) return reject(new AbortError());
-        const e = err as NodeJS.ErrnoException & { killed?: boolean };
-        let output = `${stderr}${stdout}`.trim();
-        if (!output) output = e.message;
-        if (e.killed) output = `${output}\nZeitüberschreitung nach ${((timeoutMs ?? 0) / 1000).toFixed(0)} s`.trim();
-        reject(new ToolError(cmd, typeof e.code === "number" ? e.code : null, output));
-      }));
+    const child = execFile(
+      cmd,
+      args,
+      {
+        maxBuffer: 64 * 1024 * 1024,
+        encoding: "utf8",
+        ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
+      },
+      (err, stdout, stderr) =>
+        finish(() => {
+          if (!err) return resolve({ stdout, stderr });
+          if (signal?.aborted) return reject(new AbortError());
+          const e = err as NodeJS.ErrnoException & { killed?: boolean };
+          let output = `${stderr}${stdout}`.trim();
+          if (!output) output = e.message;
+          if (e.killed)
+            output =
+              `${output}\nZeitüberschreitung nach ${((timeoutMs ?? 0) / 1000).toFixed(0)} s`.trim();
+          reject(
+            new ToolError(
+              cmd,
+              typeof e.code === "number" ? e.code : null,
+              output,
+            ),
+          );
+        }),
+    );
     // Abort: SIGTERM, escalate to SIGKILL after 3 s, and settle as soon as the child is gone. Waiting for the stdio
     // pipes to close would hang on grandchildren that inherited them.
     function onAbort(): void {
@@ -49,7 +70,8 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise
     }
     child.once("exit", () => {
       if (!signal?.aborted) return;
-      child.stdout?.destroy(); child.stderr?.destroy();
+      child.stdout?.destroy();
+      child.stderr?.destroy();
       finish(() => reject(new AbortError()));
     });
     signal?.addEventListener("abort", onAbort, { once: true });
@@ -58,5 +80,9 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise
 
 /** macOS restarts ptpcamerad (and EOS Utility may run) and both grab the camera: kill them before every gphoto2 call. */
 export async function killCameraBlockers(): Promise<void> {
-  await Promise.all([run("killall", ["ptpcamerad"]), run("killall", ["EOS Utility"])].map((p) => p.catch(() => undefined)));
+  await Promise.all(
+    [run("killall", ["ptpcamerad"]), run("killall", ["EOS Utility"])].map((p) =>
+      p.catch(() => undefined),
+    ),
+  );
 }

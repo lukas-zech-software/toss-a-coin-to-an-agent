@@ -92,6 +92,7 @@ test/fixtures/                  small committed fixtures
 ### Task 1: Hardware check and automatic sample capture
 
 **Files:**
+
 - Create: `scripts/hwcheck/shoot.sh`, `scripts/hwcheck/preview.ts`
 - Create: `docs/hardware/1300d.md`, `docs/hardware/gphoto2-list-all-config.txt`
 - Create: `test/fixtures/gphoto2-get-config.txt`
@@ -99,6 +100,7 @@ test/fixtures/                  small committed fixtures
 - Modify: `.gitignore`
 
 **Interfaces:**
+
 - Produces: `samples/<name>.jpg` + `samples/<name>.cr2` (unrotated camera output, lowercase extensions); `samples/manifest.json` (format below); `test/fixtures/gphoto2-get-config.txt` (9 `--get-config` blocks, order below; the parser fixture for Task 11); `docs/hardware/1300d.md` § "Implications" (inputs for Tasks 11 and 13).
 
 - [ ] **Step 1: Detect the camera**
@@ -114,6 +116,7 @@ killall ptpcamerad 2>/dev/null; gphoto2 --list-all-config > docs/hardware/gphoto
 perl -0pi -e 's{(/main/status/(?:eos)?serialnumber\n(?:(?!END).*\n)*?Current: ).*}{$1REDACTED}g' docs/hardware/gphoto2-list-all-config.txt
 grep -A3 serialnumber docs/hardware/gphoto2-list-all-config.txt
 ```
+
 Expected: every `Current:` under `serialnumber`/`eosserialnumber` reads `REDACTED`.
 
 - [ ] **Step 3: Save the parser fixture and record the original values**
@@ -127,6 +130,7 @@ killall ptpcamerad 2>/dev/null; gphoto2 \
   --get-config /main/capturesettings/autoexposuremode > test/fixtures/gphoto2-get-config.txt
 grep -c '^END$' test/fixtures/gphoto2-get-config.txt
 ```
+
 Expected: `9`. Copy the nine `Current:` values into the "Original values" table of `docs/hardware/1300d.md`. Step 11 restores them.
 
 - [ ] **Step 4: Create `scripts/hwcheck/shoot.sh` and `scripts/hwcheck/preview.ts`**
@@ -169,6 +173,7 @@ Expected: the final read is `Current: AV`. If it is not AV after the restore att
 - [ ] **Step 8: Autofocus and manual-focus drive**
 
 Run each command (with `killall ptpcamerad` before it) and record exit code and output:
+
 1. `gphoto2 --set-config /main/actions/autofocusdrive=1 --wait-event=2s` (no live view)
 2. `gphoto2 --set-config /main/actions/viewfinder=1 --set-config /main/actions/autofocusdrive=1 --wait-event=3s --set-config /main/actions/viewfinder=0` (live view)
 3. `gphoto2 --set-config-value "/main/actions/manualfocusdrive=Far 3"` (no live view)
@@ -188,6 +193,7 @@ killall ptpcamerad 2>/dev/null; gphoto2 --set-config-value "/main/imgsettings/im
   --capture-image-and-download --filename "samples/blurry_try.%C" --force-overwrite
 killall ptpcamerad 2>/dev/null; gphoto2 --set-config /main/actions/viewfinder=0
 ```
+
 Lowercase the extensions as `shoot.sh` does. Run `node scripts/hwcheck/preview.ts samples/blurry_try.jpg --center`. If the coin is clearly out of focus, rename to `blurry.*`. Otherwise delete `samples/blurry_try.*`, record "camera refocuses on capture", and leave `blurry` pending for Task 2.
 
 - [ ] **Step 10: Automatic samples (only if a coin is present, fully inside and sharp)**
@@ -199,6 +205,7 @@ scripts/hwcheck/shoot.sh good_av_dup $B /main/capturesettings/exposurecompensati
 scripts/hwcheck/shoot.sh under       $B /main/capturesettings/exposurecompensation=-2.5
 scripts/hwcheck/shoot.sh over        $B /main/capturesettings/exposurecompensation=3.5
 ```
+
 (`$B` is left unquoted on purpose so it splits into three arguments.) Preview each one. `under` must look clearly dark and `over` must show blown highlights on the coin. If `over` does not, re-shoot it with `exposurecompensation=5`.
 
 - [ ] **Step 11: Restore settings and verify**
@@ -216,20 +223,38 @@ Expected: two lines (`-compare, -b` and `-compareMode, -c` with option `Horizont
 ```json
 {
   "samples": [
-    { "name": "good_av", "expect": "ok", "tags": [], "settings": { "exposurecompensation": "0.5" }, "note": "" }
+    {
+      "name": "good_av",
+      "expect": "ok",
+      "tags": [],
+      "settings": { "exposurecompensation": "0.5" },
+      "note": ""
+    }
   ],
   "pairs": [
     { "a": "good_av", "b": "good_av_dup", "expect": "duplicate" },
     { "a": "good_av", "b": "good_rv", "expect": "different" }
   ],
-  "pending": ["good_rv", "empty", "cut_off", "blurry", "dark", "shiny", "large", "small", "wide"]
+  "pending": [
+    "good_rv",
+    "empty",
+    "cut_off",
+    "blurry",
+    "dark",
+    "shiny",
+    "large",
+    "small",
+    "wide"
+  ]
 }
 ```
+
 `expect` ∈ `ok | no_coin | coin_cut_off | underexposed | overexposed | blurry`. Add one entry per captured sample and list every sample that is not yet captured under `pending`. The full sample set (names are fixed; later tasks refer to them): `good_av, good_av_dup, good_rv, under, over, blurry, empty, cut_off, dark, shiny, large, small, wide`. Do not add pairs whose files are missing.
 
 - [ ] **Step 14: Write `docs/hardware/1300d.md`**
 
 Sections:
+
 1. Camera/lens (with the serial number redacted).
 2. Original values table.
 3. Key paths and full choice lists for the six capture keys.
@@ -245,11 +270,13 @@ Sections:
 - [ ] **Step 15: `.gitignore` and commit**
 
 Append to `.gitignore`:
+
 ```
 coins/
 samples/*
 !samples/manifest.json
 ```
+
 ```bash
 git add .gitignore scripts/hwcheck/shoot.sh scripts/hwcheck/preview.ts docs/hardware/1300d.md docs/hardware/gphoto2-list-all-config.txt test/fixtures/gphoto2-get-config.txt samples/manifest.json
 git commit -m "chore: hardware check for EOS 1300D and sample capture helpers"
@@ -260,9 +287,11 @@ git commit -m "chore: hardware check for EOS 1300D and sample capture helpers"
 ### Task 2: [needs Lukas] Desk sample session
 
 **Files:**
+
 - Modify: `samples/manifest.json`, `docs/hardware/1300d.md` (samples section)
 
 **Interfaces:**
+
 - Consumes: `scripts/hwcheck/shoot.sh`, `scripts/hwcheck/preview.ts` (Task 1).
 - Produces: the pending samples from Task 1 in `samples/`; manifest entries for them.
 
@@ -280,12 +309,14 @@ For every sample still in `pending`: tell Lukas exactly what to do and wait for 
   - `wide`: a normal coin with the zoom at about 50 mm ("Bitte auf ca. 50 mm zoomen"), then "Bitte wieder auf 135 mm zoomen."
   - Record the focal length (EXIF) of each sample in its `note`.
 - [ ] **Step 4: Refresh downstream artefacts**
-  If Task 4 is done: run `npm run samples:fixtures`, then `npm test`. If Task 13 is done: run `npm run samples:measure` and update the thresholds as in Task 13 Steps 5–6.
+      If Task 4 is done: run `npm run samples:fixtures`, then `npm test`. If Task 13 is done: run `npm run samples:measure` and update the thresholds as in Task 13 Steps 5–6.
 - [ ] **Step 5: Commit**
+
 ```bash
 git add samples/manifest.json docs/hardware/1300d.md test/fixtures coin-capture.config.json docs/hardware/thresholds.md
 git commit -m "chore: complete sample set from desk session"
 ```
+
 (Add only the files that exist and changed. `git add` fails on missing paths, e.g. `thresholds.md` before Task 13.)
 
 ---
@@ -293,11 +324,13 @@ git commit -m "chore: complete sample set from desk session"
 ### Task 3: Foundation: config, process runner, shared types, test harness
 
 **Files:**
+
 - Modify: `package.json` (add `"test": "node --test \"test/**/*.test.ts\""`), `tsconfig.json` (`"include": ["src", "scripts", "test"]`)
 - Create: `coin-capture.config.json`, `src/config.ts`, `src/abort.ts`, `src/proc.ts`, `src/types.ts`, `test/helpers.ts`
 - Test: `test/config.test.ts`, `test/proc.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `Config` (type mirroring the JSON below), `DEFAULT_CONFIG: Config`, `loadConfig(file?: string): Config`. The default file is `<repo>/coin-capture.config.json`. `paths.coinsRoot` is returned as an absolute path, resolved against the config file's directory.
   - `class AbortError extends Error` (`name = "AbortError"`, message `"Abgebrochen"`).
@@ -311,20 +344,40 @@ git commit -m "chore: complete sample set from desk session"
     - `renderSvg(svg: string, format?: "png" | "jpeg"): Promise<Buffer>` (default png; jpeg = quality 95, 4:2:0).
 
 `coin-capture.config.json` (= `DEFAULT_CONFIG`; thresholds are provisional until Task 13):
+
 ```json
 {
-  "paths": { "coinsRoot": "coins", "djv": "/System/Volumes/Data/Applications/djv.app/Contents/MacOS/djv" },
-  "detection": { "proxyMaxEdge": 1200, "minAreaRatio": 0.005, "minInlierRatio": 0.8, "minArcCoverage": 0.5, "minContrast": 0.15 },
+  "paths": {
+    "coinsRoot": "coins",
+    "djv": "/System/Volumes/Data/Applications/djv.app/Contents/MacOS/djv"
+  },
+  "detection": {
+    "proxyMaxEdge": 1200,
+    "minAreaRatio": 0.005,
+    "minInlierRatio": 0.8,
+    "minArcCoverage": 0.5,
+    "minContrast": 0.15
+  },
   "crop": { "marginRatio": 0.15, "jpegQuality": 95 },
   "quality": { "measureSize": 1024, "maskRadiusRatio": 0.95, "clipLevel": 250 },
   "similarity": { "gridSize": 32 },
-  "thresholds": { "minBrightness": 40, "maxClippingRatio": 0.1, "minSharpness": 20, "maxSimilarity": 0.9 },
-  "corrections": { "maxAutoPerFeature": 2, "attemptsPerRetry": 2, "steps": { "exposurecompensation": 1, "iso": 1 } },
+  "thresholds": {
+    "minBrightness": 40,
+    "maxClippingRatio": 0.1,
+    "minSharpness": 20,
+    "maxSimilarity": 0.9
+  },
+  "corrections": {
+    "maxAutoPerFeature": 2,
+    "attemptsPerRetry": 2,
+    "steps": { "exposurecompensation": 1, "iso": 1 }
+  },
   "session": { "countdownSeconds": 3 }
 }
 ```
 
 `src/types.ts` (the shared interface hub; later tasks import from here):
+
 ```ts
 export type Side = "av" | "rv";
 export type ShotPaths = { crop: string; original: string; raw: string };
@@ -333,14 +386,30 @@ export type CoinCircle = { cx: number; cy: number; r: number };
 export type Detection =
   | { found: false }
   | { found: true; circle: CoinCircle; cutOff: boolean; inlierRatio: number };
-export type CropBox = { left: number; top: number; size: number; marginRatio: number; reduced: boolean };
-export type QualityMetrics = { sharpness: number; meanBrightness: number; clippingRatio: number };
-export type ExifInfo = { focalLengthMm: number | null; shutterSpeed: string | null; fNumber: number | null; iso: number | null };
+export type CropBox = {
+  left: number;
+  top: number;
+  size: number;
+  marginRatio: number;
+  reduced: boolean;
+};
+export type QualityMetrics = {
+  sharpness: number;
+  meanBrightness: number;
+  clippingRatio: number;
+};
+export type ExifInfo = {
+  focalLengthMm: number | null;
+  shutterSpeed: string | null;
+  fNumber: number | null;
+  iso: number | null;
+};
 export type ProcessedShot = {
-  paths: ShotPaths;              // original + raw always exist; crop only when cropBox !== null
-  width: number; height: number; // rotated original
+  paths: ShotPaths; // original + raw always exist; crop only when cropBox !== null
+  width: number;
+  height: number; // rotated original
   detection: Detection;
-  cropBox: CropBox | null;       // null when no coin or coin cut off
+  cropBox: CropBox | null; // null when no coin or coin cut off
   quality: QualityMetrics | null;
   exif: ExifInfo;
   warnings: string[];
@@ -356,38 +425,58 @@ test("loads the committed config", () => {
   assert.equal(c.crop.marginRatio, 0.15);
   assert.equal(c.corrections.maxAutoPerFeature, 2);
   assert.equal(c.corrections.attemptsPerRetry, 2);
-  assert.ok(isAbsolute(c.paths.coinsRoot) && c.paths.coinsRoot.endsWith("/coins"));
+  assert.ok(
+    isAbsolute(c.paths.coinsRoot) && c.paths.coinsRoot.endsWith("/coins"),
+  );
 });
 test("missing keys fall back to defaults; coinsRoot resolves next to the file", async () => {
-  const dir = await tmpDir(); const f = join(dir, "c.json");
+  const dir = await tmpDir();
+  const f = join(dir, "c.json");
   await writeFile(f, JSON.stringify({ thresholds: { minSharpness: 77 } }));
   const c = loadConfig(f);
   assert.equal(c.thresholds.minSharpness, 77);
-  assert.equal(c.thresholds.minBrightness, DEFAULT_CONFIG.thresholds.minBrightness);
+  assert.equal(
+    c.thresholds.minBrightness,
+    DEFAULT_CONFIG.thresholds.minBrightness,
+  );
   assert.equal(c.paths.coinsRoot, join(dir, "coins"));
 });
 test("wrong type names the key", async () => {
-  const f = join(await tmpDir(), "c.json"); await writeFile(f, JSON.stringify({ thresholds: { minSharpness: "x" } }));
+  const f = join(await tmpDir(), "c.json");
+  await writeFile(f, JSON.stringify({ thresholds: { minSharpness: "x" } }));
   assert.throws(() => loadConfig(f), /thresholds\.minSharpness/);
 });
 test("unknown key is rejected (typo guard)", async () => {
-  const f = join(await tmpDir(), "c.json"); await writeFile(f, JSON.stringify({ tresholds: {} }));
+  const f = join(await tmpDir(), "c.json");
+  await writeFile(f, JSON.stringify({ tresholds: {} }));
   assert.throws(() => loadConfig(f), /tresholds/);
 });
 // test/proc.test.ts
-test("run returns stdout", async () => assert.equal((await run("echo", ["hi"])).stdout.trim(), "hi"));
+test("run returns stdout", async () =>
+  assert.equal((await run("echo", ["hi"])).stdout.trim(), "hi"));
 test("run throws ToolError with exit code and output", async () => {
-  await assert.rejects(run("sh", ["-c", "echo boom >&2; exit 3"]),
-    (e: unknown) => e instanceof ToolError && e.exitCode === 3 && e.output.includes("boom"));
+  await assert.rejects(
+    run("sh", ["-c", "echo boom >&2; exit 3"]),
+    (e: unknown) =>
+      e instanceof ToolError && e.exitCode === 3 && e.output.includes("boom"),
+  );
 });
 test("run maps an aborted signal to AbortError", async () => {
-  const ac = new AbortController(); const p = run("sleep", ["5"], { signal: ac.signal }); ac.abort();
+  const ac = new AbortController();
+  const p = run("sleep", ["5"], { signal: ac.signal });
+  ac.abort();
   await assert.rejects(p, AbortError);
 });
 test("run times out with ToolError", async () => {
-  await assert.rejects(run("sleep", ["5"], { timeoutMs: 100 }), (e: unknown) => e instanceof ToolError && /Zeitüberschreitung/.test(e.output));
+  await assert.rejects(
+    run("sleep", ["5"], { timeoutMs: 100 }),
+    (e: unknown) =>
+      e instanceof ToolError && /Zeitüberschreitung/.test(e.output),
+  );
 });
-test("killCameraBlockers never throws", async () => { await killCameraBlockers(); });
+test("killCameraBlockers never throws", async () => {
+  await killCameraBlockers();
+});
 ```
 
 - [ ] **Step 2: Run them and confirm they fail**
@@ -405,6 +494,7 @@ Run: `npm test && npm run typecheck`
 Expected: PASS, no tsc errors.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add package.json package-lock.json tsconfig.json coin-capture.config.json src/config.ts src/abort.ts src/proc.ts src/types.ts test/helpers.ts test/config.test.ts test/proc.test.ts
 git commit -m "feat: config loader, process runner, shared types and test harness"
@@ -415,24 +505,39 @@ git commit -m "feat: config loader, process runner, shared types and test harnes
 ### Task 4: Test fixtures from samples
 
 **Files:**
+
 - Create: `scripts/make-fixtures.ts`, `test/fixtures/{good_av,good_av_dup,good_rv,under,over,blurry,empty,cut_off}.jpg`, `test/fixtures/fixtures.json`
 - Modify: `package.json` (`"samples:fixtures": "node scripts/make-fixtures.ts"`)
 - Test: `test/fixtures.test.ts`
 
 **Interfaces:**
+
 - Consumes: `samples/*.jpg`, `samples/manifest.json` (Task 1/2).
 - Produces: 8 fixtures as **unrotated** camera-orientation JPEGs, 1/4 linear resolution (1296×864, except a synthetic `cut_off`, which is 1296×576), EXIF kept. `fixtures.json` = `{ "<name>": { "source": "real" | "synthetic", "width": number, "height": number } }`. Both dimensions are multiples of 16 (needed by `jpegtran -perfect`).
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-const REQUIRED = ["good_av", "good_av_dup", "good_rv", "under", "over", "blurry", "empty", "cut_off"];
+const REQUIRED = [
+  "good_av",
+  "good_av_dup",
+  "good_rv",
+  "under",
+  "over",
+  "blurry",
+  "empty",
+  "cut_off",
+];
 test("all required fixtures exist with recorded, MCU-aligned size", async () => {
-  const meta = JSON.parse(readFileSync(join(FIXTURES, "fixtures.json"), "utf8"));
+  const meta = JSON.parse(
+    readFileSync(join(FIXTURES, "fixtures.json"), "utf8"),
+  );
   for (const name of REQUIRED) {
     const m = await sharp(fixture(name)).metadata();
-    assert.equal(m.width, meta[name].width, name); assert.equal(m.height, meta[name].height, name);
-    assert.equal(m.width! % 16, 0, name); assert.equal(m.height! % 16, 0, name);
+    assert.equal(m.width, meta[name].width, name);
+    assert.equal(m.height, meta[name].height, name);
+    assert.equal(m.width! % 16, 0, name);
+    assert.equal(m.height! % 16, 0, name);
     assert.ok(["real", "synthetic"].includes(meta[name].source), name);
   }
 });
@@ -467,6 +572,7 @@ Run: `node --test test/fixtures.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
+
 ```bash
 git add scripts/make-fixtures.ts test/fixtures/*.jpg test/fixtures/fixtures.json test/fixtures.test.ts package.json package-lock.json
 git commit -m "test: derive small image fixtures from camera samples"
@@ -477,10 +583,12 @@ git commit -m "test: derive small image fixtures from camera samples"
 ### Task 5: Rotation and EXIF
 
 **Files:**
+
 - Create: `src/image/rotate.ts`, `src/image/exif.ts`
 - Test: `test/image/rotate.test.ts`
 
 **Interfaces:**
+
 - Consumes: `run`, `ToolError` (Task 3); `ExifInfo` (`src/types.ts`).
 - Produces:
   - `rotateJpg(src: string, dst: string): Promise<void>`: `jpegtran -copy all -perfect -rotate 90 -outfile <dst> <src>`, then `exiftool -overwrite_original -n -Orientation=1 <dst>`.
@@ -492,31 +600,67 @@ git commit -m "test: derive small image fixtures from camera samples"
 ```ts
 const HALVES = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32"><rect width="32" height="32" fill="#000"/><rect x="32" width="32" height="32" fill="#fff"/></svg>`;
 test("rotateJpg rotates 90° clockwise and resets Orientation", async () => {
-  const dir = await tmpDir(); const src = join(dir, "in.jpg"), dst = join(dir, "out.jpg");
+  const dir = await tmpDir();
+  const src = join(dir, "in.jpg"),
+    dst = join(dir, "out.jpg");
   await writeFile(src, await renderSvg(HALVES, "jpeg"));
   await rotateJpg(src, dst);
-  const { data, info } = await sharp(dst).greyscale().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(dst)
+    .greyscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
   assert.deepEqual([info.width, info.height], [32, 64]);
-  const mean = (y0: number, y1: number) => { let s = 0; for (let y = y0; y < y1; y++) for (let x = 0; x < 32; x++) s += data[y * 32 + x]!; return s / ((y1 - y0) * 32); };
+  const mean = (y0: number, y1: number) => {
+    let s = 0;
+    for (let y = y0; y < y1; y++)
+      for (let x = 0; x < 32; x++) s += data[y * 32 + x]!;
+    return s / ((y1 - y0) * 32);
+  };
   assert.ok(mean(0, 16) < 40, "left half (black) is now on top");
   assert.ok(mean(48, 64) > 215);
-  assert.equal((await run("exiftool", ["-n", "-s3", "-Orientation", dst])).stdout.trim(), "1");
+  assert.equal(
+    (await run("exiftool", ["-n", "-s3", "-Orientation", dst])).stdout.trim(),
+    "1",
+  );
 });
 test("rotateJpg refuses images that cannot be rotated losslessly", async () => {
-  const dir = await tmpDir(); const src = join(dir, "odd.jpg");
-  await writeFile(src, await renderSvg(`<svg xmlns="http://www.w3.org/2000/svg" width="70" height="30"><rect width="70" height="30" fill="#888"/></svg>`, "jpeg"));
+  const dir = await tmpDir();
+  const src = join(dir, "odd.jpg");
+  await writeFile(
+    src,
+    await renderSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="70" height="30"><rect width="70" height="30" fill="#888"/></svg>`,
+      "jpeg",
+    ),
+  );
   await assert.rejects(rotateJpg(src, join(dir, "o.jpg")), ToolError);
 });
-test("orientRaw sets Orientation 6 on a real CR2", { skip: !existsSync("samples/good_av.cr2") }, async () => {
-  const p = join(await tmpDir(), "x.CR2"); await copyFile("samples/good_av.cr2", p);
-  await orientRaw(p);
-  assert.equal((await run("exiftool", ["-n", "-s3", "-Orientation", p])).stdout.trim(), "6");
-});
+test(
+  "orientRaw sets Orientation 6 on a real CR2",
+  { skip: !existsSync("samples/good_av.cr2") },
+  async () => {
+    const p = join(await tmpDir(), "x.CR2");
+    await copyFile("samples/good_av.cr2", p);
+    await orientRaw(p);
+    assert.equal(
+      (await run("exiftool", ["-n", "-s3", "-Orientation", p])).stdout.trim(),
+      "6",
+    );
+  },
+);
 test("readExif reads camera EXIF and tolerates missing tags", async () => {
   const e = await readExif(fixture("good_av"));
-  assert.ok(e.focalLengthMm! > 0 && typeof e.shutterSpeed === "string" && e.iso! > 0);
-  const p = join(await tmpDir(), "plain.jpg"); await writeFile(p, await renderSvg(HALVES, "jpeg"));
-  assert.deepEqual(await readExif(p), { focalLengthMm: null, shutterSpeed: null, fNumber: null, iso: null });
+  assert.ok(
+    e.focalLengthMm! > 0 && typeof e.shutterSpeed === "string" && e.iso! > 0,
+  );
+  const p = join(await tmpDir(), "plain.jpg");
+  await writeFile(p, await renderSvg(HALVES, "jpeg"));
+  assert.deepEqual(await readExif(p), {
+    focalLengthMm: null,
+    shutterSpeed: null,
+    fNumber: null,
+    iso: null,
+  });
 });
 ```
 
@@ -533,6 +677,7 @@ Run: `node --test test/image/rotate.test.ts && npm run typecheck`
 Expected: PASS (`orientRaw` is skipped only when no CR2 sample exists).
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/image/rotate.ts src/image/exif.ts test/image/rotate.test.ts
 git commit -m "feat: lossless JPG rotation, RAW orientation tag, EXIF reader"
@@ -543,10 +688,12 @@ git commit -m "feat: lossless JPG rotation, RAW orientation tag, EXIF reader"
 ### Task 6: Coin detection
 
 **Files:**
+
 - Create: `src/image/cv.ts`, `src/image/detect.ts`
 - Test: `test/image/detect.test.ts`
 
 **Interfaces:**
+
 - Consumes: `CoinCircle`, `Detection` (`src/types.ts`); `Config["detection"]`.
 - Produces:
   - `src/image/cv.ts`: `type CV = Awaited<typeof cvModule>` (`import cvModule from "@techstark/opencv-js"`); `getCv(): Promise<CV>` (memoised; same init pattern as `scripts/doctor.ts`: await the module if it is a Promise, then wait for `onRuntimeInitialized` unless `cv.Mat` exists).
@@ -556,38 +703,85 @@ git commit -m "feat: lossless JPG rotation, RAW orientation tag, EXIF reader"
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-const D = { proxyMaxEdge: 1200, minAreaRatio: 0.005, minInlierRatio: 0.8, minArcCoverage: 0.5, minContrast: 0.15 };
+const D = {
+  proxyMaxEdge: 1200,
+  minAreaRatio: 0.005,
+  minInlierRatio: 0.8,
+  minArcCoverage: 0.5,
+  minContrast: 0.15,
+};
 const svg = (w: number, h: number, body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="#f2f2f2"/>${body}</svg>`;
 const near = (a: number, b: number, tol: number) => Math.abs(a - b) <= tol;
 
 test("fitCircle recovers a circle from a 120° arc", () => {
   const pts: Array<[number, number]> = [];
-  for (let a = 0; a <= 120; a += 2) { const t = (a * Math.PI) / 180; pts.push([100 + 50 * Math.cos(t), 80 + 50 * Math.sin(t)]); }
+  for (let a = 0; a <= 120; a += 2) {
+    const t = (a * Math.PI) / 180;
+    pts.push([100 + 50 * Math.cos(t), 80 + 50 * Math.sin(t)]);
+  }
   const c = fitCircle(pts)!;
   assert.ok(near(c.cx, 100, 0.5) && near(c.cy, 80, 0.5) && near(c.r, 50, 0.5));
-  assert.equal(fitCircle([[0, 0], [1, 1]]), null);
+  assert.equal(
+    fitCircle([
+      [0, 0],
+      [1, 1],
+    ]),
+    null,
+  );
 });
 test("finds a disc and ignores a dark band at the border", async () => {
-  const d = await detectCoin(await renderSvg(svg(1200, 800, `<rect width="120" height="800" fill="#3c3c3c"/><circle cx="600" cy="400" r="150" fill="#5a4630"/>`)), D);
+  const d = await detectCoin(
+    await renderSvg(
+      svg(
+        1200,
+        800,
+        `<rect width="120" height="800" fill="#3c3c3c"/><circle cx="600" cy="400" r="150" fill="#5a4630"/>`,
+      ),
+    ),
+    D,
+  );
   assert.ok(d.found && !d.cutOff);
-  assert.ok(near(d.circle.cx, 600, 3) && near(d.circle.cy, 400, 3) && near(d.circle.r, 150, 3));
+  assert.ok(
+    near(d.circle.cx, 600, 3) &&
+      near(d.circle.cy, 400, 3) &&
+      near(d.circle.r, 150, 3),
+  );
 });
 test("cut-off disc is found, flagged, and keeps its true radius", async () => {
-  const d = await detectCoin(await renderSvg(svg(1200, 800, `<circle cx="1130" cy="400" r="150" fill="#5a4630"/>`)), D);
+  const d = await detectCoin(
+    await renderSvg(
+      svg(1200, 800, `<circle cx="1130" cy="400" r="150" fill="#5a4630"/>`),
+    ),
+    D,
+  );
   assert.ok(d.found && d.cutOff && near(d.circle.r, 150, 5));
 });
 test("plain vignetted paper is no coin", async () => {
   const body = `<defs><radialGradient id="g"><stop offset="0" stop-color="#f6f6f6"/><stop offset="1" stop-color="#d6d6d6"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#g)"/>`;
-  assert.deepEqual(await detectCoin(await renderSvg(svg(1200, 800, body)), D), { found: false });
+  assert.deepEqual(await detectCoin(await renderSvg(svg(1200, 800, body)), D), {
+    found: false,
+  });
 });
 test("circle is returned in original coordinates (proxy rescaling)", async () => {
-  const d = await detectCoin(await renderSvg(svg(2400, 1600, `<circle cx="1000" cy="800" r="300" fill="#5a4630"/>`)), D);
-  assert.ok(d.found && near(d.circle.cx, 1000, 4) && near(d.circle.cy, 800, 4) && near(d.circle.r, 300, 4));
+  const d = await detectCoin(
+    await renderSvg(
+      svg(2400, 1600, `<circle cx="1000" cy="800" r="300" fill="#5a4630"/>`),
+    ),
+    D,
+  );
+  assert.ok(
+    d.found &&
+      near(d.circle.cx, 1000, 4) &&
+      near(d.circle.cy, 800, 4) &&
+      near(d.circle.r, 300, 4),
+  );
 });
 test("fixtures: good, empty, cut_off", async () => {
   const g = await detectCoin(fixture("good_av"), D);
-  assert.ok(g.found && !g.cutOff && g.circle.r > 0.1 * 864 && g.circle.r < 0.5 * 864);
+  assert.ok(
+    g.found && !g.cutOff && g.circle.r > 0.1 * 864 && g.circle.r < 0.5 * 864,
+  );
   assert.equal((await detectCoin(fixture("empty"), D)).found, false);
   const c = await detectCoin(fixture("cut_off"), D);
   assert.ok(c.found && c.cutOff);
@@ -633,6 +827,7 @@ Run: `node --test test/image/detect.test.ts && npm run typecheck`
 Expected: PASS. If a fixture test fails, view the fixture (Read tool) before changing any default. Only `detection.*` values in `coin-capture.config.json`/`DEFAULT_CONFIG` may be tuned, and the change must be recorded in the commit message.
 
 - [ ] **Step 6: Commit**
+
 ```bash
 git add src/image/cv.ts src/image/detect.ts test/image/detect.test.ts
 git commit -m "feat: contour-based coin detection with circle fit and cut-off flag"
@@ -643,10 +838,12 @@ git commit -m "feat: contour-based coin detection with circle fit and cut-off fl
 ### Task 7: Square crop with margin
 
 **Files:**
+
 - Create: `src/image/crop.ts`
 - Test: `test/image/crop.test.ts`
 
 **Interfaces:**
+
 - Consumes: `CoinCircle`, `CropBox`.
 - Produces:
   - `computeCropBox(circle: CoinCircle, width: number, height: number, marginRatio: number): CropBox`:
@@ -660,8 +857,10 @@ git commit -m "feat: contour-based coin detection with circle fit and cut-off fl
 
 ```ts
 test("full margin when it fits", () => {
-  assert.deepEqual(computeCropBox({ cx: 2000, cy: 2600, r: 1000 }, 3456, 5184, 0.15),
-    { left: 700, top: 1300, size: 2600, marginRatio: 0.15, reduced: false });
+  assert.deepEqual(
+    computeCropBox({ cx: 2000, cy: 2600, r: 1000 }, 3456, 5184, 0.15),
+    { left: 700, top: 1300, size: 2600, marginRatio: 0.15, reduced: false },
+  );
 });
 test("margin reduced when the image is too small", () => {
   const b = computeCropBox({ cx: 1728, cy: 2592, r: 1500 }, 3456, 5184, 0.15);
@@ -670,14 +869,28 @@ test("margin reduced when the image is too small", () => {
 });
 test("coin touching the edge gives zero margin, never clips the coin", () => {
   const b = computeCropBox({ cx: 1000, cy: 2592, r: 1000 }, 3456, 5184, 0.15);
-  assert.deepEqual([b.left, b.size, b.reduced, b.marginRatio], [0, 2000, true, 0]);
+  assert.deepEqual(
+    [b.left, b.size, b.reduced, b.marginRatio],
+    [0, 2000, true, 0],
+  );
 });
 test("throws when the coin exceeds the image", () => {
-  assert.throws(() => computeCropBox({ cx: 900, cy: 2592, r: 1000 }, 3456, 5184, 0.15), /ragt über den Bildrand/);
+  assert.throws(
+    () => computeCropBox({ cx: 900, cy: 2592, r: 1000 }, 3456, 5184, 0.15),
+    /ragt über den Bildrand/,
+  );
 });
 test("cropToFile writes a square JPEG of box size", async () => {
-  const dir = await tmpDir(); const src = join(dir, "s.jpg"), dst = join(dir, "c.jpg");
-  await writeFile(src, await renderSvg(`<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="800"><rect width="100%" height="100%" fill="#f2f2f2"/><circle cx="400" cy="400" r="200" fill="#5a4630"/></svg>`, "jpeg"));
+  const dir = await tmpDir();
+  const src = join(dir, "s.jpg"),
+    dst = join(dir, "c.jpg");
+  await writeFile(
+    src,
+    await renderSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="800"><rect width="100%" height="100%" fill="#f2f2f2"/><circle cx="400" cy="400" r="200" fill="#5a4630"/></svg>`,
+      "jpeg",
+    ),
+  );
   const box = computeCropBox({ cx: 400, cy: 400, r: 200 }, 1000, 800, 0.15);
   await cropToFile(src, box, dst, 95);
   const m = await sharp(dst).metadata();
@@ -698,6 +911,7 @@ Run: `node --test test/image/crop.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/image/crop.ts test/image/crop.test.ts
 git commit -m "feat: centred 1:1 crop with configurable margin"
@@ -708,10 +922,12 @@ git commit -m "feat: centred 1:1 crop with configurable margin"
 ### Task 8: Quality metrics
 
 **Files:**
+
 - Create: `src/image/quality.ts`
 - Test: `test/image/quality.test.ts`
 
 **Interfaces:**
+
 - Consumes: `getCv` (Task 6), `detectCoin` (tests only), `CoinCircle`, `QualityMetrics`, `Config["quality"]`.
 - Produces:
   - `coinSquareGray(image: string | Buffer, circle: CoinCircle, size: number): Promise<Uint8Array>`: extracts the coin's bounding square (`cx±r`, `cy±r`, rounded, clamped and kept square) and returns it resized to `size×size` (`fit: "fill"`), greyscale, alpha removed, raw.
@@ -727,26 +943,45 @@ git commit -m "feat: centred 1:1 crop with configurable margin"
 ```ts
 const Q = { measureSize: 512, maskRadiusRatio: 0.95, clipLevel: 250 };
 const C = { cx: 400, cy: 400, r: 300 };
-const disc = (fill: string, extra = "") => renderSvg(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="100%" height="100%" fill="#fff"/>${extra}<circle cx="400" cy="400" r="300" fill="${fill}"/></svg>`);
+const disc = (fill: string, extra = "") =>
+  renderSvg(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="100%" height="100%" fill="#fff"/>${extra}<circle cx="400" cy="400" r="300" fill="${fill}"/></svg>`,
+  );
 test("uniform grey disc: exact brightness, no clipping, ~zero sharpness", async () => {
   const m = await measureQuality(await disc("rgb(128,128,128)"), C, Q);
-  assert.ok(Math.abs(m.meanBrightness - 128) <= 2 && m.clippingRatio === 0 && m.sharpness < 1);
+  assert.ok(
+    Math.abs(m.meanBrightness - 128) <= 2 &&
+      m.clippingRatio === 0 &&
+      m.sharpness < 1,
+  );
 });
 test("half-white disc: ~50 % clipping", async () => {
-  const img = await renderSvg(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="100%" height="100%" fill="#fff"/><circle cx="400" cy="400" r="300" fill="rgb(100,100,100)"/><rect x="400" y="0" width="400" height="800" fill="#fff"/></svg>`);
+  const img = await renderSvg(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="100%" height="100%" fill="#fff"/><circle cx="400" cy="400" r="300" fill="rgb(100,100,100)"/><rect x="400" y="0" width="400" height="800" fill="#fff"/></svg>`,
+  );
   const m = await measureQuality(img, C, Q);
-  assert.ok(Math.abs(m.clippingRatio - 0.5) < 0.05 && Math.abs(m.meanBrightness - 177.5) < 6);
+  assert.ok(
+    Math.abs(m.clippingRatio - 0.5) < 0.05 &&
+      Math.abs(m.meanBrightness - 177.5) < 6,
+  );
 });
 test("blur lowers sharpness strongly", async () => {
   const pat = `<defs><pattern id="p" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#fff"/><rect width="4" height="4" fill="#000"/><rect x="4" y="4" width="4" height="4" fill="#000"/></pattern></defs>`;
   const sharpImg = await disc("url(#p)", pat);
   const blurred = await sharp(sharpImg).blur(4).png().toBuffer();
-  assert.ok((await measureQuality(blurred, C, Q)).sharpness < (await measureQuality(sharpImg, C, Q)).sharpness / 4);
+  assert.ok(
+    (await measureQuality(blurred, C, Q)).sharpness <
+      (await measureQuality(sharpImg, C, Q)).sharpness / 4,
+  );
 });
 test("fixtures: ordering good vs blurry / under / over", async () => {
-  const cfg = testConfig(); const d = await detectCoin(fixture("good_av"), cfg.detection); assert.ok(d.found);
+  const cfg = testConfig();
+  const d = await detectCoin(fixture("good_av"), cfg.detection);
+  assert.ok(d.found);
   const m = (n: string) => measureQuality(fixture(n), d.circle, cfg.quality); // same scene, same circle
-  const [good, blurry, under, over] = await Promise.all(["good_av", "blurry", "under", "over"].map(m));
+  const [good, blurry, under, over] = await Promise.all(
+    ["good_av", "blurry", "under", "over"].map(m),
+  );
   assert.ok(good!.sharpness > 2 * blurry!.sharpness);
   assert.ok(under!.meanBrightness + 25 < good!.meanBrightness);
   assert.ok(over!.clippingRatio > good!.clippingRatio + 0.01);
@@ -766,6 +1001,7 @@ Run: `node --test test/image/quality.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/image/quality.ts test/image/quality.test.ts
 git commit -m "feat: masked sharpness, brightness and clipping metrics"
@@ -776,10 +1012,12 @@ git commit -m "feat: masked sharpness, brightness and clipping metrics"
 ### Task 9: Duplicate-side similarity
 
 **Files:**
+
 - Create: `src/image/similarity.ts`
 - Test: `test/image/similarity.test.ts`
 
 **Interfaces:**
+
 - Consumes: `coinSquareGray` (Task 8).
 - Produces: `type CoinImage = { image: string | Buffer; circle: CoinCircle }`; `similarity(a: CoinImage, b: CoinImage, gridSize: number): Promise<number>`. This is the Pearson correlation in [−1, 1] of the two `gridSize×gridSize` coin squares, using only pixels within radius `0.95 × gridSize/2` of the centre. If both images are constant it returns 1; if only one is, 0. Correlation is invariant to the exposure difference between the two sides.
 
@@ -788,14 +1026,26 @@ git commit -m "feat: masked sharpness, brightness and clipping metrics"
 ```ts
 test("identical and exposure-shifted images are ~1; flipped side is clearly lower than duplicate", async () => {
   const cfg = testConfig();
-  const circleOf = async (n: string) => { const d = await detectCoin(fixture(n), cfg.detection); assert.ok(d.found, n); return d.circle; };
+  const circleOf = async (n: string) => {
+    const d = await detectCoin(fixture(n), cfg.detection);
+    assert.ok(d.found, n);
+    return d.circle;
+  };
   const av = { image: fixture("good_av"), circle: await circleOf("good_av") };
-  const dup = { image: fixture("good_av_dup"), circle: await circleOf("good_av_dup") };
+  const dup = {
+    image: fixture("good_av_dup"),
+    circle: await circleOf("good_av_dup"),
+  };
   const rv = { image: fixture("good_rv"), circle: await circleOf("good_rv") };
   assert.ok((await similarity(av, av, 32)) > 0.999);
-  const darker = { image: await sharp(fixture("good_av")).linear(0.7, 0).toBuffer(), circle: av.circle };
+  const darker = {
+    image: await sharp(fixture("good_av")).linear(0.7, 0).toBuffer(),
+    circle: av.circle,
+  };
   assert.ok((await similarity(av, darker, 32)) > 0.95);
-  assert.ok((await similarity(av, dup, 32)) > (await similarity(av, rv, 32)) + 0.2);
+  assert.ok(
+    (await similarity(av, dup, 32)) > (await similarity(av, rv, 32)) + 0.2,
+  );
 });
 ```
 
@@ -812,6 +1062,7 @@ Run: `node --test test/image/similarity.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/image/similarity.ts test/image/similarity.test.ts
 git commit -m "feat: grid correlation for duplicate-side check"
@@ -822,22 +1073,39 @@ git commit -m "feat: grid correlation for duplicate-side check"
 ### Task 10: Image pipeline
 
 **Files:**
+
 - Create: `src/image/pipeline.ts`
 - Test: `test/image/pipeline.test.ts`
 
 **Interfaces:**
+
 - Consumes: `rotateJpg`, `orientRaw`, `readExif` (Task 5), `detectCoin` (6), `computeCropBox`, `cropToFile` (7), `measureQuality` (8), `similarity` (9), `Config`.
 - Produces:
+
 ```ts
-export type ImageTools = { rotateJpg(src: string, dst: string): Promise<void>; orientRaw(path: string): Promise<void> };
+export type ImageTools = {
+  rotateJpg(src: string, dst: string): Promise<void>;
+  orientRaw(path: string): Promise<void>;
+};
 export interface Pipeline {
-  process(raw: RawCapture, paths: ShotPaths, onStep?: (label: string) => void): Promise<ProcessedShot>;
-  analyze(jpg: string): Promise<{ detection: Detection; quality: QualityMetrics | null }>; // for an existing crop, e.g. reference.jpg
-  similarity(a: ProcessedShot, b: ProcessedShot): Promise<number>;                        // throws unless both found
+  process(
+    raw: RawCapture,
+    paths: ShotPaths,
+    onStep?: (label: string) => void,
+  ): Promise<ProcessedShot>;
+  analyze(
+    jpg: string,
+  ): Promise<{ detection: Detection; quality: QualityMetrics | null }>; // for an existing crop, e.g. reference.jpg
+  similarity(a: ProcessedShot, b: ProcessedShot): Promise<number>; // throws unless both found
 }
-export function createPipeline(cfg: Config, tools?: Partial<ImageTools>): Pipeline;
+export function createPipeline(
+  cfg: Config,
+  tools?: Partial<ImageTools>,
+): Pipeline;
 ```
+
 `process`, in this order:
+
 1. `mkdir -p` the parent directories of the three paths.
 2. `onStep("Drehe Bild …")`: `rotateJpg(raw.jpgPath → paths.original)`, delete `raw.jpgPath`.
 3. Rename `raw.rawPath → paths.raw` and run `orientRaw(paths.raw)`.
@@ -854,29 +1122,65 @@ export function createPipeline(cfg: Config, tools?: Partial<ImageTools>): Pipeli
 const tools = { orientRaw: async () => {} }; // fixtures have no real CR2
 async function incoming(dir: string, jpg: string): Promise<RawCapture> {
   await mkdir(dir, { recursive: true });
-  await copyFile(jpg, join(dir, "capture.jpg")); await writeFile(join(dir, "capture.cr2"), "raw");
-  return { jpgPath: join(dir, "capture.jpg"), rawPath: join(dir, "capture.cr2") };
+  await copyFile(jpg, join(dir, "capture.jpg"));
+  await writeFile(join(dir, "capture.cr2"), "raw");
+  return {
+    jpgPath: join(dir, "capture.jpg"),
+    rawPath: join(dir, "capture.cr2"),
+  };
 }
-const pathsIn = (d: string): ShotPaths => ({ crop: join(d, "c.jpg"), original: join(d, "originals/o.jpg"), raw: join(d, "originals/r.CR2") });
+const pathsIn = (d: string): ShotPaths => ({
+  crop: join(d, "c.jpg"),
+  original: join(d, "originals/o.jpg"),
+  raw: join(d, "originals/r.CR2"),
+});
 test("good shot: rotated original, square crop, raw moved, metrics, steps", async () => {
-  const d = await tmpDir(); const p = createPipeline(testConfig(), tools); const steps: string[] = [];
-  const s = await p.process(await incoming(join(d, "in"), fixture("good_av")), pathsIn(d), (x) => steps.push(x));
+  const d = await tmpDir();
+  const p = createPipeline(testConfig(), tools);
+  const steps: string[] = [];
+  const s = await p.process(
+    await incoming(join(d, "in"), fixture("good_av")),
+    pathsIn(d),
+    (x) => steps.push(x),
+  );
   assert.deepEqual([s.width, s.height], [864, 1296]);
-  assert.ok(s.detection.found && s.cropBox && s.quality && s.exif.focalLengthMm);
-  const m = await sharp(pathsIn(d).crop).metadata(); assert.equal(m.width, m.height); assert.equal(m.width, s.cropBox!.size);
-  assert.ok(existsSync(pathsIn(d).raw) && !existsSync(join(d, "in/capture.jpg")) && !existsSync(join(d, "in/capture.cr2")));
+  assert.ok(
+    s.detection.found && s.cropBox && s.quality && s.exif.focalLengthMm,
+  );
+  const m = await sharp(pathsIn(d).crop).metadata();
+  assert.equal(m.width, m.height);
+  assert.equal(m.width, s.cropBox!.size);
+  assert.ok(
+    existsSync(pathsIn(d).raw) &&
+      !existsSync(join(d, "in/capture.jpg")) &&
+      !existsSync(join(d, "in/capture.cr2")),
+  );
   assert.ok(steps.length >= 3);
 });
 test("empty and cut-off shots: no crop, no quality, originals kept", async () => {
   for (const n of ["empty", "cut_off"]) {
-    const d = await tmpDir(); const s = await createPipeline(testConfig(), tools).process(await incoming(join(d, "in"), fixture(n)), pathsIn(d));
-    assert.equal(s.cropBox, null, n); assert.equal(s.quality, null, n);
-    assert.ok(!existsSync(pathsIn(d).crop) && existsSync(pathsIn(d).original) && existsSync(pathsIn(d).raw), n);
+    const d = await tmpDir();
+    const s = await createPipeline(testConfig(), tools).process(
+      await incoming(join(d, "in"), fixture(n)),
+      pathsIn(d),
+    );
+    assert.equal(s.cropBox, null, n);
+    assert.equal(s.quality, null, n);
+    assert.ok(
+      !existsSync(pathsIn(d).crop) &&
+        existsSync(pathsIn(d).original) &&
+        existsSync(pathsIn(d).raw),
+      n,
+    );
   }
 });
 test("analyze measures an existing crop; similarity of a shot with itself is ~1", async () => {
-  const d = await tmpDir(); const p = createPipeline(testConfig(), tools);
-  const s = await p.process(await incoming(join(d, "in"), fixture("good_av")), pathsIn(d));
+  const d = await tmpDir();
+  const p = createPipeline(testConfig(), tools);
+  const s = await p.process(
+    await incoming(join(d, "in"), fixture("good_av")),
+    pathsIn(d),
+  );
   const a = await p.analyze(pathsIn(d).crop);
   assert.ok(a.detection.found && a.quality);
   assert.ok((await p.similarity(s, s)) > 0.999);
@@ -896,6 +1200,7 @@ Run: `node --test test/image/pipeline.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/image/pipeline.ts test/image/pipeline.test.ts
 git commit -m "feat: image pipeline (rotate, detect, crop, measure)"
@@ -906,10 +1211,12 @@ git commit -m "feat: image pipeline (rotate, detect, crop, measure)"
 ### Task 11: Camera layer
 
 **Files:**
+
 - Create: `src/camera/settings.ts`, `src/camera/camera.ts`, `src/camera/gphoto2.ts`, `test/fakes.ts`
 - Test: `test/camera/camera.test.ts`, `test/camera/gphoto2.live.test.ts`
 
 **Interfaces:**
+
 - Consumes: `run`, `ToolError`, `killCameraBlockers` (Task 3); `RawCapture`; `docs/hardware/1300d.md` "Implications" (Task 1); `test/fixtures/gphoto2-get-config.txt`.
 - Produces:
   - `src/camera/settings.ts`:
@@ -945,23 +1252,47 @@ test("parseGetConfig parses all blocks in order", () => {
   const e = parseGetConfig(OUT);
   assert.equal(e.length, 9);
   assert.equal(e[2]!.label, "Exposure Compensation");
-  assert.equal(e[2]!.choices[0], "-5"); assert.equal(e[2]!.choices.at(-1), "5");
+  assert.equal(e[2]!.choices[0], "-5");
+  assert.equal(e[2]!.choices.at(-1), "5");
   assert.ok(e[3]!.choices.includes("Manual"));
-  assert.equal(e[7]!.type, "TEXT"); assert.equal(e[7]!.readonly, true); assert.deepEqual(e[7]!.choices, []);
+  assert.equal(e[7]!.type, "TEXT");
+  assert.equal(e[7]!.readonly, true);
+  assert.deepEqual(e[7]!.choices, []);
   assert.match(e[7]!.current, /EF-S18-135mm/);
 });
 test("buildCaptureArgs: fixed + given settings by value, AF before capture, filename last", () => {
   const a = buildCaptureArgs(BASELINE, { autofocus: true, outDir: "/x" });
-  for (const v of ["/main/imgsettings/imageformat=RAW + L", "/main/settings/capturetarget=Internal RAM", "/main/capturesettings/exposurecompensation=0.5", "/main/imgsettings/whitebalance=Manual"])
+  for (const v of [
+    "/main/imgsettings/imageformat=RAW + L",
+    "/main/settings/capturetarget=Internal RAM",
+    "/main/capturesettings/exposurecompensation=0.5",
+    "/main/imgsettings/whitebalance=Manual",
+  ])
     assert.equal(a[a.indexOf(v) - 1], "--set-config-value", v);
   const cap = a.indexOf("--capture-image-and-download");
-  if (AF_ARGS.length) assert.ok(a.indexOf(AF_ARGS[0]!) < cap && a.indexOf(AF_ARGS[0]!) > -1);
-  assert.deepEqual(a.slice(cap), ["--capture-image-and-download", "--filename", "/x/capture.%C", "--force-overwrite"]);
-  assert.ok(!buildCaptureArgs(BASELINE, { autofocus: false, outDir: "/x" }).some((s) => s.includes("autofocusdrive")));
+  if (AF_ARGS.length)
+    assert.ok(a.indexOf(AF_ARGS[0]!) < cap && a.indexOf(AF_ARGS[0]!) > -1);
+  assert.deepEqual(a.slice(cap), [
+    "--capture-image-and-download",
+    "--filename",
+    "/x/capture.%C",
+    "--force-overwrite",
+  ]);
+  assert.ok(
+    !buildCaptureArgs(BASELINE, { autofocus: false, outDir: "/x" }).some((s) =>
+      s.includes("autofocusdrive"),
+    ),
+  );
 });
 test("pickCaptureFiles is case-insensitive and demands both files", () => {
-  assert.deepEqual(pickCaptureFiles("/d", ["capture.JPG", "capture.CR2"]), { jpgPath: "/d/capture.JPG", rawPath: "/d/capture.CR2" });
-  assert.throws(() => pickCaptureFiles("/d", ["capture.jpg"]), /kein JPG und CR2/);
+  assert.deepEqual(pickCaptureFiles("/d", ["capture.JPG", "capture.CR2"]), {
+    jpgPath: "/d/capture.JPG",
+    rawPath: "/d/capture.CR2",
+  });
+  assert.throws(
+    () => pickCaptureFiles("/d", ["capture.jpg"]),
+    /kein JPG und CR2/,
+  );
 });
 test("stepChoice walks the camera list, skips Auto, stops at the ends", () => {
   const c = realChoices();
@@ -975,16 +1306,29 @@ test("stepChoice walks the camera list, skips Auto, stops at the ends", () => {
 });
 test("invalidSettings flags labels the camera does not offer", () => {
   assert.deepEqual(invalidSettings(BASELINE, realChoices()), []);
-  assert.deepEqual(invalidSettings({ ...BASELINE, whitebalance: "Custom", exposurecompensation: "0.3" }, realChoices()), ["exposurecompensation", "whitebalance"]);
+  assert.deepEqual(
+    invalidSettings(
+      { ...BASELINE, whitebalance: "Custom", exposurecompensation: "0.3" },
+      realChoices(),
+    ),
+    ["exposurecompensation", "whitebalance"],
+  );
 });
 test("FakeCamera writes files, records calls, throws scripted errors", async () => {
-  const cam = new FakeCamera({ shots: [{}, { error: "*** Error: No camera found." }] });
-  const d = await tmpDir(); const r = await cam.capture(BASELINE, { autofocus: false, outDir: d });
+  const cam = new FakeCamera({
+    shots: [{}, { error: "*** Error: No camera found." }],
+  });
+  const d = await tmpDir();
+  const r = await cam.capture(BASELINE, { autofocus: false, outDir: d });
   assert.ok(existsSync(r.jpgPath) && existsSync(r.rawPath));
   assert.deepEqual(cam.calls, [{ settings: BASELINE, autofocus: false }]);
-  await assert.rejects(cam.capture(BASELINE, { autofocus: false, outDir: d }), ToolError);
+  await assert.rejects(
+    cam.capture(BASELINE, { autofocus: false, outDir: d }),
+    ToolError,
+  );
 });
 ```
+
 `test/camera/gphoto2.live.test.ts` runs only when `COIN_LIVE_CAMERA=1` (`{ skip: process.env.COIN_LIVE_CAMERA !== "1" }`). It calls `info()` (model contains `1300D`), `choices()` (`invalidSettings(BASELINE, choices)` is empty), and `capture(BASELINE, { autofocus: false, outDir: tmp })`, asserting that the JPG is 5184×3456 and the CR2 exists.
 
 - [ ] **Step 2: Run and confirm failure**
@@ -1002,6 +1346,7 @@ Run: `COIN_LIVE_CAMERA=1 node --test test/camera/gphoto2.live.test.ts`
 Expected: PASS (one capture into a temp dir; the card is untouched because `capturetarget=Internal RAM`).
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/camera test/fakes.ts test/camera
 git commit -m "feat: gphoto2 camera adapter, settings stepping, fake camera"
@@ -1012,47 +1357,119 @@ git commit -m "feat: gphoto2 camera adapter, settings stepping, fake camera"
 ### Task 12: Declarative rule table and correction planning
 
 **Files:**
+
 - Create: `src/check/rules.ts`
 - Test: `test/check/rules.test.ts`
 
 **Interfaces:**
+
 - Consumes: `CameraKey`, `CameraSettings`, `ChoiceLists`, `stepChoice`, `KEY_LABELS` (Task 11); `Detection`, `QualityMetrics`; `Config`.
 - Produces:
+
 ```ts
-export type Defect = "no_coin" | "coin_cut_off" | "underexposed" | "overexposed" | "blurry";
+export type Defect =
+  "no_coin" | "coin_cut_off" | "underexposed" | "overexposed" | "blurry";
 export type Feature = "detection" | "exposure" | "sharpness";
 export type Finding = { defect: Defect; feature: Feature; message: string };
 export type Thresholds = Config["thresholds"];
-export type CorrectionStep = { kind: "step"; key: CameraKey; direction: 1 | -1 } | { kind: "autofocus" };
+export type CorrectionStep =
+  { kind: "step"; key: CameraKey; direction: 1 | -1 } | { kind: "autofocus" };
 export type Rule =
-  | { defect: "no_coin" | "coin_cut_off"; feature: "detection"; when: "not_found" | "cut_off"; corrections: readonly CorrectionStep[] }
-  | { defect: "underexposed" | "overexposed" | "blurry"; feature: "exposure" | "sharpness"; metric: keyof QualityMetrics;
-      op: "<" | ">"; threshold: keyof Thresholds; corrections: readonly CorrectionStep[] };
-export type CorrectionState = { counts: { exposure: number; sharpness: number }; budget: { exposure: number; sharpness: number } };
+  | {
+      defect: "no_coin" | "coin_cut_off";
+      feature: "detection";
+      when: "not_found" | "cut_off";
+      corrections: readonly CorrectionStep[];
+    }
+  | {
+      defect: "underexposed" | "overexposed" | "blurry";
+      feature: "exposure" | "sharpness";
+      metric: keyof QualityMetrics;
+      op: "<" | ">";
+      threshold: keyof Thresholds;
+      corrections: readonly CorrectionStep[];
+    };
+export type CorrectionState = {
+  counts: { exposure: number; sharpness: number };
+  budget: { exposure: number; sharpness: number };
+};
 export type Plan =
   | { action: "accept" }
-  | { action: "retry"; feature: "exposure" | "sharpness"; settings: CameraSettings; autofocus: boolean; note: string }
-  | { action: "menu"; reason: "detection" | "conflict" | "limit" | "scale_end"; hint: string };
+  | {
+      action: "retry";
+      feature: "exposure" | "sharpness";
+      settings: CameraSettings;
+      autofocus: boolean;
+      note: string;
+    }
+  | {
+      action: "menu";
+      reason: "detection" | "conflict" | "limit" | "scale_end";
+      hint: string;
+    };
 export const RULES: readonly Rule[];
-export function evaluateShot(shot: { detection: Detection; quality: QualityMetrics | null }, t: Thresholds): Finding[];
+export function evaluateShot(
+  shot: { detection: Detection; quality: QualityMetrics | null },
+  t: Thresholds,
+): Finding[];
 export function newCorrectionState(cfg: Config): CorrectionState; // counts 0, budget = maxAutoPerFeature
-export function planNext(findings: Finding[], settings: CameraSettings, choices: ChoiceLists,
-  state: CorrectionState, steps: Config["corrections"]["steps"]): Plan;
+export function planNext(
+  findings: Finding[],
+  settings: CameraSettings,
+  choices: ChoiceLists,
+  state: CorrectionState,
+  steps: Config["corrections"]["steps"],
+): Plan;
 ```
+
 The rule table (exact copy; spec §6.2: detection and correction side by side, in one place):
+
 ```ts
 export const RULES: readonly Rule[] = [
-  { defect: "no_coin", feature: "detection", when: "not_found", corrections: [] },
-  { defect: "coin_cut_off", feature: "detection", when: "cut_off", corrections: [] },
-  { defect: "underexposed", feature: "exposure", metric: "meanBrightness", op: "<", threshold: "minBrightness",
-    corrections: [{ kind: "step", key: "exposurecompensation", direction: 1 }] },
-  { defect: "overexposed", feature: "exposure", metric: "clippingRatio", op: ">", threshold: "maxClippingRatio",
-    corrections: [{ kind: "step", key: "exposurecompensation", direction: -1 }] },
-  { defect: "blurry", feature: "sharpness", metric: "sharpness", op: "<", threshold: "minSharpness",
-    corrections: [{ kind: "autofocus" }, { kind: "step", key: "iso", direction: 1 }] }, // i-th correction uses corrections[min(i, len-1)]
+  {
+    defect: "no_coin",
+    feature: "detection",
+    when: "not_found",
+    corrections: [],
+  },
+  {
+    defect: "coin_cut_off",
+    feature: "detection",
+    when: "cut_off",
+    corrections: [],
+  },
+  {
+    defect: "underexposed",
+    feature: "exposure",
+    metric: "meanBrightness",
+    op: "<",
+    threshold: "minBrightness",
+    corrections: [{ kind: "step", key: "exposurecompensation", direction: 1 }],
+  },
+  {
+    defect: "overexposed",
+    feature: "exposure",
+    metric: "clippingRatio",
+    op: ">",
+    threshold: "maxClippingRatio",
+    corrections: [{ kind: "step", key: "exposurecompensation", direction: -1 }],
+  },
+  {
+    defect: "blurry",
+    feature: "sharpness",
+    metric: "sharpness",
+    op: "<",
+    threshold: "minSharpness",
+    corrections: [
+      { kind: "autofocus" },
+      { kind: "step", key: "iso", direction: 1 },
+    ],
+  }, // i-th correction uses corrections[min(i, len-1)]
 ];
 ```
+
 Messages:
+
 - `no_coin`: `Keine Münze erkannt`
 - `coin_cut_off`: `Münze ragt über den Bildrand – bitte herauszoomen oder Münze mittig legen`
 - `underexposed`: `` `Helligkeit ${Math.round(v)} < ${t}` ``
@@ -1062,6 +1479,7 @@ Messages:
 `evaluateShot` returns findings in RULES order. A detection finding returns immediately (no quality rules).
 
 `planNext`, in order:
+
 1. No findings → `accept`.
 2. Any detection finding → `menu`/`detection`, hint `Münze zurechtlegen (ggf. herauszoomen)`.
 3. Both under- and overexposed → `menu`/`conflict`, hint `Unterbelichtet und geclippt zugleich – Licht/Reflexe prüfen`.
@@ -1074,48 +1492,157 @@ Messages:
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-const T = TEST_THRESHOLDS; const C = realChoices();
-const q = (o: Partial<QualityMetrics> = {}): QualityMetrics => ({ sharpness: 400, meanBrightness: 150, clippingRatio: 0.01, ...o });
-const found: Detection = { found: true, circle: { cx: 1, cy: 1, r: 1 }, cutOff: false, inlierRatio: 1 };
-const st = (e = 0, s = 0): CorrectionState => ({ counts: { exposure: e, sharpness: s }, budget: { exposure: 2, sharpness: 2 } });
+const T = TEST_THRESHOLDS;
+const C = realChoices();
+const q = (o: Partial<QualityMetrics> = {}): QualityMetrics => ({
+  sharpness: 400,
+  meanBrightness: 150,
+  clippingRatio: 0.01,
+  ...o,
+});
+const found: Detection = {
+  found: true,
+  circle: { cx: 1, cy: 1, r: 1 },
+  cutOff: false,
+  inlierRatio: 1,
+};
+const st = (e = 0, s = 0): CorrectionState => ({
+  counts: { exposure: e, sharpness: s },
+  budget: { exposure: 2, sharpness: 2 },
+});
 const STEPS = { exposurecompensation: 1, iso: 1 };
-const ev = (o: Partial<QualityMetrics>) => evaluateShot({ detection: found, quality: q(o) }, T);
+const ev = (o: Partial<QualityMetrics>) =>
+  evaluateShot({ detection: found, quality: q(o) }, T);
 
 test("evaluateShot messages and order", () => {
   assert.deepEqual(ev({}), []);
-  assert.deepEqual(ev({ meanBrightness: 48 }), [{ defect: "underexposed", feature: "exposure", message: "Helligkeit 48 < 60" }]);
-  assert.equal(ev({ clippingRatio: 0.062 })[0]!.message, "Clipping 6.2 % > 5.0 %");
+  assert.deepEqual(ev({ meanBrightness: 48 }), [
+    {
+      defect: "underexposed",
+      feature: "exposure",
+      message: "Helligkeit 48 < 60",
+    },
+  ]);
+  assert.equal(
+    ev({ clippingRatio: 0.062 })[0]!.message,
+    "Clipping 6.2 % > 5.0 %",
+  );
   assert.equal(ev({ sharpness: 85.33 })[0]!.message, "Schärfe 85.3 < 100");
-  assert.deepEqual(ev({ meanBrightness: 10, sharpness: 1 }).map((f) => f.defect), ["underexposed", "blurry"]);
-  assert.deepEqual(evaluateShot({ detection: { found: false }, quality: null }, T).map((f) => f.defect), ["no_coin"]);
-  assert.deepEqual(evaluateShot({ detection: { ...found, cutOff: true } as Detection, quality: null }, T).map((f) => f.defect), ["coin_cut_off"]);
+  assert.deepEqual(
+    ev({ meanBrightness: 10, sharpness: 1 }).map((f) => f.defect),
+    ["underexposed", "blurry"],
+  );
+  assert.deepEqual(
+    evaluateShot({ detection: { found: false }, quality: null }, T).map(
+      (f) => f.defect,
+    ),
+    ["no_coin"],
+  );
+  assert.deepEqual(
+    evaluateShot(
+      { detection: { ...found, cutOff: true } as Detection, quality: null },
+      T,
+    ).map((f) => f.defect),
+    ["coin_cut_off"],
+  );
 });
 test("planNext: exposure steps follow the camera list", () => {
-  assert.deepEqual(planNext([], BASELINE, C, st(), STEPS), { action: "accept" });
+  assert.deepEqual(planNext([], BASELINE, C, st(), STEPS), {
+    action: "accept",
+  });
   const up = planNext(ev({ meanBrightness: 10 }), BASELINE, C, st(), STEPS);
-  assert.ok(up.action === "retry" && up.settings.exposurecompensation === "1" && !up.autofocus && up.note === "Belichtungskorrektur 0.5 → 1");
+  assert.ok(
+    up.action === "retry" &&
+      up.settings.exposurecompensation === "1" &&
+      !up.autofocus &&
+      up.note === "Belichtungskorrektur 0.5 → 1",
+  );
   const down = planNext(ev({ clippingRatio: 0.5 }), BASELINE, C, st(), STEPS);
-  assert.ok(down.action === "retry" && down.settings.exposurecompensation === "0");
-  const two = planNext(ev({ meanBrightness: 10 }), BASELINE, C, st(), { ...STEPS, exposurecompensation: 2 });
-  assert.ok(two.action === "retry" && two.settings.exposurecompensation === "1.5");
+  assert.ok(
+    down.action === "retry" && down.settings.exposurecompensation === "0",
+  );
+  const two = planNext(ev({ meanBrightness: 10 }), BASELINE, C, st(), {
+    ...STEPS,
+    exposurecompensation: 2,
+  });
+  assert.ok(
+    two.action === "retry" && two.settings.exposurecompensation === "1.5",
+  );
 });
 test("planNext: blur → autofocus first, then ISO up, repeating", () => {
   const b = ev({ sharpness: 1 });
   const p0 = planNext(b, BASELINE, C, st(0, 0), STEPS);
   assert.ok(p0.action === "retry" && p0.autofocus && p0.settings.iso === "100");
   const p1 = planNext(b, BASELINE, C, st(0, 1), STEPS);
-  assert.ok(p1.action === "retry" && !p1.autofocus && p1.settings.iso === "200");
-  const p3 = planNext(b, { ...BASELINE, iso: "400" }, C, { counts: { exposure: 0, sharpness: 3 }, budget: { exposure: 2, sharpness: 4 } }, STEPS);
+  assert.ok(
+    p1.action === "retry" && !p1.autofocus && p1.settings.iso === "200",
+  );
+  const p3 = planNext(
+    b,
+    { ...BASELINE, iso: "400" },
+    C,
+    {
+      counts: { exposure: 0, sharpness: 3 },
+      budget: { exposure: 2, sharpness: 4 },
+    },
+    STEPS,
+  );
   assert.ok(p3.action === "retry" && p3.settings.iso === "800");
 });
 test("planNext: menus for detection, conflict, limit, scale end", () => {
   const m = (p: Plan) => (p.action === "menu" ? p.reason : p.action);
-  assert.equal(m(planNext(evaluateShot({ detection: { found: false }, quality: null }, T), BASELINE, C, st(), STEPS)), "detection");
-  const conflict = planNext(ev({ meanBrightness: 10, clippingRatio: 0.5 }), BASELINE, C, st(), STEPS);
-  assert.ok(conflict.action === "menu" && conflict.reason === "conflict" && /Licht\/Reflexe/.test(conflict.hint));
-  assert.equal(m(planNext(ev({ meanBrightness: 10 }), BASELINE, C, st(2, 0), STEPS)), "limit");
-  assert.equal(m(planNext(ev({ meanBrightness: 10 }), { ...BASELINE, exposurecompensation: "5" }, C, st(), STEPS)), "scale_end");
-  assert.equal(m(planNext(ev({ sharpness: 1 }), { ...BASELINE, iso: "6400" }, C, st(0, 1), STEPS)), "scale_end");
+  assert.equal(
+    m(
+      planNext(
+        evaluateShot({ detection: { found: false }, quality: null }, T),
+        BASELINE,
+        C,
+        st(),
+        STEPS,
+      ),
+    ),
+    "detection",
+  );
+  const conflict = planNext(
+    ev({ meanBrightness: 10, clippingRatio: 0.5 }),
+    BASELINE,
+    C,
+    st(),
+    STEPS,
+  );
+  assert.ok(
+    conflict.action === "menu" &&
+      conflict.reason === "conflict" &&
+      /Licht\/Reflexe/.test(conflict.hint),
+  );
+  assert.equal(
+    m(planNext(ev({ meanBrightness: 10 }), BASELINE, C, st(2, 0), STEPS)),
+    "limit",
+  );
+  assert.equal(
+    m(
+      planNext(
+        ev({ meanBrightness: 10 }),
+        { ...BASELINE, exposurecompensation: "5" },
+        C,
+        st(),
+        STEPS,
+      ),
+    ),
+    "scale_end",
+  );
+  assert.equal(
+    m(
+      planNext(
+        ev({ sharpness: 1 }),
+        { ...BASELINE, iso: "6400" },
+        C,
+        st(0, 1),
+        STEPS,
+      ),
+    ),
+    "scale_end",
+  );
 });
 ```
 
@@ -1132,6 +1659,7 @@ Run: `node --test test/check/rules.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/check/rules.ts test/check/rules.test.ts
 git commit -m "feat: declarative quality rules with correction planning"
@@ -1142,20 +1670,36 @@ git commit -m "feat: declarative quality rules with correction planning"
 ### Task 13: Derive thresholds from the full-resolution samples (completes spec §11)
 
 **Files:**
+
 - Create: `src/check/suggest.ts`, `scripts/measure-samples.ts`, `docs/hardware/thresholds.md`
 - Modify: `coin-capture.config.json` (`thresholds` only), `package.json` (`"samples:measure": "node scripts/measure-samples.ts"`)
 - Test: `test/check/suggest.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createPipeline` (10), `evaluateShot` (12), `loadConfig` (3), `samples/manifest.json`.
 - Produces:
+
 ```ts
-export type SampleRow = { name: string; expect: string; quality: QualityMetrics | null };
+export type SampleRow = {
+  name: string;
+  expect: string;
+  quality: QualityMetrics | null;
+};
 export type PairRow = { expect: "duplicate" | "different"; similarity: number };
-export type Suggestion = { value: number | null; basis: string; overlap: boolean };
-export function suggestThresholds(rows: SampleRow[], pairs: PairRow[]): Record<keyof Thresholds, Suggestion>;
+export type Suggestion = {
+  value: number | null;
+  basis: string;
+  overlap: boolean;
+};
+export function suggestThresholds(
+  rows: SampleRow[],
+  pairs: PairRow[],
+): Record<keyof Thresholds, Suggestion>;
 ```
+
 Formulas (generous: the threshold sits nearer the defect class, spec §10). `ok` = rows with `expect: "ok"`.
+
 - `minBrightness` = defMax + 0.3·(okMin − defMax), over `underexposed` rows; with no defect rows: `0.5·okMin`; rounded to an integer.
 - `maxClippingRatio` = okMax + 0.7·(defMin − okMax), over `overexposed` rows; with none: `max(0.1, 2·okMax)`; rounded to 3 decimals.
 - `minSharpness` = defMax + 0.3·(okMin − defMax), over `blurry` rows; with none: `0.3·okMin`; rounded to an integer.
@@ -1166,22 +1710,50 @@ Formulas (generous: the threshold sits nearer the defect class, spec §10). `ok`
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-const row = (name: string, expect: string, m: Partial<QualityMetrics>): SampleRow =>
-  ({ name, expect, quality: { sharpness: 300, meanBrightness: 150, clippingRatio: 0.01, ...m } });
+const row = (
+  name: string,
+  expect: string,
+  m: Partial<QualityMetrics>,
+): SampleRow => ({
+  name,
+  expect,
+  quality: { sharpness: 300, meanBrightness: 150, clippingRatio: 0.01, ...m },
+});
 test("suggestThresholds places thresholds nearer the defect class", () => {
   const s = suggestThresholds(
-    [row("a", "ok", { meanBrightness: 120, sharpness: 200, clippingRatio: 0.02 }), row("u", "underexposed", { meanBrightness: 40 }),
-     row("o", "overexposed", { clippingRatio: 0.3 }), row("b", "blurry", { sharpness: 20 })],
-    [{ expect: "duplicate", similarity: 0.97 }, { expect: "different", similarity: 0.3 }]);
-  assert.equal(s.minBrightness.value, 64);        // 40 + 0.3·80
-  assert.equal(s.maxClippingRatio.value, 0.216);  // 0.02 + 0.7·0.28
-  assert.equal(s.minSharpness.value, 74);         // 20 + 0.3·180
-  assert.equal(s.maxSimilarity.value, 0.77);      // 0.3 + 0.7·0.67
+    [
+      row("a", "ok", {
+        meanBrightness: 120,
+        sharpness: 200,
+        clippingRatio: 0.02,
+      }),
+      row("u", "underexposed", { meanBrightness: 40 }),
+      row("o", "overexposed", { clippingRatio: 0.3 }),
+      row("b", "blurry", { sharpness: 20 }),
+    ],
+    [
+      { expect: "duplicate", similarity: 0.97 },
+      { expect: "different", similarity: 0.3 },
+    ],
+  );
+  assert.equal(s.minBrightness.value, 64); // 40 + 0.3·80
+  assert.equal(s.maxClippingRatio.value, 0.216); // 0.02 + 0.7·0.28
+  assert.equal(s.minSharpness.value, 74); // 20 + 0.3·180
+  assert.equal(s.maxSimilarity.value, 0.77); // 0.3 + 0.7·0.67
 });
 test("overlap and missing classes", () => {
-  const s = suggestThresholds([row("a", "ok", { meanBrightness: 50 }), row("u", "underexposed", { meanBrightness: 60 })], []);
-  assert.deepEqual([s.minBrightness.value, s.minBrightness.overlap], [null, true]);
-  assert.equal(s.minSharpness.value, 90);         // 0.3·300
+  const s = suggestThresholds(
+    [
+      row("a", "ok", { meanBrightness: 50 }),
+      row("u", "underexposed", { meanBrightness: 60 }),
+    ],
+    [],
+  );
+  assert.deepEqual(
+    [s.minBrightness.value, s.minBrightness.overlap],
+    [null, true],
+  );
+  assert.equal(s.minSharpness.value, 90); // 0.3·300
   assert.equal(s.maxSimilarity.value, 0.9);
 });
 ```
@@ -1194,6 +1766,7 @@ Expected: FAIL (module not found).
 - [ ] **Step 3: Implement `suggestThresholds`, then `scripts/measure-samples.ts`**
 
 The script:
+
 - For each manifest sample whose `samples/<name>.jpg` exists: copy the JPG and CR2 (if any) to a temp incoming dir and run `createPipeline(loadConfig()).process(...)` into a temp dir (full resolution, real `orientRaw` when a CR2 exists, otherwise a no-op tool).
 - Print one row per sample: `name | expect | found | cutOff | r | Helligkeit | Clipping | Schärfe | verdict (evaluateShot with the current config, "ok" or defects joined by "+") | match ✔/✘`.
 - Print one line per pair: `a ~ b: <similarity> (expect …)`.
@@ -1215,6 +1788,7 @@ Expected: exit 0, every row ✔. If a row is still ✘ or there was an overlap, 
 Include: date, the sample list used (real vs. missing), the full measurement table output, the chosen values with their basis, "provisional" if any of `blurry`, `dark`, `shiny`, `good_rv` is missing, and how to re-run (`npm run samples:measure`).
 
 - [ ] **Step 7: Commit**
+
 ```bash
 git add src/check/suggest.ts scripts/measure-samples.ts test/check/suggest.test.ts coin-capture.config.json docs/hardware/thresholds.md package.json package-lock.json
 git commit -m "feat: measure samples and derive quality thresholds"
@@ -1225,10 +1799,12 @@ git commit -m "feat: measure samples and derive quality thresholds"
 ### Task 14: Coin store (IDs, file layout, finalize)
 
 **Files:**
+
 - Create: `src/store/coins.ts`
 - Test: `test/store/coins.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Side`, `ShotPaths`.
 - Produces:
   - `formatCoinId(n: number): string` (`COIN-0003`).
@@ -1249,32 +1825,68 @@ test("IDs: format, next, gaps, ignored names", async () => {
   assert.equal(formatCoinId(3), "COIN-0003");
   const root = await tmpDir();
   assert.equal(await nextCoinId(join(root, "missing")), "COIN-0001");
-  for (const d of ["COIN-0001", "COIN-0007", "_calibration", "COIN-12", "COIN-0009 copy"]) await mkdir(join(root, d));
+  for (const d of [
+    "COIN-0001",
+    "COIN-0007",
+    "_calibration",
+    "COIN-12",
+    "COIN-0009 copy",
+  ])
+    await mkdir(join(root, d));
   await writeFile(join(root, "COIN-0010"), "file, not dir");
   assert.equal(await nextCoinId(root), "COIN-0008");
 });
 test("findUnfinishedCoins lists coin dirs without markdown", async () => {
   const root = await tmpDir();
-  await createCoinDir(root, "COIN-0001"); await writeFile(join(root, "COIN-0001/COIN-0001.md"), "x");
+  await createCoinDir(root, "COIN-0001");
+  await writeFile(join(root, "COIN-0001/COIN-0001.md"), "x");
   await createCoinDir(root, "COIN-0002");
   assert.deepEqual(await findUnfinishedCoins(root), ["COIN-0002"]);
   await assert.rejects(createCoinDir(root, "COIN-0002"));
 });
 test("attempt and final names", () => {
-  assert.deepEqual(attemptPaths("/c", "COIN-0002", "av", 1),
-    { crop: "/c/COIN-0002_av_v1.jpg", original: "/c/originals/COIN-0002_av_v1_original.jpg", raw: "/c/originals/COIN-0002_av_v1.CR2" });
-  assert.deepEqual(finalPaths("/c", "COIN-0001", "rv"),
-    { crop: "/c/COIN-0001_rv.jpg", original: "/c/originals/COIN-0001_rv_original.jpg", raw: "/c/originals/COIN-0001_rv.CR2" });
+  assert.deepEqual(attemptPaths("/c", "COIN-0002", "av", 1), {
+    crop: "/c/COIN-0002_av_v1.jpg",
+    original: "/c/originals/COIN-0002_av_v1_original.jpg",
+    raw: "/c/originals/COIN-0002_av_v1.CR2",
+  });
+  assert.deepEqual(finalPaths("/c", "COIN-0001", "rv"), {
+    crop: "/c/COIN-0001_rv.jpg",
+    original: "/c/originals/COIN-0001_rv_original.jpg",
+    raw: "/c/originals/COIN-0001_rv.CR2",
+  });
 });
 test("finalizeSide keeps only the final attempt under final names", async () => {
-  const root = await tmpDir(); const dir = await createCoinDir(root, "COIN-0001");
+  const root = await tmpDir();
+  const dir = await createCoinDir(root, "COIN-0001");
   const touch = (p: string) => writeFile(p, "x");
-  const a1 = attemptPaths(dir, "COIN-0001", "av", 1), a2 = attemptPaths(dir, "COIN-0001", "av", 2), r1 = attemptPaths(dir, "COIN-0001", "rv", 1);
-  await Promise.all([touch(a1.original), touch(a1.raw), touch(a2.crop), touch(a2.original), touch(a2.raw), touch(r1.crop)]);
+  const a1 = attemptPaths(dir, "COIN-0001", "av", 1),
+    a2 = attemptPaths(dir, "COIN-0001", "av", 2),
+    r1 = attemptPaths(dir, "COIN-0001", "rv", 1);
+  await Promise.all([
+    touch(a1.original),
+    touch(a1.raw),
+    touch(a2.crop),
+    touch(a2.original),
+    touch(a2.raw),
+    touch(r1.crop),
+  ]);
   const f = await finalizeSide(dir, "COIN-0001", "av", 2, [1, 2]);
   assert.deepEqual(f, finalPaths(dir, "COIN-0001", "av"));
-  const all = [...(await readdir(dir)), ...(await readdir(join(dir, "originals")))].sort();
-  assert.deepEqual(all, ["COIN-0001_av.CR2", "COIN-0001_av.jpg", "COIN-0001_av_original.jpg", "COIN-0001_rv_v1.jpg", "originals"].sort());
+  const all = [
+    ...(await readdir(dir)),
+    ...(await readdir(join(dir, "originals"))),
+  ].sort();
+  assert.deepEqual(
+    all,
+    [
+      "COIN-0001_av.CR2",
+      "COIN-0001_av.jpg",
+      "COIN-0001_av_original.jpg",
+      "COIN-0001_rv_v1.jpg",
+      "originals",
+    ].sort(),
+  );
 });
 ```
 
@@ -1291,6 +1903,7 @@ Run: `node --test test/store/coins.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/store/coins.ts test/store/coins.test.ts
 git commit -m "feat: coin folder IDs, attempt layout and finalize"
@@ -1301,11 +1914,13 @@ git commit -m "feat: coin folder IDs, attempt layout and finalize"
 ### Task 15: Markdown record
 
 **Files:**
+
 - Create: `src/store/markdown.ts`
 - Modify: `src/types.ts` (add `AttemptRecord`)
 - Test: `test/store/markdown.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Finding` (12), `CameraSettings` (11), `CameraInfo` (11), `ProcessedShot`, `Side`; the `yaml` package.
 - Produces:
   - Added to `src/types.ts`: `export type AttemptRecord = { n: number; settings: CameraSettings; autofocus: boolean; shot: ProcessedShot; findings: Finding[] }` (type-only imports).
@@ -1316,6 +1931,7 @@ git commit -m "feat: coin folder IDs, attempt layout and finalize"
   - `buildFrontmatter(r: CoinRecordInput): Record<string, unknown>`; `renderCoinMarkdown(r): string`; `writeCoinMarkdown(r): Promise<string>`, which writes `<coinDir>/<id>.md` with flag `"wx"` (never overwrites) and returns the path.
 
 Frontmatter (spec §8; key order exactly as listed; all paths relative to `coinDir`):
+
 - `id`, `status`, then for incomplete records `incomplete_reason` and `last_error`, then `described: false`, `comment`.
 - `capture: { started_at, completed_at, tool_version, camera: <model>, lens }`.
 - `images`: complete → `{ av: "<id>_av.jpg", rv: … }` taken from `final.shot.paths.crop`; incomplete → for each side, the list of crops of the attempts that have a crop.
@@ -1333,57 +1949,178 @@ Body: `` `# ${id}\n\n## Notizen\n\n${comment}\n` ``. File = `` `---\n${YAML.stri
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-const shot = (dir: string, n: number | null, side: Side, o: Partial<ProcessedShot> = {}): ProcessedShot => ({
-  paths: n === null ? finalPaths(dir, "COIN-0001", side) : attemptPaths(dir, "COIN-0001", side, n),
-  width: 3456, height: 5184,
-  detection: { found: true, circle: { cx: 1730.4, cy: 2590.6, r: 1210.2 }, cutOff: false, inlierRatio: 0.97 },
+const shot = (
+  dir: string,
+  n: number | null,
+  side: Side,
+  o: Partial<ProcessedShot> = {},
+): ProcessedShot => ({
+  paths:
+    n === null
+      ? finalPaths(dir, "COIN-0001", side)
+      : attemptPaths(dir, "COIN-0001", side, n),
+  width: 3456,
+  height: 5184,
+  detection: {
+    found: true,
+    circle: { cx: 1730.4, cy: 2590.6, r: 1210.2 },
+    cutOff: false,
+    inlierRatio: 0.97,
+  },
   cropBox: { left: 0, top: 0, size: 10, marginRatio: 0.15, reduced: false },
   quality: { sharpness: 412.54, meanBrightness: 178.4, clippingRatio: 0.00412 },
-  exif: { focalLengthMm: 135, shutterSpeed: "1/8", fNumber: 8, iso: 100 }, warnings: [], ...o });
-const att = (n: number, s: ProcessedShot, findings: Finding[] = []): AttemptRecord => ({ n, settings: BASELINE, autofocus: false, shot: s, findings });
-const parse = (md: string) => { const [, fm, body] = md.split(/^---\n/m); return { fm: YAML.parse(fm!), body: body!.slice(1) }; }; // drop the blank line after ---
+  exif: { focalLengthMm: 135, shutterSpeed: "1/8", fNumber: 8, iso: 100 },
+  warnings: [],
+  ...o,
+});
+const att = (
+  n: number,
+  s: ProcessedShot,
+  findings: Finding[] = [],
+): AttemptRecord => ({
+  n,
+  settings: BASELINE,
+  autofocus: false,
+  shot: s,
+  findings,
+});
+const parse = (md: string) => {
+  const [, fm, body] = md.split(/^---\n/m);
+  return { fm: YAML.parse(fm!), body: body!.slice(1) };
+}; // drop the blank line after ---
 const base = (dir: string): CoinRecordInput => ({
-  id: "COIN-0001", coinDir: dir, status: "complete", incompleteReason: null, lastError: null,
-  startedAt: new Date("2026-10-28T13:02:11Z"), completedAt: new Date("2026-10-28T13:03:40Z"),
-  camera: { model: "Canon EOS 1300D", lens: "EF-S18-135mm f/3.5-5.6 IS STM", exposureMode: "AV" },
+  id: "COIN-0001",
+  coinDir: dir,
+  status: "complete",
+  incompleteReason: null,
+  lastError: null,
+  startedAt: new Date("2026-10-28T13:02:11Z"),
+  completedAt: new Date("2026-10-28T13:03:40Z"),
+  camera: {
+    model: "Canon EOS 1300D",
+    lens: "EF-S18-135mm f/3.5-5.6 IS STM",
+    exposureMode: "AV",
+  },
   sides: {
-    av: { attempts: [att(1, shot(dir, 1, "av"), [{ defect: "underexposed", feature: "exposure", message: "Helligkeit 48 < 60" }]), att(2, shot(dir, null, "av"))], final: att(2, shot(dir, null, "av")), warnings: [] },
-    rv: { attempts: [att(1, shot(dir, null, "rv"))], final: att(1, shot(dir, null, "rv")), warnings: ["Margin auf 9 % reduziert (Soll 15 %)"] } },
-  similarity: 0.3149, comment: "" });
+    av: {
+      attempts: [
+        att(1, shot(dir, 1, "av"), [
+          {
+            defect: "underexposed",
+            feature: "exposure",
+            message: "Helligkeit 48 < 60",
+          },
+        ]),
+        att(2, shot(dir, null, "av")),
+      ],
+      final: att(2, shot(dir, null, "av")),
+      warnings: [],
+    },
+    rv: {
+      attempts: [att(1, shot(dir, null, "rv"))],
+      final: att(1, shot(dir, null, "rv")),
+      warnings: ["Margin auf 9 % reduziert (Soll 15 %)"],
+    },
+  },
+  similarity: 0.3149,
+  comment: "",
+});
 
 test("complete record", () => {
   const { fm, body } = parse(renderCoinMarkdown(base("/c")));
-  assert.deepEqual(Object.keys(fm), ["id", "status", "described", "comment", "capture", "images", "originals", "sides", "similarity_av_rv"]);
+  assert.deepEqual(Object.keys(fm), [
+    "id",
+    "status",
+    "described",
+    "comment",
+    "capture",
+    "images",
+    "originals",
+    "sides",
+    "similarity_av_rv",
+  ]);
   assert.equal(fm.described, false);
-  assert.deepEqual(fm.images, { av: "COIN-0001_av.jpg", rv: "COIN-0001_rv.jpg" });
-  assert.deepEqual(fm.originals.av, { raw: "originals/COIN-0001_av.CR2", jpg: "originals/COIN-0001_av_original.jpg" });
-  assert.deepEqual(fm.sides.av.settings, { ...BASELINE, focal_length_mm: 135, shutterspeed: "1/8" });
-  assert.deepEqual(fm.sides.av.quality, { sharpness: 412.5, mean_brightness: 178, clipping_ratio: 0.0041 });
-  assert.deepEqual(fm.sides.av.coin, { center: { x: 1730, y: 2591 }, radius: 1210 });
-  assert.deepEqual(fm.sides.av.attempts.map((a: { result: string }) => a.result), ["underexposed", "ok"]);
+  assert.deepEqual(fm.images, {
+    av: "COIN-0001_av.jpg",
+    rv: "COIN-0001_rv.jpg",
+  });
+  assert.deepEqual(fm.originals.av, {
+    raw: "originals/COIN-0001_av.CR2",
+    jpg: "originals/COIN-0001_av_original.jpg",
+  });
+  assert.deepEqual(fm.sides.av.settings, {
+    ...BASELINE,
+    focal_length_mm: 135,
+    shutterspeed: "1/8",
+  });
+  assert.deepEqual(fm.sides.av.quality, {
+    sharpness: 412.5,
+    mean_brightness: 178,
+    clipping_ratio: 0.0041,
+  });
+  assert.deepEqual(fm.sides.av.coin, {
+    center: { x: 1730, y: 2591 },
+    radius: 1210,
+  });
+  assert.deepEqual(
+    fm.sides.av.attempts.map((a: { result: string }) => a.result),
+    ["underexposed", "ok"],
+  );
   assert.equal(fm.sides.av.attempts[0].message, "Helligkeit 48 < 60");
   assert.equal(fm.similarity_av_rv, 0.31);
   assert.equal(fm.capture.tool_version, "0.1.0");
-  assert.match(fm.capture.started_at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
-  assert.equal(new Date(fm.capture.started_at).getTime(), Date.parse("2026-10-28T13:02:11Z"));
+  assert.match(
+    fm.capture.started_at,
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
+  );
+  assert.equal(
+    new Date(fm.capture.started_at).getTime(),
+    Date.parse("2026-10-28T13:02:11Z"),
+  );
   assert.match(body, /^# COIN-0001\n\n## Notizen\n/);
 });
 test("incomplete record lists all attempt files", () => {
-  const r = base("/c"); const a1 = att(1, shot("/c", 1, "av")), a2 = att(2, shot("/c", 2, "av", { cropBox: null, quality: null, detection: { found: false } }));
-  const { fm } = parse(renderCoinMarkdown({ ...r, status: "incomplete", incompleteReason: "ignored", lastError: "Keine Münze erkannt",
-    sides: { av: { attempts: [a1, a2], final: null, warnings: [] } }, similarity: null }));
-  assert.deepEqual(Object.keys(fm).slice(0, 5), ["id", "status", "incomplete_reason", "last_error", "described"]);
+  const r = base("/c");
+  const a1 = att(1, shot("/c", 1, "av")),
+    a2 = att(
+      2,
+      shot("/c", 2, "av", {
+        cropBox: null,
+        quality: null,
+        detection: { found: false },
+      }),
+    );
+  const { fm } = parse(
+    renderCoinMarkdown({
+      ...r,
+      status: "incomplete",
+      incompleteReason: "ignored",
+      lastError: "Keine Münze erkannt",
+      sides: { av: { attempts: [a1, a2], final: null, warnings: [] } },
+      similarity: null,
+    }),
+  );
+  assert.deepEqual(Object.keys(fm).slice(0, 5), [
+    "id",
+    "status",
+    "incomplete_reason",
+    "last_error",
+    "described",
+  ]);
   assert.deepEqual(fm.images.av, ["COIN-0001_av_v1.jpg"]);
   assert.equal(fm.originals.av.length, 2);
-  assert.equal(fm.sides.rv, undefined); assert.equal(fm.sides.av.coin, null);
+  assert.equal(fm.sides.rv, undefined);
+  assert.equal(fm.sides.av.coin, null);
 });
 test("comment with YAML-special characters and umlauts round-trips", () => {
   const c = 'Rand: leicht beschädigt # Kratzer "alt"\n- zweite Zeile';
   const { fm, body } = parse(renderCoinMarkdown({ ...base("/c"), comment: c }));
-  assert.equal(fm.comment, c); assert.ok(body.includes(c));
+  assert.equal(fm.comment, c);
+  assert.ok(body.includes(c));
 });
 test("writeCoinMarkdown never overwrites", async () => {
-  const dir = await tmpDir(); const r = base(dir);
+  const dir = await tmpDir();
+  const r = base(dir);
   assert.equal(await writeCoinMarkdown(r), join(dir, "COIN-0001.md"));
   await assert.rejects(writeCoinMarkdown(r), /EEXIST/);
 });
@@ -1402,6 +2139,7 @@ Run: `node --test test/store/markdown.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/types.ts src/store/markdown.ts test/store/markdown.test.ts
 git commit -m "feat: coin markdown with YAML frontmatter"
@@ -1412,22 +2150,24 @@ git commit -m "feat: coin markdown with YAML frontmatter"
 ### Task 16: Terminal UI and viewers
 
 **Files:**
+
 - Create: `src/ui/ui.ts`, `src/ui/terminal.ts`, `src/ui/viewer.ts`
 - Modify: `test/fakes.ts` (add `ScriptedUi`, `FakeViewer`)
 - Test: `test/ui/ui.test.ts`
 
 **Interfaces:**
+
 - Consumes: `AbortError`, `run`; `Side`.
 - Produces:
   - `src/ui/ui.ts`:
     ```ts
     export interface Ui {
-      status(text: string): void;                                  // persistent status line
+      status(text: string): void; // persistent status line
       print(text: string): void;
       key(prompt: string, allowed: readonly string[]): Promise<string>; // "enter" for Enter; throws AbortError on Ctrl+C
       line(prompt: string): Promise<string>;
-      countdown(seconds: number): Promise<void>;                   // "3 … 2 … 1 …", abortable
-      readonly signal: AbortSignal;                                // aborted on Ctrl+C
+      countdown(seconds: number): Promise<void>; // "3 … 2 … 1 …", abortable
+      readonly signal: AbortSignal; // aborted on Ctrl+C
       close(): void;
     }
     ```
@@ -1445,10 +2185,20 @@ git commit -m "feat: coin markdown with YAML frontmatter"
   - `src/ui/viewer.ts`:
     ```ts
     export type CompareHandle = { usedDjv: boolean; close(): void };
-    export interface Viewer { preview(paths: string[]): Promise<void>; finder(dir: string): Promise<void>; compare(a: string, b: string): Promise<CompareHandle> }
-    export type SystemViewerDeps = { djvPath: string; run?: (cmd: string, args: string[]) => Promise<unknown>;
-      spawn?: (cmd: string, args: string[]) => { kill(): void }; exists?: (p: string) => boolean };
-    export class SystemViewer implements Viewer { constructor(deps: SystemViewerDeps) }
+    export interface Viewer {
+      preview(paths: string[]): Promise<void>;
+      finder(dir: string): Promise<void>;
+      compare(a: string, b: string): Promise<CompareHandle>;
+    }
+    export type SystemViewerDeps = {
+      djvPath: string;
+      run?: (cmd: string, args: string[]) => Promise<unknown>;
+      spawn?: (cmd: string, args: string[]) => { kill(): void };
+      exists?: (p: string) => boolean;
+    };
+    export class SystemViewer implements Viewer {
+      constructor(deps: SystemViewerDeps);
+    }
     ```
     - `preview` → `open -a Preview <paths…>`; `finder` → `open <dir>`.
     - `compare`: if `exists(djvPath)`, spawn `djvPath [a, "-b", b, "-c", "Horizontal"]` (`stdio: "ignore"`) and return `{ usedDjv: true, close: kill }`. Otherwise call `preview([a, b])` and return `{ usedDjv: false, close: noop }`.
@@ -1463,12 +2213,47 @@ git commit -m "feat: coin markdown with YAML frontmatter"
 
 ```ts
 test("parseKey", () => {
-  assert.deepEqual(["\r", "\n", "\u0003", "Q", "+", "=", "3", "\u001b", "\u007f", "\u001b[A"].map(parseKey),
-    ["enter", "enter", "ctrl-c", "q", "+", "=", "3", "escape", "backspace", null]);
+  assert.deepEqual(
+    [
+      "\r",
+      "\n",
+      "\u0003",
+      "Q",
+      "+",
+      "=",
+      "3",
+      "\u001b",
+      "\u007f",
+      "\u001b[A",
+    ].map(parseKey),
+    [
+      "enter",
+      "enter",
+      "ctrl-c",
+      "q",
+      "+",
+      "=",
+      "3",
+      "escape",
+      "backspace",
+      null,
+    ],
+  );
 });
 test("formatStatus", () => {
-  assert.equal(formatStatus({ id: "COIN-0003", side: "rv", attempt: 2, step: "Prüfe Schärfe …" }), "COIN-0003 · Rückseite · Versuch 2 · Prüfe Schärfe …");
-  assert.equal(formatStatus({ id: "COIN-0004", step: "Warte auf Enter" }), "COIN-0004 · Warte auf Enter");
+  assert.equal(
+    formatStatus({
+      id: "COIN-0003",
+      side: "rv",
+      attempt: 2,
+      step: "Prüfe Schärfe …",
+    }),
+    "COIN-0003 · Rückseite · Versuch 2 · Prüfe Schärfe …",
+  );
+  assert.equal(
+    formatStatus({ id: "COIN-0004", step: "Warte auf Enter" }),
+    "COIN-0004 · Warte auf Enter",
+  );
 });
 test("ScriptedUi enforces allowed keys and aborts on ctrl-c", async () => {
   const ui = new ScriptedUi(["x", "ctrl-c"]);
@@ -1477,13 +2262,32 @@ test("ScriptedUi enforces allowed keys and aborts on ctrl-c", async () => {
   assert.ok(ui.signal.aborted);
 });
 test("SystemViewer.compare uses DJV when present, Preview otherwise", async () => {
-  const ran: string[][] = [], spawned: string[][] = [];
-  const deps = { djvPath: "/djv", run: async (c: string, a: string[]) => { ran.push([c, ...a]); },
-    spawn: (c: string, a: string[]) => { spawned.push([c, ...a]); return { kill() {} }; } };
-  const h1 = await new SystemViewer({ ...deps, exists: () => true }).compare("/a.jpg", "/b.jpg");
-  assert.ok(h1.usedDjv); assert.deepEqual(spawned, [["/djv", "/a.jpg", "-b", "/b.jpg", "-c", "Horizontal"]]);
-  const h2 = await new SystemViewer({ ...deps, exists: () => false }).compare("/a.jpg", "/b.jpg");
-  assert.ok(!h2.usedDjv); assert.deepEqual(ran, [["open", "-a", "Preview", "/a.jpg", "/b.jpg"]]);
+  const ran: string[][] = [],
+    spawned: string[][] = [];
+  const deps = {
+    djvPath: "/djv",
+    run: async (c: string, a: string[]) => {
+      ran.push([c, ...a]);
+    },
+    spawn: (c: string, a: string[]) => {
+      spawned.push([c, ...a]);
+      return { kill() {} };
+    },
+  };
+  const h1 = await new SystemViewer({ ...deps, exists: () => true }).compare(
+    "/a.jpg",
+    "/b.jpg",
+  );
+  assert.ok(h1.usedDjv);
+  assert.deepEqual(spawned, [
+    ["/djv", "/a.jpg", "-b", "/b.jpg", "-c", "Horizontal"],
+  ]);
+  const h2 = await new SystemViewer({ ...deps, exists: () => false }).compare(
+    "/a.jpg",
+    "/b.jpg",
+  );
+  assert.ok(!h2.usedDjv);
+  assert.deepEqual(ran, [["open", "-a", "Preview", "/a.jpg", "/b.jpg"]]);
 });
 ```
 
@@ -1502,6 +2306,7 @@ Run: `printf 'x\n\nhello\n' | node --input-type=module -e "import { TerminalUi }
 Expected output contains `» S`, `enter` and `hello` (non-TTY path; the disallowed `x` re-prompts).
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/ui test/fakes.ts test/ui/ui.test.ts
 git commit -m "feat: terminal UI with status line, viewers (Preview/Finder/DJV)"
@@ -1512,11 +2317,13 @@ git commit -m "feat: terminal UI with status line, viewers (Preview/Finder/DJV)"
 ### Task 17: Side capture loop with automatic corrections and error menu
 
 **Files:**
+
 - Create: `src/session/context.ts`, `src/session/side.ts`
 - Modify: `test/fakes.ts` (add `FakePipeline`, shot presets, `makeSession`)
 - Test: `test/session/side.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Camera`, `CameraInfo` (11), `Pipeline` (10), `evaluateShot`, `planNext`, `newCorrectionState` (12), `attemptPaths`, `discardAttempts` (14), `Ui`, `formatStatus`, `SIDE_LABEL`, `Viewer` (16), `AttemptRecord` (15), `AbortError`, `ToolError`.
 - Produces:
   - `src/session/context.ts`: `type SessionContext = { cfg: Config; camera: Camera; pipeline: Pipeline; ui: Ui; viewer: Viewer; defaults: CameraSettings; choices: ChoiceLists; cameraInfo: CameraInfo; incomingDir: string; now: () => Date }`.
@@ -1524,8 +2331,16 @@ git commit -m "feat: terminal UI with status line, viewers (Preview/Finder/DJV)"
     ```ts
     export type SideOutcome =
       | { kind: "ok"; attempts: AttemptRecord[]; final: AttemptRecord }
-      | { kind: "ignored" | "deleted" | "aborted"; attempts: AttemptRecord[]; lastError: string | null };
-    export function captureSide(ctx: SessionContext, coin: { id: string; dir: string }, side: Side): Promise<SideOutcome>;
+      | {
+          kind: "ignored" | "deleted" | "aborted";
+          attempts: AttemptRecord[];
+          lastError: string | null;
+        };
+    export function captureSide(
+      ctx: SessionContext,
+      coin: { id: string; dir: string },
+      side: Side,
+    ): Promise<SideOutcome>;
     export function formatAttemptLine(a: AttemptRecord): string;
     // e.g. "Versuch 2: Helligkeit 132 · Clipping 0.4 % · Schärfe 412.5 · r=1210 px · EV 1 · ISO 100 → underexposed: Helligkeit 48 < 60"
     ```
@@ -1542,6 +2357,7 @@ git commit -m "feat: terminal UI with status line, viewers (Preview/Finder/DJV)"
       - `newCoin()` → `createCoinDir(root, "COIN-0001")`.
 
 `captureSide` behaviour (spec §6.1–6.4):
+
 - Start with `settings = { ...ctx.defaults }`, `state = newCorrectionState(cfg)`, `autofocus = false`, `n = 0`.
 - **Loop:**
   1. `n++`; `ui.status(formatStatus({ id, side, attempt: n, step: "Aufnahme …" }))`.
@@ -1558,7 +2374,7 @@ git commit -m "feat: terminal UI with status line, viewers (Preview/Finder/DJV)"
   - `ui.key("v = Vorschau · w = weiter versuchen · i = ignorieren · l = löschen · q = beenden", ["v", "w", "i", "l", "q"])`:
     - `v`: `viewer.preview(<crop ?? original of each failed attempt>)`, then show the menu again.
     - `w` with `limit`: `budget[feature] += cfg.corrections.attemptsPerRetry`, re-plan from the last findings.
-    - `w` with `detection`/`conflict`/`scale_end`: `` ui.key(`${plan.hint} – Enter = neue Aufnahme · q = beenden`, ["enter", "q"]) ``, then `ui.countdown(cfg.session.countdownSeconds)`, then capture again with the unchanged settings.
+    - `w` with `detection`/`conflict`/`scale_end`: ``ui.key(`${plan.hint} – Enter = neue Aufnahme · q = beenden`, ["enter", "q"])``, then `ui.countdown(cfg.session.countdownSeconds)`, then capture again with the unchanged settings.
     - `i` → `ignored`.
     - `l` → `ui.key("Wirklich löschen? (j/N)", ["j", "n", "enter"])`; `j` → `deleted`, anything else → back to the menu.
     - `q` → `aborted`.
@@ -1567,58 +2383,108 @@ git commit -m "feat: terminal UI with status line, viewers (Preview/Finder/DJV)"
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-const shoot = async (o: Parameters<typeof makeSession>[0]) => { const s = await makeSession(o); const out = await captureSide(s.ctx, await s.newCoin(), "av"); return { s, out }; };
+const shoot = async (o: Parameters<typeof makeSession>[0]) => {
+  const s = await makeSession(o);
+  const out = await captureSide(s.ctx, await s.newCoin(), "av");
+  return { s, out };
+};
 test("ok on first attempt uses defaults", async () => {
   const { s, out } = await shoot({ results: [OK] });
-  assert.equal(out.kind, "ok"); assert.equal(out.attempts.length, 1);
-  assert.deepEqual(s.camera.calls, [{ settings: s.ctx.defaults, autofocus: false }]);
+  assert.equal(out.kind, "ok");
+  assert.equal(out.attempts.length, 1);
+  assert.deepEqual(s.camera.calls, [
+    { settings: s.ctx.defaults, autofocus: false },
+  ]);
 });
 test("underexposed → exposure +1 step without prompt or countdown", async () => {
   const { s, out } = await shoot({ results: [UNDER, OK] });
-  assert.equal(out.kind, "ok"); assert.equal(s.camera.calls[1]!.settings.exposurecompensation, "1");
+  assert.equal(out.kind, "ok");
+  assert.equal(s.camera.calls[1]!.settings.exposurecompensation, "1");
   assert.deepEqual([s.ui.prompts.length, s.ui.countdowns], [0, 0]);
 });
 test("overexposed → exposure −1 step", async () => {
-  const { s } = await shoot({ results: [OVER, OK] }); assert.equal(s.camera.calls[1]!.settings.exposurecompensation, "0");
+  const { s } = await shoot({ results: [OVER, OK] });
+  assert.equal(s.camera.calls[1]!.settings.exposurecompensation, "0");
 });
 test("blurry: AF, then ISO up, then menu after 2 corrections", async () => {
-  const { s, out } = await shoot({ results: [BLURRY, BLURRY, BLURRY], script: ["i"] });
-  assert.equal(out.kind, "ignored"); assert.equal(out.attempts.length, 3);
-  assert.deepEqual(s.camera.calls.map((c) => [c.autofocus, c.settings.iso]), [[false, "100"], [true, "100"], [false, "200"]]);
+  const { s, out } = await shoot({
+    results: [BLURRY, BLURRY, BLURRY],
+    script: ["i"],
+  });
+  assert.equal(out.kind, "ignored");
+  assert.equal(out.attempts.length, 3);
+  assert.deepEqual(
+    s.camera.calls.map((c) => [c.autofocus, c.settings.iso]),
+    [
+      [false, "100"],
+      [true, "100"],
+      [false, "200"],
+    ],
+  );
 });
 test("limit then w gives two more corrections in the same direction", async () => {
-  const { s, out } = await shoot({ results: [UNDER, UNDER, UNDER, UNDER, UNDER], script: ["w", "i"] });
+  const { s, out } = await shoot({
+    results: [UNDER, UNDER, UNDER, UNDER, UNDER],
+    script: ["w", "i"],
+  });
   assert.equal(out.kind, "ignored");
-  assert.deepEqual(s.camera.calls.map((c) => c.settings.exposurecompensation), ["0.5", "1", "1.5", "2", "2.5"]);
+  assert.deepEqual(
+    s.camera.calls.map((c) => c.settings.exposurecompensation),
+    ["0.5", "1", "1.5", "2", "2.5"],
+  );
 });
 test("conflict and detection failures go straight to the menu", async () => {
   const c = await shoot({ results: [UNDER_OVER], script: ["i"] });
-  assert.equal(c.out.attempts.length, 1); assert.ok(c.s.ui.output.some((l) => l.includes("Licht/Reflexe")));
+  assert.equal(c.out.attempts.length, 1);
+  assert.ok(c.s.ui.output.some((l) => l.includes("Licht/Reflexe")));
   const d = await shoot({ results: [NO_COIN, OK], script: ["w", "enter"] });
-  assert.equal(d.out.kind, "ok"); assert.equal(d.s.ui.countdowns, 1);
+  assert.equal(d.out.kind, "ok");
+  assert.equal(d.s.ui.countdowns, 1);
   assert.deepEqual(d.s.camera.calls[1]!.settings, d.s.ctx.defaults);
   assert.ok(d.s.ui.prompts.some((p) => p.includes("zurechtlegen")));
 });
 test("scale end goes to the menu", async () => {
-  const { s, out } = await shoot({ results: [UNDER, UNDER], defaults: { exposurecompensation: "4.5" }, script: ["i"] });
-  assert.equal(out.attempts.length, 2); assert.ok(s.ui.output.some((l) => l.includes("Ende der Skala")));
+  const { s, out } = await shoot({
+    results: [UNDER, UNDER],
+    defaults: { exposurecompensation: "4.5" },
+    script: ["i"],
+  });
+  assert.equal(out.attempts.length, 2);
+  assert.ok(s.ui.output.some((l) => l.includes("Ende der Skala")));
 });
 test("menu: v previews failed attempts, l asks before deleting", async () => {
-  const { s, out } = await shoot({ results: [NO_COIN], script: ["v", "l", "n", "l", "j"] });
+  const { s, out } = await shoot({
+    results: [NO_COIN],
+    script: ["v", "l", "n", "l", "j"],
+  });
   assert.equal(out.kind, "deleted");
   assert.deepEqual(s.viewer.calls[0]!.slice(0, 1), ["preview"]);
-  assert.ok(s.ui.prompts.filter((p) => p.includes("Wirklich löschen? (j/N)")).length === 2);
+  assert.ok(
+    s.ui.prompts.filter((p) => p.includes("Wirklich löschen? (j/N)")).length ===
+      2,
+  );
 });
 test("technical error shows details and retries the same attempt", async () => {
-  const { s, out } = await shoot({ shots: [{ error: "*** Error: No camera found." }, {}], results: [OK], script: ["enter"] });
-  assert.equal(out.kind, "ok"); assert.equal(out.attempts[0]!.n, 1);
+  const { s, out } = await shoot({
+    shots: [{ error: "*** Error: No camera found." }, {}],
+    results: [OK],
+    script: ["enter"],
+  });
+  assert.equal(out.kind, "ok");
+  assert.equal(out.attempts[0]!.n, 1);
   assert.ok(s.ui.output.some((l) => l.includes("No camera found")));
 });
 test("q in the menu and ctrl-c during capture abort", async () => {
-  assert.equal((await shoot({ results: [NO_COIN], script: ["q"] })).out.kind, "aborted");
+  assert.equal(
+    (await shoot({ results: [NO_COIN], script: ["q"] })).out.kind,
+    "aborted",
+  );
   const s = await makeSession({ shots: [{ waitForAbort: true }], results: [] });
   setTimeout(() => s.ui.abort(), 20);
-  assert.equal((await captureSide(s.ctx, await s.newCoin(), "av")).kind, "aborted");
+  assert.equal(
+    (await captureSide(s.ctx, await s.newCoin(), "av")).kind,
+    "aborted",
+  );
 });
 ```
 
@@ -1635,6 +2501,7 @@ Run: `node --test test/session/side.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/session/context.ts src/session/side.ts test/fakes.ts test/session/side.test.ts
 git commit -m "feat: side capture loop with auto-correction and error menu"
@@ -1645,14 +2512,17 @@ git commit -m "feat: side capture loop with auto-correction and error menu"
 ### Task 18: Coin workflow
 
 **Files:**
+
 - Create: `src/session/coin.ts`
 - Test: `test/session/coin.test.ts`
 
 **Interfaces:**
+
 - Consumes: `captureSide`, `SideOutcome` (17), `nextCoinId`, `createCoinDir`, `finalizeSide`, `discardAttempts`, `deleteCoinDir` (14), `writeCoinMarkdown`, `SideData` (15), `SessionContext`.
 - Produces: `type CoinOutcome = { kind: "complete" | "ignored" | "deleted" | "aborted" | "quit"; id: string | null; endSession: boolean }`; `runCoin(ctx: SessionContext): Promise<CoinOutcome>`.
 
 Flow (spec §6.1, 6.3, 6.5, 6.6):
+
 1. `id = nextCoinId(root)`; `ui.key("Neue Münze: Bitte Vorderseite einlegen und Enter drücken.", ["enter", "q"])`. `q` → `{ kind: "quit", id: null, endSession: true }` with no folder.
 2. `ui.print("Erfasse Vorderseite …")`; countdown; `startedAt = now()`; `createCoinDir` (only now: the folder is created at the first capture); `captureSide(av)`.
 3. `ui.key("Vorderseite erfasst. Bitte Münze umdrehen und Enter drücken.", ["enter", "q"])`; `q` → abort. Then `ui.print("Erfasse Rückseite …")`; countdown; `captureSide(rv)`.
@@ -1671,74 +2541,164 @@ Flow (spec §6.1, 6.3, 6.5, 6.6):
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-const files = async (dir: string) => [...(await readdir(dir)).filter((f) => f !== "originals"), ...(await readdir(join(dir, "originals"))).map((f) => "originals/" + f)].sort();
-const fm = async (p: string) => YAML.parse((await readFile(p, "utf8")).split(/^---\n/m)[1]!);
+const files = async (dir: string) =>
+  [
+    ...(await readdir(dir)).filter((f) => f !== "originals"),
+    ...(await readdir(join(dir, "originals"))).map((f) => "originals/" + f),
+  ].sort();
+const fm = async (p: string) =>
+  YAML.parse((await readFile(p, "utf8")).split(/^---\n/m)[1]!);
 test("happy path leaves exactly the final layout", async () => {
-  const s = await makeSession({ results: [UNDER, OK, OK], script: ["enter", "enter", "Kratzer am Rand", "enter"] });
+  const s = await makeSession({
+    results: [UNDER, OK, OK],
+    script: ["enter", "enter", "Kratzer am Rand", "enter"],
+  });
   const out = await runCoin(s.ctx);
-  assert.deepEqual(out, { kind: "complete", id: "COIN-0001", endSession: false });
+  assert.deepEqual(out, {
+    kind: "complete",
+    id: "COIN-0001",
+    endSession: false,
+  });
   const dir = join(s.root, "COIN-0001");
-  assert.deepEqual(await files(dir), ["COIN-0001.md", "COIN-0001_av.jpg", "COIN-0001_rv.jpg", "originals/COIN-0001_av.CR2", "originals/COIN-0001_av_original.jpg", "originals/COIN-0001_rv.CR2", "originals/COIN-0001_rv_original.jpg"]);
+  assert.deepEqual(await files(dir), [
+    "COIN-0001.md",
+    "COIN-0001_av.jpg",
+    "COIN-0001_rv.jpg",
+    "originals/COIN-0001_av.CR2",
+    "originals/COIN-0001_av_original.jpg",
+    "originals/COIN-0001_rv.CR2",
+    "originals/COIN-0001_rv_original.jpg",
+  ]);
   const f = await fm(join(dir, "COIN-0001.md"));
-  assert.equal(f.status, "complete"); assert.equal(f.comment, "Kratzer am Rand"); assert.equal(f.sides.av.attempts.length, 2);
+  assert.equal(f.status, "complete");
+  assert.equal(f.comment, "Kratzer am Rand");
+  assert.equal(f.sides.av.attempts.length, 2);
   assert.equal(s.ui.countdowns, 2);
 });
 test("IDs continue after existing folders", async () => {
-  const s = await makeSession({ results: [OK, OK], script: ["enter", "enter", "", "enter"] });
-  await mkdir(join(s.root, "COIN-0004")); await writeFile(join(s.root, "COIN-0004/COIN-0004.md"), "x"); await mkdir(join(s.root, "_calibration"));
+  const s = await makeSession({
+    results: [OK, OK],
+    script: ["enter", "enter", "", "enter"],
+  });
+  await mkdir(join(s.root, "COIN-0004"));
+  await writeFile(join(s.root, "COIN-0004/COIN-0004.md"), "x");
+  await mkdir(join(s.root, "_calibration"));
   assert.equal((await runCoin(s.ctx)).id, "COIN-0005");
 });
 test("duplicate rv: Enter discards and re-shoots rv", async () => {
-  const s = await makeSession({ results: [OK, OK, OK], similarities: [0.97, 0.2], script: ["enter", "enter", "enter", "", "enter"] });
+  const s = await makeSession({
+    results: [OK, OK, OK],
+    similarities: [0.97, 0.2],
+    script: ["enter", "enter", "enter", "", "enter"],
+  });
   assert.equal((await runCoin(s.ctx)).kind, "complete");
-  assert.ok(s.ui.output.some((l) => l.includes("Rückseite gleicht der Vorderseite – Münze umgedreht?")));
+  assert.ok(
+    s.ui.output.some((l) =>
+      l.includes("Rückseite gleicht der Vorderseite – Münze umgedreht?"),
+    ),
+  );
   const f = await fm(join(s.root, "COIN-0001/COIN-0001.md"));
   assert.ok(f.sides.rv.warnings[0].startsWith("Doppelaufnahme verworfen"));
 });
 test("duplicate rv: i keeps the coin as incomplete", async () => {
-  const s = await makeSession({ results: [OK, OK], similarities: [0.97], script: ["enter", "enter", "i", ""] });
+  const s = await makeSession({
+    results: [OK, OK],
+    similarities: [0.97],
+    script: ["enter", "enter", "i", ""],
+  });
   assert.equal((await runCoin(s.ctx)).kind, "ignored");
   const f = await fm(join(s.root, "COIN-0001/COIN-0001.md"));
-  assert.deepEqual([f.status, f.incomplete_reason], ["incomplete", "ignored"]); assert.match(f.last_error, /gleicht der Vorderseite/);
+  assert.deepEqual([f.status, f.incomplete_reason], ["incomplete", "ignored"]);
+  assert.match(f.last_error, /gleicht der Vorderseite/);
   assert.ok(existsSync(join(s.root, "COIN-0001/COIN-0001_rv_v1.jpg")));
 });
 test("ignore on av asks for a comment and skips rv", async () => {
-  const s = await makeSession({ results: [NO_COIN], script: ["enter", "i", "leer"] });
-  assert.equal((await runCoin(s.ctx)).kind, "ignored"); assert.equal(s.camera.calls.length, 1);
-  assert.equal((await fm(join(s.root, "COIN-0001/COIN-0001.md"))).comment, "leer");
+  const s = await makeSession({
+    results: [NO_COIN],
+    script: ["enter", "i", "leer"],
+  });
+  assert.equal((await runCoin(s.ctx)).kind, "ignored");
+  assert.equal(s.camera.calls.length, 1);
+  assert.equal(
+    (await fm(join(s.root, "COIN-0001/COIN-0001.md"))).comment,
+    "leer",
+  );
 });
 test("delete removes the folder", async () => {
-  const s = await makeSession({ results: [NO_COIN], script: ["enter", "l", "j"] });
-  assert.deepEqual(await runCoin(s.ctx), { kind: "deleted", id: "COIN-0001", endSession: false });
+  const s = await makeSession({
+    results: [NO_COIN],
+    script: ["enter", "l", "j"],
+  });
+  assert.deepEqual(await runCoin(s.ctx), {
+    kind: "deleted",
+    id: "COIN-0001",
+    endSession: false,
+  });
   assert.ok(!existsSync(join(s.root, "COIN-0001")));
 });
 test("q at the flip prompt and abort during rv capture write incomplete md without comment", async () => {
   const s = await makeSession({ results: [OK], script: ["enter", "q"] });
-  assert.deepEqual(await runCoin(s.ctx), { kind: "aborted", id: "COIN-0001", endSession: true });
-  assert.equal((await fm(join(s.root, "COIN-0001/COIN-0001.md"))).incomplete_reason, "aborted");
-  const t = await makeSession({ shots: [{}, { waitForAbort: true }], results: [OK], script: ["enter", "enter"] });
+  assert.deepEqual(await runCoin(s.ctx), {
+    kind: "aborted",
+    id: "COIN-0001",
+    endSession: true,
+  });
+  assert.equal(
+    (await fm(join(s.root, "COIN-0001/COIN-0001.md"))).incomplete_reason,
+    "aborted",
+  );
+  const t = await makeSession({
+    shots: [{}, { waitForAbort: true }],
+    results: [OK],
+    script: ["enter", "enter"],
+  });
   setTimeout(() => t.ui.abort(), 30);
   assert.equal((await runCoin(t.ctx)).kind, "aborted");
-  assert.equal((await fm(join(t.root, "COIN-0001/COIN-0001.md"))).status, "incomplete");
+  assert.equal(
+    (await fm(join(t.root, "COIN-0001/COIN-0001.md"))).status,
+    "incomplete",
+  );
 });
 test("q before the first capture creates nothing", async () => {
   const s = await makeSession({ script: ["q"] });
-  assert.deepEqual(await runCoin(s.ctx), { kind: "quit", id: null, endSession: true });
-  assert.deepEqual((await readdir(s.root)).filter((d) => d.startsWith("COIN-")), []);
+  assert.deepEqual(await runCoin(s.ctx), {
+    kind: "quit",
+    id: null,
+    endSession: true,
+  });
+  assert.deepEqual(
+    (await readdir(s.root)).filter((d) => d.startsWith("COIN-")),
+    [],
+  );
 });
 test("success menu opens Finder and Preview", async () => {
-  const s = await makeSession({ results: [OK, OK], script: ["enter", "enter", "", "o", "p", "enter"] });
+  const s = await makeSession({
+    results: [OK, OK],
+    script: ["enter", "enter", "", "o", "p", "enter"],
+  });
   await runCoin(s.ctx);
   const dir = join(s.root, "COIN-0001");
-  assert.deepEqual(s.viewer.calls, [["finder", dir], ["preview", join(dir, "COIN-0001_av.jpg"), join(dir, "COIN-0001_rv.jpg")]]);
+  assert.deepEqual(s.viewer.calls, [
+    ["finder", dir],
+    ["preview", join(dir, "COIN-0001_av.jpg"), join(dir, "COIN-0001_rv.jpg")],
+  ]);
 });
 test("end-to-end with the real pipeline on fixtures", async () => {
-  const s = await makeSession({ realPipeline: true, thresholds: LENIENT_THRESHOLDS,
-    shots: [{ jpg: fixture("good_av") }, { jpg: fixture("good_rv") }], script: ["enter", "enter", "", "enter"] });
+  const s = await makeSession({
+    realPipeline: true,
+    thresholds: LENIENT_THRESHOLDS,
+    shots: [{ jpg: fixture("good_av") }, { jpg: fixture("good_rv") }],
+    script: ["enter", "enter", "", "enter"],
+  });
   assert.equal((await runCoin(s.ctx)).kind, "complete");
-  const m = await sharp(join(s.root, "COIN-0001/COIN-0001_av.jpg")).metadata(); assert.equal(m.width, m.height);
-  const d = await makeSession({ realPipeline: true, thresholds: LENIENT_THRESHOLDS,
-    shots: [{ jpg: fixture("good_av") }, { jpg: fixture("good_av") }], script: ["enter", "enter", "i", ""] });
+  const m = await sharp(join(s.root, "COIN-0001/COIN-0001_av.jpg")).metadata();
+  assert.equal(m.width, m.height);
+  const d = await makeSession({
+    realPipeline: true,
+    thresholds: LENIENT_THRESHOLDS,
+    shots: [{ jpg: fixture("good_av") }, { jpg: fixture("good_av") }],
+    script: ["enter", "enter", "i", ""],
+  });
   assert.equal((await runCoin(d.ctx)).kind, "ignored"); // identical rv is caught as a duplicate
 });
 ```
@@ -1756,6 +2716,7 @@ Run: `node --test test/session/coin.test.ts && npm test && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/session/coin.ts test/session/coin.test.ts
 git commit -m "feat: coin workflow with duplicate check, finish, ignore, delete, abort"
@@ -1766,10 +2727,12 @@ git commit -m "feat: coin workflow with duplicate check, finish, ignore, delete,
 ### Task 19: Calibration files and reference shot
 
 **Files:**
+
 - Create: `src/calibration/store.ts`, `src/calibration/reference.ts`
 - Test: `test/calibration/store.test.ts`
 
 **Interfaces:**
+
 - Consumes: `BASELINE`, `CAMERA_KEYS` (11), `evaluateShot` (12), `SessionContext` (17), `Pipeline` (10).
 - Produces:
   - `src/calibration/store.ts`:
@@ -1792,25 +2755,39 @@ git commit -m "feat: coin workflow with duplicate check, finish, ignore, delete,
 ```ts
 test("ensureDefaults creates from BASELINE once and validates", async () => {
   const root = await tmpDir();
-  assert.deepEqual(await ensureDefaults(root), { settings: BASELINE, created: true });
+  assert.deepEqual(await ensureDefaults(root), {
+    settings: BASELINE,
+    created: true,
+  });
   await saveDefaults(root, { ...BASELINE, iso: "200" });
-  assert.deepEqual(await ensureDefaults(root), { settings: { ...BASELINE, iso: "200" }, created: false });
-  await writeFile(join(calibrationDir(root), "defaults.json"), JSON.stringify({ iso: "100" }));
+  assert.deepEqual(await ensureDefaults(root), {
+    settings: { ...BASELINE, iso: "200" },
+    created: false,
+  });
+  await writeFile(
+    join(calibrationDir(root), "defaults.json"),
+    JSON.stringify({ iso: "100" }),
+  );
   await assert.rejects(ensureDefaults(root), /Schlüssel aperture/);
 });
 test("takeReference retries after a failed detection and saves reference.jpg", async () => {
-  const s = await makeSession({ results: [NO_COIN, OK], script: ["enter", "enter"] });
+  const s = await makeSession({
+    results: [NO_COIN, OK],
+    script: ["enter", "enter"],
+  });
   assert.equal(await isCalibrated(s.root), false);
   await ensureDefaults(s.root);
   const ref = await takeReference(s.ctx);
-  assert.equal(ref!.image, referencePath(s.root)); assert.deepEqual(ref!.settings, s.ctx.defaults);
+  assert.equal(ref!.image, referencePath(s.root));
+  assert.deepEqual(ref!.settings, s.ctx.defaults);
   assert.equal(await isCalibrated(s.root), true);
   assert.ok(!existsSync(join(calibrationDir(s.root), "tmp")));
   assert.equal(s.ui.countdowns, 2);
 });
 test("takeReference: q returns null and changes nothing", async () => {
   const s = await makeSession({ script: ["q"] });
-  assert.equal(await takeReference(s.ctx), null); assert.ok(!existsSync(referencePath(s.root)));
+  assert.equal(await takeReference(s.ctx), null);
+  assert.ok(!existsSync(referencePath(s.root)));
 });
 ```
 
@@ -1827,6 +2804,7 @@ Run: `node --test test/calibration/store.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/calibration/store.ts src/calibration/reference.ts test/calibration/store.test.ts
 git commit -m "feat: calibration defaults, reference shot"
@@ -1837,10 +2815,12 @@ git commit -m "feat: calibration defaults, reference shot"
 ### Task 20: Calibration workflow (A/B with DJV)
 
 **Files:**
+
 - Create: `src/calibration/workflow.ts`
 - Test: `test/calibration/workflow.test.ts`
 
 **Interfaces:**
+
 - Consumes: `CalibShot`, `captureCalibShot` (19), `saveDefaults`, `saveReference`, `calibrationDir` (19), `KEY_LABELS`, `CAMERA_KEYS`, `stepChoice` (11), `Viewer` (16), `SessionContext`.
 - Produces:
   - `editParameters(ui: Ui, start: CameraSettings, choices: ChoiceLists): Promise<CameraSettings | null>`:
@@ -1866,23 +2846,56 @@ git commit -m "feat: calibration defaults, reference shot"
 
 ```ts
 const setup = async (o: Parameters<typeof makeSession>[0]) => {
-  const s = await makeSession(o); await ensureDefaults(s.root);
-  await mkdir(calibrationDir(s.root), { recursive: true }); await writeFile(referencePath(s.root), "old");
-  return { s, start: { image: referencePath(s.root), settings: s.ctx.defaults, quality: null, exif: null } };
+  const s = await makeSession(o);
+  await ensureDefaults(s.root);
+  await mkdir(calibrationDir(s.root), { recursive: true });
+  await writeFile(referencePath(s.root), "old");
+  return {
+    s,
+    start: {
+      image: referencePath(s.root),
+      settings: s.ctx.defaults,
+      quality: null,
+      exif: null,
+    },
+  };
 };
 test("editParameters: step, direct entry, invalid value, back", async () => {
   // key() and line() consume the same queue in call order; "400" and "Custom" answer the two "=" prompts
-  const ui = new ScriptedUi(["3", "+", "+", "enter", "2", "=", "400", "enter", "4", "=", "Custom", "enter", "enter"]);
+  const ui = new ScriptedUi([
+    "3",
+    "+",
+    "+",
+    "enter",
+    "2",
+    "=",
+    "400",
+    "enter",
+    "4",
+    "=",
+    "Custom",
+    "enter",
+    "enter",
+  ]);
   const r = await editParameters(ui, BASELINE, realChoices());
   assert.deepEqual(r, { ...BASELINE, exposurecompensation: "1.5", iso: "400" });
   assert.ok(ui.output.some((l) => l.includes("Ungültiger Wert: Custom")));
 });
 test("better → confirm: defaults and reference replaced, tmp removed", async () => {
-  const { s, start } = await setup({ results: [OK], script: ["3", "+", "enter", "enter", "b", "r"] });
+  const { s, start } = await setup({
+    results: [OK],
+    script: ["3", "+", "enter", "enter", "b", "r"],
+  });
   assert.equal(await runCalibration(s.ctx, start), "confirmed");
-  assert.equal((await ensureDefaults(s.root)).settings.exposurecompensation, "1");
+  assert.equal(
+    (await ensureDefaults(s.root)).settings.exposurecompensation,
+    "1",
+  );
   assert.notEqual(await readFile(referencePath(s.root), "utf8"), "old");
-  assert.deepEqual(s.viewer.calls.map((c) => c[0]), ["preview", "compare", "close"]);
+  assert.deepEqual(
+    s.viewer.calls.map((c) => c[0]),
+    ["preview", "compare", "close"],
+  );
   assert.ok(!existsSync(join(calibrationDir(s.root), "tmp")));
 });
 test("worse ends without changes", async () => {
@@ -1891,9 +2904,28 @@ test("worse ends without changes", async () => {
   assert.equal(await readFile(referencePath(s.root), "utf8"), "old");
 });
 test("better, continue, worse → offer best as reference", async () => {
-  const { s, start } = await setup({ results: [OK, OK], script: ["3", "+", "enter", "enter", "b", "w", "3", "+", "enter", "enter", "s", "j"] });
+  const { s, start } = await setup({
+    results: [OK, OK],
+    script: [
+      "3",
+      "+",
+      "enter",
+      "enter",
+      "b",
+      "w",
+      "3",
+      "+",
+      "enter",
+      "enter",
+      "s",
+      "j",
+    ],
+  });
   assert.equal(await runCalibration(s.ctx, start), "confirmed");
-  assert.equal((await ensureDefaults(s.root)).settings.exposurecompensation, "1");
+  assert.equal(
+    (await ensureDefaults(s.root)).settings.exposurecompensation,
+    "1",
+  );
   assert.ok(s.ui.prompts.some((p) => p.includes("Bestes Bild dieser Sitzung")));
 });
 test("q aborts without changes; missing DJV warns", async () => {
@@ -1904,6 +2936,7 @@ test("q aborts without changes; missing DJV warns", async () => {
   assert.ok(s.ui.output.some((l) => l.includes("DJV nicht gefunden")));
 });
 ```
+
 - [ ] **Step 2: Run and confirm failure**
 
 Run: `node --test test/calibration/workflow.test.ts`
@@ -1917,6 +2950,7 @@ Run: `node --test test/calibration/workflow.test.ts && npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
+
 ```bash
 git add src/calibration/workflow.ts test/calibration/workflow.test.ts test/fakes.ts
 git commit -m "feat: calibration A/B workflow with DJV comparison"
@@ -1927,11 +2961,13 @@ git commit -m "feat: calibration A/B workflow with DJV comparison"
 ### Task 21: CLI entry points, preflight, doctor, acceptance
 
 **Files:**
+
 - Create: `src/cli/preflight.ts`, `src/cli/capture.ts`, `src/cli/calibrate.ts`
 - Modify: `scripts/doctor.ts`, `package.json` (`"capture": "node src/cli/capture.ts"`, `"calibrate": "node src/cli/calibrate.ts"`)
 - Test: `test/cli/preflight.test.ts`
 
 **Interfaces:**
+
 - Consumes: everything above.
 - Produces: `preflight(deps: { cfg: Config; camera: Camera; pipeline: Pipeline; ui: Ui; viewer: Viewer; now?: () => Date }): Promise<SessionContext | null>`, in this order:
   1. `camera.info()`. On a technical error: print the full message, then `ui.key("Enter = erneut versuchen · q = beenden")`.
@@ -1951,30 +2987,59 @@ git commit -m "feat: calibration A/B workflow with DJV comparison"
 
 ```ts
 const deps = async (o: { info?: CameraInfo[]; script?: string[] } = {}) => {
-  const root = await tmpDir(); const ui = new ScriptedUi(o.script ?? []);
+  const root = await tmpDir();
+  const ui = new ScriptedUi(o.script ?? []);
   const infos = [...(o.info ?? [])];
   const camera = new FakeCamera({ shots: [] });
   if (infos.length) camera.info = async () => infos.shift()!;
-  return { root, ui, d: { cfg: testConfig({ paths: { coinsRoot: root } }), camera, pipeline: new FakePipeline([]), ui, viewer: new FakeViewer() } };
+  return {
+    root,
+    ui,
+    d: {
+      cfg: testConfig({ paths: { coinsRoot: root } }),
+      camera,
+      pipeline: new FakePipeline([]),
+      ui,
+      viewer: new FakeViewer(),
+    },
+  };
 };
-const info = (exposureMode: string): CameraInfo => ({ model: "Canon EOS 1300D", lens: "x", exposureMode });
+const info = (exposureMode: string): CameraInfo => ({
+  model: "Canon EOS 1300D",
+  lens: "x",
+  exposureMode,
+});
 test("preflight returns a context and creates defaults and .incoming", async () => {
-  const { root, d } = await deps(); const ctx = await preflight(d);
-  assert.ok(ctx); assert.deepEqual(ctx.defaults, BASELINE); assert.ok(existsSync(join(root, ".incoming")));
+  const { root, d } = await deps();
+  const ctx = await preflight(d);
+  assert.ok(ctx);
+  assert.deepEqual(ctx.defaults, BASELINE);
+  assert.ok(existsSync(join(root, ".incoming")));
 });
 test("preflight waits for the mode dial", async () => {
-  const { ui, d } = await deps({ info: [info("TV"), info("AV")], script: ["enter"] });
-  assert.ok(await preflight(d)); assert.ok(ui.output.some((l) => l.includes("erwartet Av")));
+  const { ui, d } = await deps({
+    info: [info("TV"), info("AV")],
+    script: ["enter"],
+  });
+  assert.ok(await preflight(d));
+  assert.ok(ui.output.some((l) => l.includes("erwartet Av")));
 });
 test("preflight rejects defaults the camera does not offer", async () => {
-  const { root, ui, d } = await deps(); await saveDefaults(root, { ...BASELINE, whitebalance: "Custom" });
+  const { root, ui, d } = await deps();
+  await saveDefaults(root, { ...BASELINE, whitebalance: "Custom" });
   assert.equal(await preflight(d), null);
-  assert.ok(ui.output.some((l) => l.includes("whitebalance=Custom") && l.includes("Manual")));
+  assert.ok(
+    ui.output.some(
+      (l) => l.includes("whitebalance=Custom") && l.includes("Manual"),
+    ),
+  );
 });
 test("preflight lists unfinished folders without touching them", async () => {
-  const { root, ui, d } = await deps(); await mkdir(join(root, "COIN-0003/originals"), { recursive: true });
+  const { root, ui, d } = await deps();
+  await mkdir(join(root, "COIN-0003/originals"), { recursive: true });
   await preflight(d);
-  assert.ok(ui.output.some((l) => l.includes("COIN-0003"))); assert.ok(existsSync(join(root, "COIN-0003/originals")));
+  assert.ok(ui.output.some((l) => l.includes("COIN-0003")));
+  assert.ok(existsSync(join(root, "COIN-0003/originals")));
 });
 ```
 
@@ -1996,6 +3061,7 @@ Run: `printf 'q\n' | npm run capture; echo "exit=$?"`
 Expected: preflight output appears (any unfinished-folder warning); then either `Bitte eine beliebige Münze einlegen und Enter drücken` (not calibrated) or `Neue Münze: Bitte Vorderseite einlegen und Enter drücken.`; `q` ends it; `exit=0`. `coins/_calibration/defaults.json` exists and no `COIN-*` folder was created.
 
 - [ ] **Step 6: Commit**
+
 ```bash
 git add src/cli scripts/doctor.ts package.json package-lock.json test/cli/preflight.test.ts
 git commit -m "feat: capture and calibrate CLIs with preflight checks"
@@ -2004,6 +3070,7 @@ git commit -m "feat: capture and calibrate CLIs with preflight checks"
 - [ ] **Step 7: [needs Lukas] Desk acceptance run**
 
 Lukas runs these in a real terminal. Record the results in `docs/hardware/acceptance.md` and commit it.
+
 1. `npm run capture` with no `coins/_calibration/reference.jpg` → reference shot → calibration (one A/B round in DJV, `b` → `r`) → session starts.
 2. Normal coin: av, flip, rv → the folder contains exactly the files of spec §7; the Markdown frontmatter is plausible; `o`/`p` work.
 3. Do not flip before rv → duplicate prompt; Enter after flipping → complete.

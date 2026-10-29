@@ -14,14 +14,21 @@ import { preflight } from "./preflight.ts";
 const cfg = loadConfig();
 const ui = new TerminalUi();
 try {
-  const ctx = await preflight({ cfg, camera: new GPhoto2Camera(), pipeline: createPipeline(cfg), ui, viewer: new SystemViewer({ djvPath: cfg.paths.djv }) });
+  const ctx = await preflight({
+    cfg,
+    camera: new GPhoto2Camera(),
+    pipeline: createPipeline(cfg),
+    ui,
+    viewer: new SystemViewer({ djvPath: cfg.paths.djv }),
+  });
   if (ctx) {
     let run = true;
     if (!(await isCalibrated(cfg.paths.coinsRoot))) {
       // First start (spec 9.1): reference shot with the defaults, then one calibration round, then the session.
       const reference = await takeReference(ctx);
       if (!reference) run = false;
-      else if ((await runCalibration(ctx, reference)) === "aborted") run = false;
+      else if ((await runCalibration(ctx, reference)) === "aborted")
+        run = false;
       else ctx.defaults = (await ensureDefaults(cfg.paths.coinsRoot)).settings;
     }
     while (run) {
@@ -31,7 +38,10 @@ try {
   }
 } catch (e) {
   if (e instanceof AbortError) ui.print("Abgebrochen");
-  else { ui.print(e instanceof Error ? (e.stack ?? e.message) : String(e)); process.exitCode = 1; }
+  else {
+    ui.print(e instanceof Error ? (e.stack ?? e.message) : String(e));
+    process.exitCode = 1;
+  }
 } finally {
   ui.close();
 }

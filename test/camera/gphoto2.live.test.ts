@@ -14,7 +14,10 @@ test("live: info and choices", { skip }, async () => {
   assert.deepEqual(invalidSettings(BASELINE, await cam.choices()), []);
 });
 test("live: capture yields a 5184x3456 JPG and a CR2", { skip }, async () => {
-  const r = await new GPhoto2Camera().capture(BASELINE, { autofocus: false, outDir: await tmpDir() });
+  const r = await new GPhoto2Camera().capture(BASELINE, {
+    autofocus: false,
+    outDir: await tmpDir(),
+  });
   const m = await sharp(r.jpgPath).metadata();
   assert.deepEqual([m.width, m.height], [5184, 3456]);
   assert.ok(existsSync(r.rawPath));

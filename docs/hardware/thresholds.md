@@ -7,33 +7,33 @@ Münzen nicht als Fehler gelten.
 
 ## Verwendete Samples
 
-| Sample | echt / fehlt |
-|---|---|
-| good_av, good_av_dup, good_rv, under, over, blurry, empty, cut_off, dark, shiny, large, small, wide | alle fehlen |
+| Sample                                                                                              | echt / fehlt |
+| --------------------------------------------------------------------------------------------------- | ------------ |
+| good_av, good_av_dup, good_rv, under, over, blurry, empty, cut_off, dark, shiny, large, small, wide | alle fehlen  |
 
 Messtabelle von `npm run samples:measure`: leer (`Keine Samples gemessen`). Die Vorschläge (`suggestThresholds`)
 liefern ohne ok-Beispiele keinen Wert; nur `maxSimilarity` hat den Standard 0.9.
 
 ## Aktuelle Werte
 
-| Schwelle | Wert | Grundlage |
-|---|---|---|
-| `minBrightness` | 40 | Plan-Startwert (nicht gemessen) |
-| `maxClippingRatio` | 0.1 | Plan-Startwert (nicht gemessen) |
-| `minSharpness` | 20 | Plan-Startwert (nicht gemessen) |
-| `maxSimilarity` | 0.9 | Plan-Startwert (kein Paar gemessen) |
+| Schwelle           | Wert | Grundlage                           |
+| ------------------ | ---- | ----------------------------------- |
+| `minBrightness`    | 40   | Plan-Startwert (nicht gemessen)     |
+| `maxClippingRatio` | 0.1  | Plan-Startwert (nicht gemessen)     |
+| `minSharpness`     | 20   | Plan-Startwert (nicht gemessen)     |
+| `maxSimilarity`    | 0.9  | Plan-Startwert (kein Paar gemessen) |
 
 ## Einzige echte Messpunkte (informativ, kein Ersatz für die Sample-Messung)
 
 Aus der Probeaufnahme `samples/probe_lv.jpg` (angeschnittene Münze am Bildrand, 16:9-JPG der Live-View-Aufnahme,
 Münzquadrat deshalb an den Bildrand geklemmt), einmalig von Hand gemessen mit `measureQuality` (Messgröße 1024):
 
-| Variante | Schärfe | Helligkeit | Clipping |
-|---|---|---|---|
-| Original | 48.8 | 127 | 0.0 % |
-| Weichzeichner σ=3 | 6.9 | 128 | 0.0 % |
-| Helligkeit ×0.35 | 6.9 | 44 | 0.0 % |
-| Helligkeit ×1.9 | 131.1 | 215 | 48.8 % |
+| Variante          | Schärfe | Helligkeit | Clipping |
+| ----------------- | ------- | ---------- | -------- |
+| Original          | 48.8    | 127        | 0.0 %    |
+| Weichzeichner σ=3 | 6.9     | 128        | 0.0 %    |
+| Helligkeit ×0.35  | 6.9     | 44         | 0.0 %    |
+| Helligkeit ×1.9   | 131.1   | 215        | 48.8 %   |
 
 Die Startwerte (Schärfe 20, Helligkeit 40, Clipping 0.1) trennen auf diesem einen Bild die künstlichen Fehlerfälle
 vom Original, mehr belegt das nicht. Der Test mit künstlich überbelichtetem Bild (×1.9) zeigt außerdem: Eine helle Silbermünze

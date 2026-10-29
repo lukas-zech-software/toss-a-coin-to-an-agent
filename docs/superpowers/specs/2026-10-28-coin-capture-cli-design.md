@@ -16,12 +16,14 @@ Die Ordner sind die Grundlage für einen späteren, separaten Workflow (Projekt 
 ## 2. Ziele, Nicht-Ziele, Anti-Ziele
 
 **Ziele**
+
 - Interaktives CLI, das auf Tastendruck Vorder- und Rückseite einer Münze aufnimmt. [entschieden]
 - Deterministische Qualitätsprüfung (Münzerkennung, Belichtung, Schärfe, Doppelaufnahme) mit automatischer Korrektur per `gphoto2`. [entschieden]
 - Pro Münze ein Ordner mit fortlaufender ID: zwei finale Bilder, Markdown-Datei, Unterordner mit RAW und Originalen. [entschieden]
 - Kalibrierungs-Workflow für die Standard-Kameraparameter mit Referenzbild und A/B-Vergleich in DJV. [entschieden]
 
 **Nicht-Ziele (diese Version)**
+
 - KI-Agent, Sprach-/Texteingabe einer Münzbeschreibung, Entitätsextraktion. [entschieden]
 - Knowledge Base (`kb/index.json`, `kb/coins/`, `kb/assets/`). [entschieden]
 - Bestimmung, Zustandsbewertung, Wertschätzung (Projekt 2) und Anzeigen auf Münzbörsen (Projekt 3). [entschieden]
@@ -29,6 +31,7 @@ Die Ordner sind die Grundlage für einen späteren, separaten Workflow (Projekt 
 - Historie früherer Referenzbilder/Standardparameter. [Annahme]
 
 **Anti-Ziele (wäre ein Fehlschlag, auch wenn es technisch läuft)**
+
 - Ein Münzordner gilt als „fertig“, obwohl ein Bild unscharf/falsch belichtet ist oder zweimal dieselbe Seite enthält.
 - Ein fertiger Ordner ist mit Zwischenversuchen zugemüllt.
 - Das Tool bleibt bei einem Fehler stumm hängen oder bricht ab, ohne Details zu zeigen und eine Wahl anzubieten.
@@ -49,10 +52,10 @@ Die Ordner sind die Grundlage für einen späteren, separaten Workflow (Projekt 
 
 ## 4. Befehle
 
-| Befehl | Zweck |
-|---|---|
-| `npm run capture` | Startet die Erfassungs-Session (inkl. Startprüfung Kalibrierung, §9.1). |
-| `npm run calibrate` | Startet den Kalibrierungs-Workflow explizit (§9.2). |
+| Befehl              | Zweck                                                                   |
+| ------------------- | ----------------------------------------------------------------------- |
+| `npm run capture`   | Startet die Erfassungs-Session (inkl. Startprüfung Kalibrierung, §9.1). |
+| `npm run calibrate` | Startet den Kalibrierungs-Workflow explizit (§9.2).                     |
 
 Tastenbelegung [Annahme]: `Enter` bestätigt/löst aus; Menüs mit einzelnen Buchstaben (siehe unten); `q` beendet in jedem Wartezustand; `Ctrl+C` beendet jederzeit (siehe §6.6).
 
@@ -96,13 +99,13 @@ Start → Startprüfung Kalibrierung (§9.1)
 
 Die Prüfungen und ihre Korrekturen sind als **eine deklarative Regeltabelle** an einer Stelle hinterlegt: pro Fehler die Erkennung (Messwert + Schwelle aus der Konfiguration) und direkt daneben die Korrekturanweisung (gphoto2-Konfigschlüssel + Richtung/Schrittweite). [entschieden]
 
-| Fehler | Merkmal | Erkennung | Korrektur pro Versuch |
-|---|---|---|---|
-| `no_coin` | Erkennung | kein Kreis gefunden | keine – sofort Fehlermenü |
-| `coin_cut_off` | Erkennung | Münzkreis ragt über den Bildrand | keine – sofort Fehlermenü |
-| `underexposed` | Belichtung | mittlere Helligkeit < Schwelle | `exposurecompensation` eine Stufe höher (+1/3 EV) |
-| `overexposed` | Belichtung | Clipping-Anteil > Schwelle | `exposurecompensation` eine Stufe niedriger (−1/3 EV) |
-| `blurry` | Schärfe | Laplace-Varianz < Schwelle | Korrektur 1: Autofokus per `autofocusdrive` neu auslösen und aufnehmen; Korrektur 2+: `iso` eine Stufe höher (kürzere Verschlusszeit gegen Verwacklung). Falls der Hardware-Check zeigt, dass `manualfocusdrive` zuverlässig funktioniert, kann der Builder zusätzlich kleine Fokusschritte einsetzen. |
+| Fehler         | Merkmal    | Erkennung                        | Korrektur pro Versuch                                                                                                                                                                                                                                                                                  |
+| -------------- | ---------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `no_coin`      | Erkennung  | kein Kreis gefunden              | keine – sofort Fehlermenü                                                                                                                                                                                                                                                                              |
+| `coin_cut_off` | Erkennung  | Münzkreis ragt über den Bildrand | keine – sofort Fehlermenü                                                                                                                                                                                                                                                                              |
+| `underexposed` | Belichtung | mittlere Helligkeit < Schwelle   | `exposurecompensation` eine Stufe höher (+1/3 EV)                                                                                                                                                                                                                                                      |
+| `overexposed`  | Belichtung | Clipping-Anteil > Schwelle       | `exposurecompensation` eine Stufe niedriger (−1/3 EV)                                                                                                                                                                                                                                                  |
+| `blurry`       | Schärfe    | Laplace-Varianz < Schwelle       | Korrektur 1: Autofokus per `autofocusdrive` neu auslösen und aufnehmen; Korrektur 2+: `iso` eine Stufe höher (kürzere Verschlusszeit gegen Verwacklung). Falls der Hardware-Check zeigt, dass `manualfocusdrive` zuverlässig funktioniert, kann der Builder zusätzlich kleine Fokusschritte einsetzen. |
 
 - Im Modus Av wählt die Kamera die Verschlusszeit selbst; „höhere Belichtung“ wird daher über die Belichtungskorrektur umgesetzt. [Annahme]
 - Gültige Stufen werden von der Kamera gelesen (`gphoto2 --get-config` Choice-Liste); das Ende der Skala gilt als nicht behebbar.
@@ -169,8 +172,8 @@ YAML-Frontmatter mit allen lokal bekannten Daten, darunter der Kommentar. Keine 
 ```markdown
 ---
 id: COIN-0001
-status: complete              # complete | incomplete
-described: false              # wird erst von Projekt 2 gesetzt
+status: complete # complete | incomplete
+described: false # wird erst von Projekt 2 gesetzt
 capture:
   started_at: 2026-10-28T14:02:11+01:00
   completed_at: 2026-10-28T14:03:40+01:00
@@ -180,16 +183,36 @@ images:
   av: COIN-0001_av.jpg
   rv: COIN-0001_rv.jpg
 originals:
-  av: { raw: originals/COIN-0001_av.CR2, jpg: originals/COIN-0001_av_original.jpg }
-  rv: { raw: originals/COIN-0001_rv.CR2, jpg: originals/COIN-0001_rv_original.jpg }
+  av:
+    {
+      raw: originals/COIN-0001_av.CR2,
+      jpg: originals/COIN-0001_av_original.jpg,
+    }
+  rv:
+    {
+      raw: originals/COIN-0001_rv.CR2,
+      jpg: originals/COIN-0001_rv_original.jpg,
+    }
 sides:
   av:
-    settings: { aperture: "8", iso: "100", exposurecompensation: "0.6", whitebalance: "Custom", focal_length_mm: 135, shutterspeed: "1/8" }   # Brennweite/Zeit aus EXIF
+    settings: {
+        aperture: "8",
+        iso: "100",
+        exposurecompensation: "0.6",
+        whitebalance: "Custom",
+        focal_length_mm: 135,
+        shutterspeed: "1/8",
+      } # Brennweite/Zeit aus EXIF
     quality: { sharpness: 412.5, mean_brightness: 178, clipping_ratio: 0.004 }
-    coin: { center: { x: 1730, y: 2590 }, radius: 1210 }   # Pixel im gedrehten Original
+    coin: { center: { x: 1730, y: 2590 }, radius: 1210 } # Pixel im gedrehten Original
     warnings: []
     attempts:
-      - { n: 1, settings: { exposurecompensation: "0.3" }, result: underexposed, message: "Helligkeit 48 < 60" }
+      - {
+          n: 1,
+          settings: { exposurecompensation: "0.3" },
+          result: underexposed,
+          message: "Helligkeit 48 < 60",
+        }
       - { n: 2, settings: { exposurecompensation: "0.6" }, result: ok }
   rv: { … }
 similarity_av_rv: 0.31
@@ -233,6 +256,7 @@ Automatische Korrekturen der Erfassungs-Session ändern die Standardparameter ni
 ## 10. Konfiguration [Annahme]
 
 Eine versionierte Konfigurationsdatei im Projekt (z. B. `coin-capture.config.json`) enthält:
+
 - Pfade: Wurzelordner `coins/`, DJV-Pfad.
 - Margin (Default 15 %), Messauflösung für die Qualitätsprüfung.
 - Schwellwerte für Helligkeit, Clipping, Schärfe, Ähnlichkeit (Doppelaufnahme).
@@ -245,6 +269,7 @@ Startwerte der Schwellen setzt der Builder (die Laplace-Schwelle muss empirisch 
 ## 11. Erster Schritt der Umsetzung: Hardware-Check und Testbilder [Annahme]
 
 Da die Kamera angeschlossen ist, beginnt die Umsetzung mit einem kurzen Hardware-Check, bevor Kamera-Schicht, Korrekturregeln und Schwellen festgelegt werden:
+
 - Echte `gphoto2`-Konfiguration der 1300D auslesen und als Referenz ablegen: Schlüsselnamen, Choice-Listen (Belichtungskorrektur-Stufen, ISO, Weißabgleich-Label „Custom“, Blende), ob Fokus/AF-Auslösung ohne Live View funktioniert, welche Einstellungen nur physische Schalter sind (Modus Av, AF/MF am Objektiv).
 - Testaufnahmen machen und daraus einen Beispielbild-Satz für automatisierte Tests bilden: gut, unscharf, unter-/überbelichtet, ohne Münze, angeschnitten, gleiche Seite doppelt, dunkel patiniert, glänzend, große und kleine Münze bzw. unterschiedliche Brennweite. Für Fälle, die sich nicht künstlich herstellen lassen, hilft Lukas am Schreibtisch.
 - Aus den Messwerten dieser Bilder die Startwerte der Schwellen ableiten.

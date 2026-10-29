@@ -26,10 +26,19 @@ if (center) {
   if (!width || !height) throw new Error("Bildgröße nicht lesbar");
   const size = Math.min(800, width, height);
   await sharp(src)
-    .extract({ left: Math.floor((width - size) / 2), top: Math.floor((height - size) / 2), width: size, height: size })
+    .extract({
+      left: Math.floor((width - size) / 2),
+      top: Math.floor((height - size) / 2),
+      width: size,
+      height: size,
+    })
     .jpeg({ quality: 92 })
     .toFile(dst);
 } else {
-  await sharp(src).rotate(90).resize({ width: 1200 }).jpeg({ quality: 85 }).toFile(dst);
+  await sharp(src)
+    .rotate(90)
+    .resize({ width: 1200 })
+    .jpeg({ quality: 85 })
+    .toFile(dst);
 }
 console.log(dst);

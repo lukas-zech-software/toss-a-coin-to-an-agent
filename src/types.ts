@@ -9,17 +9,39 @@ export type CoinCircle = { cx: number; cy: number; r: number };
 export type Detection =
   | { found: false }
   | { found: true; circle: CoinCircle; cutOff: boolean; inlierRatio: number };
-export type CropBox = { left: number; top: number; size: number; marginRatio: number; reduced: boolean };
-export type QualityMetrics = { sharpness: number; meanBrightness: number; clippingRatio: number };
-export type ExifInfo = { focalLengthMm: number | null; shutterSpeed: string | null; fNumber: number | null; iso: number | null };
+export type CropBox = {
+  left: number;
+  top: number;
+  size: number;
+  marginRatio: number;
+  reduced: boolean;
+};
+export type QualityMetrics = {
+  sharpness: number;
+  meanBrightness: number;
+  clippingRatio: number;
+};
+export type ExifInfo = {
+  focalLengthMm: number | null;
+  shutterSpeed: string | null;
+  fNumber: number | null;
+  iso: number | null;
+};
 export type ProcessedShot = {
-  paths: ShotPaths;              // original + raw always exist; crop only when cropBox !== null
-  width: number; height: number; // rotated original
+  paths: ShotPaths; // original + raw always exist; crop only when cropBox !== null
+  width: number;
+  height: number; // rotated original
   detection: Detection;
-  cropBox: CropBox | null;       // null when no coin or coin cut off
+  cropBox: CropBox | null; // null when no coin or coin cut off
   quality: QualityMetrics | null;
   exif: ExifInfo;
   warnings: string[];
 };
 
-export type AttemptRecord = { n: number; settings: CameraSettings; autofocus: boolean; shot: ProcessedShot; findings: Finding[] };
+export type AttemptRecord = {
+  n: number;
+  settings: CameraSettings;
+  autofocus: boolean;
+  shot: ProcessedShot;
+  findings: Finding[];
+};

@@ -18,7 +18,11 @@ export type SystemViewerDeps = {
 function defaultSpawn(cmd: string, args: string[]): { kill(): void } {
   const child = nodeSpawn(cmd, args, { stdio: "ignore" });
   child.on("error", () => {}); // a missing/crashing viewer must not crash the session
-  return { kill: () => { child.kill(); } };
+  return {
+    kill: () => {
+      child.kill();
+    },
+  };
 }
 
 /** macOS viewers: Preview and Finder via `open`, DJV (side by side) for the calibration comparison. */
@@ -33,11 +37,21 @@ export class SystemViewer implements Viewer {
     this.spawnCmd = deps.spawn ?? defaultSpawn;
     this.exists = deps.exists ?? existsSync;
   }
-  async preview(paths: string[]): Promise<void> { await this.runCmd("open", ["-a", "Preview", ...paths]); }
-  async finder(dir: string): Promise<void> { await this.runCmd("open", [dir]); }
+  async preview(paths: string[]): Promise<void> {
+    await this.runCmd("open", ["-a", "Preview", ...paths]);
+  }
+  async finder(dir: string): Promise<void> {
+    await this.runCmd("open", [dir]);
+  }
   async compare(a: string, b: string): Promise<CompareHandle> {
     if (this.exists(this.djvPath)) {
-      const child = this.spawnCmd(this.djvPath, [a, "-b", b, "-c", "Horizontal"]);
+      const child = this.spawnCmd(this.djvPath, [
+        a,
+        "-b",
+        b,
+        "-c",
+        "Horizontal",
+      ]);
       return { usedDjv: true, close: () => child.kill() };
     }
     await this.preview([a, b]);

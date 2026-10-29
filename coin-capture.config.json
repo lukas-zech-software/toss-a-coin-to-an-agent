@@ -1,10 +1,28 @@
 {
-  "paths": { "coinsRoot": "coins", "djv": "/System/Volumes/Data/Applications/djv.app/Contents/MacOS/djv" },
-  "detection": { "proxyMaxEdge": 1200, "minAreaRatio": 0.005, "minInlierRatio": 0.8, "minArcCoverage": 0.5, "minContrast": 0.15 },
+  "paths": {
+    "coinsRoot": "coins",
+    "djv": "/System/Volumes/Data/Applications/djv.app/Contents/MacOS/djv"
+  },
+  "detection": {
+    "proxyMaxEdge": 1200,
+    "minAreaRatio": 0.005,
+    "minInlierRatio": 0.8,
+    "minArcCoverage": 0.5,
+    "minContrast": 0.15
+  },
   "crop": { "marginRatio": 0.15, "jpegQuality": 95 },
   "quality": { "measureSize": 1024, "maskRadiusRatio": 0.95, "clipLevel": 250 },
   "similarity": { "gridSize": 32 },
-  "thresholds": { "minBrightness": 40, "maxClippingRatio": 0.1, "minSharpness": 20, "maxSimilarity": 0.9 },
-  "corrections": { "maxAutoPerFeature": 2, "attemptsPerRetry": 2, "steps": { "exposurecompensation": 1, "iso": 1 } },
+  "thresholds": {
+    "minBrightness": 40,
+    "maxClippingRatio": 0.1,
+    "minSharpness": 20,
+    "maxSimilarity": 0.9
+  },
+  "corrections": {
+    "maxAutoPerFeature": 2,
+    "attemptsPerRetry": 2,
+    "steps": { "exposurecompensation": 1, "iso": 1 }
+  },
   "session": { "countdownSeconds": 3 }
 }

@@ -7,7 +7,14 @@ import type { Viewer } from "../ui/viewer.ts";
 
 /** Everything the workflows need; camera, pipeline, UI and viewer are injected (fakes in tests). */
 export type SessionContext = {
-  cfg: Config; camera: Camera; pipeline: Pipeline; ui: Ui; viewer: Viewer;
-  defaults: CameraSettings; choices: ChoiceLists; cameraInfo: CameraInfo;
-  incomingDir: string; now: () => Date;
+  cfg: Config;
+  camera: Camera;
+  pipeline: Pipeline;
+  ui: Ui;
+  viewer: Viewer;
+  defaults: CameraSettings;
+  choices: ChoiceLists;
+  cameraInfo: CameraInfo;
+  incomingDir: string;
+  now: () => Date;
 };

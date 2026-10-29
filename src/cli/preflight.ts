@@ -12,13 +12,22 @@ import { findUnfinishedCoins } from "../store/coins.ts";
 import type { Ui } from "../ui/ui.ts";
 import type { Viewer } from "../ui/viewer.ts";
 
-export type PreflightDeps = { cfg: Config; camera: Camera; pipeline: Pipeline; ui: Ui; viewer: Viewer; now?: () => Date };
+export type PreflightDeps = {
+  cfg: Config;
+  camera: Camera;
+  pipeline: Pipeline;
+  ui: Ui;
+  viewer: Viewer;
+  now?: () => Date;
+};
 
 /**
  * Everything that can be checked before the first coin: camera reachable, mode dial on Av, the camera's choice lists,
  * folders, defaults.json against those choices. Returns null when the session must not start (q, invalid defaults).
  */
-export async function preflight(deps: PreflightDeps): Promise<SessionContext | null> {
+export async function preflight(
+  deps: PreflightDeps,
+): Promise<SessionContext | null> {
   const { cfg, camera, ui } = deps;
   const root = cfg.paths.coinsRoot;
 
@@ -30,7 +39,13 @@ export async function preflight(deps: PreflightDeps): Promise<SessionContext | n
       } catch (e) {
         if (e instanceof AbortError) throw e;
         ui.print(e instanceof Error ? e.message : String(e));
-        if ((await ui.key("Enter = erneut versuchen · q = beenden", ["enter", "q"])) === "q") return null;
+        if (
+          (await ui.key("Enter = erneut versuchen · q = beenden", [
+            "enter",
+            "q",
+          ])) === "q"
+        )
+          return null;
       }
     }
   }
@@ -41,8 +56,16 @@ export async function preflight(deps: PreflightDeps): Promise<SessionContext | n
       info = await retrying(() => camera.info());
       if (!info) return null;
       if (info.exposureMode === "AV") break;
-      ui.print(`Moduswahlrad steht auf ${info.exposureMode} – erwartet Av. Bitte auf Av stellen.`);
-      if ((await ui.key("Enter = erneut prüfen · q = beenden", ["enter", "q"])) === "q") return null;
+      ui.print(
+        `Moduswahlrad steht auf ${info.exposureMode} – erwartet Av. Bitte auf Av stellen.`,
+      );
+      if (
+        (await ui.key("Enter = erneut prüfen · q = beenden", [
+          "enter",
+          "q",
+        ])) === "q"
+      )
+        return null;
     }
 
     const choices: ChoiceLists | null = await retrying(() => camera.choices());
@@ -54,26 +77,44 @@ export async function preflight(deps: PreflightDeps): Promise<SessionContext | n
     await mkdir(incomingDir, { recursive: true });
 
     const unfinished = await findUnfinishedCoins(root);
-    if (unfinished.length) ui.print(`Warnung: Ordner ohne Markdown-Datei (werden nicht verändert): ${unfinished.join(", ")}`);
+    if (unfinished.length)
+      ui.print(
+        `Warnung: Ordner ohne Markdown-Datei (werden nicht verändert): ${unfinished.join(", ")}`,
+      );
 
     let defaults;
     try {
       ({ settings: defaults } = await ensureDefaults(root));
     } catch (e) {
       ui.print(e instanceof Error ? e.message : String(e));
-      ui.print("Bitte defaults.json korrigieren oder neu kalibrieren (npm run calibrate).");
+      ui.print(
+        "Bitte defaults.json korrigieren oder neu kalibrieren (npm run calibrate).",
+      );
       return null;
     }
     const invalid = invalidSettings(defaults, choices);
     if (invalid.length) {
-      for (const key of invalid) ui.print(`defaults.json: ${key}=${defaults[key]} wird von der Kamera nicht angeboten (erlaubt: ${choices[key].join(", ")})`);
-      ui.print("Bitte defaults.json korrigieren oder neu kalibrieren (npm run calibrate).");
+      for (const key of invalid)
+        ui.print(
+          `defaults.json: ${key}=${defaults[key]} wird von der Kamera nicht angeboten (erlaubt: ${choices[key].join(", ")})`,
+        );
+      ui.print(
+        "Bitte defaults.json korrigieren oder neu kalibrieren (npm run calibrate).",
+      );
       return null;
     }
 
     return {
-      cfg, camera, pipeline: deps.pipeline, ui, viewer: deps.viewer, defaults, choices, cameraInfo: info,
-      incomingDir, now: deps.now ?? (() => new Date()),
+      cfg,
+      camera,
+      pipeline: deps.pipeline,
+      ui,
+      viewer: deps.viewer,
+      defaults,
+      choices,
+      cameraInfo: info,
+      incomingDir,
+      now: deps.now ?? (() => new Date()),
     };
   } catch (e) {
     if (e instanceof AbortError) return null;

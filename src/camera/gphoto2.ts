@@ -24,17 +24,37 @@ export const CONFIG_PATHS = {
 } as const;
 
 /** AF variant (a) from the hardware check: autofocusdrive works without live view. */
-export const AF_ARGS: readonly string[] = ["--set-config", `${CONFIG_PATHS.autofocusdrive}=1`];
+export const AF_ARGS: readonly string[] = [
+  "--set-config",
+  `${CONFIG_PATHS.autofocusdrive}=1`,
+];
 
-export type ConfigEntry = { label: string; readonly: boolean; type: string; current: string; choices: string[] };
+export type ConfigEntry = {
+  label: string;
+  readonly: boolean;
+  type: string;
+  current: string;
+  choices: string[];
+};
 
 /** Parses the output of `gphoto2 --get-config …`: one entry per END-terminated block, in order. */
 export function parseGetConfig(out: string): ConfigEntry[] {
   const entries: ConfigEntry[] = [];
-  let cur: ConfigEntry = { label: "", readonly: false, type: "", current: "", choices: [] };
+  let cur: ConfigEntry = {
+    label: "",
+    readonly: false,
+    type: "",
+    current: "",
+    choices: [],
+  };
   let open = false;
   for (const line of out.split("\n")) {
-    if (line === "END") { entries.push(cur); cur = { label: "", readonly: false, type: "", current: "", choices: [] }; open = false; continue; }
+    if (line === "END") {
+      entries.push(cur);
+      cur = { label: "", readonly: false, type: "", current: "", choices: [] };
+      open = false;
+      continue;
+    }
     const m = /^(Label|Readonly|Type|Current|Choice): ?(.*)$/.exec(line);
     if (!m) continue;
     open = true;
@@ -49,24 +69,38 @@ export function parseGetConfig(out: string): ConfigEntry[] {
   return entries;
 }
 
-export function buildCaptureArgs(s: CameraSettings, o: { autofocus: boolean; outDir: string }): string[] {
+export function buildCaptureArgs(
+  s: CameraSettings,
+  o: { autofocus: boolean; outDir: string },
+): string[] {
   const args: string[] = [];
-  for (const k of ["imageformat", "capturetarget"] as const) args.push("--set-config-value", `${CONFIG_PATHS[k]}=${FIXED_SETTINGS[k]}`);
-  for (const k of CAMERA_KEYS) args.push("--set-config-value", `${CONFIG_PATHS[k]}=${s[k]}`);
+  for (const k of ["imageformat", "capturetarget"] as const)
+    args.push("--set-config-value", `${CONFIG_PATHS[k]}=${FIXED_SETTINGS[k]}`);
+  for (const k of CAMERA_KEYS)
+    args.push("--set-config-value", `${CONFIG_PATHS[k]}=${s[k]}`);
   if (o.autofocus) args.push(...AF_ARGS);
-  args.push("--capture-image-and-download", "--filename", `${o.outDir}/capture.%C`, "--force-overwrite");
+  args.push(
+    "--capture-image-and-download",
+    "--filename",
+    `${o.outDir}/capture.%C`,
+    "--force-overwrite",
+  );
   return args;
 }
 
 export function pickCaptureFiles(dir: string, names: string[]): RawCapture {
   const jpg = names.find((n) => /\.jpg$/i.test(n));
   const raw = names.find((n) => /\.cr2$/i.test(n));
-  if (!jpg || !raw) throw new Error(`Kamera lieferte kein JPG und CR2: ${names.join(", ") || "(keine Dateien)"}`);
+  if (!jpg || !raw)
+    throw new Error(
+      `Kamera lieferte kein JPG und CR2: ${names.join(", ") || "(keine Dateien)"}`,
+    );
   return { jpgPath: join(dir, jpg), rawPath: join(dir, raw) };
 }
 
-const getConfigArgs = (keys: ReadonlyArray<keyof typeof CONFIG_PATHS>): string[] =>
-  keys.flatMap((k) => ["--get-config", CONFIG_PATHS[k]]);
+const getConfigArgs = (
+  keys: ReadonlyArray<keyof typeof CONFIG_PATHS>,
+): string[] => keys.flatMap((k) => ["--get-config", CONFIG_PATHS[k]]);
 
 export class GPhoto2Camera implements Camera {
   private timeoutMs: number;
@@ -76,23 +110,40 @@ export class GPhoto2Camera implements Camera {
 
   async info(): Promise<CameraInfo> {
     await killCameraBlockers();
-    const { stdout } = await run("gphoto2", getConfigArgs(["cameramodel", "lensname", "autoexposuremode"]), { timeoutMs: this.timeoutMs });
+    const { stdout } = await run(
+      "gphoto2",
+      getConfigArgs(["cameramodel", "lensname", "autoexposuremode"]),
+      { timeoutMs: this.timeoutMs },
+    );
     const [model, lens, mode] = parseGetConfig(stdout);
-    if (!model || !lens || !mode) throw new Error(`Unerwartete gphoto2-Ausgabe:\n${stdout}`);
-    return { model: model.current, lens: lens.current, exposureMode: mode.current };
+    if (!model || !lens || !mode)
+      throw new Error(`Unerwartete gphoto2-Ausgabe:\n${stdout}`);
+    return {
+      model: model.current,
+      lens: lens.current,
+      exposureMode: mode.current,
+    };
   }
 
   async choices(): Promise<ChoiceLists> {
     await killCameraBlockers();
-    const { stdout } = await run("gphoto2", getConfigArgs(CAMERA_KEYS), { timeoutMs: this.timeoutMs });
+    const { stdout } = await run("gphoto2", getConfigArgs(CAMERA_KEYS), {
+      timeoutMs: this.timeoutMs,
+    });
     const entries = parseGetConfig(stdout);
-    if (entries.length !== CAMERA_KEYS.length) throw new Error(`Unerwartete gphoto2-Ausgabe:\n${stdout}`);
-    return Object.fromEntries(CAMERA_KEYS.map((k: CameraKey, i) => [k, entries[i]!.choices])) as ChoiceLists;
+    if (entries.length !== CAMERA_KEYS.length)
+      throw new Error(`Unerwartete gphoto2-Ausgabe:\n${stdout}`);
+    return Object.fromEntries(
+      CAMERA_KEYS.map((k: CameraKey, i) => [k, entries[i]!.choices]),
+    ) as ChoiceLists;
   }
 
   async capture(s: CameraSettings, o: CaptureOptions): Promise<RawCapture> {
     await killCameraBlockers();
-    await run("gphoto2", buildCaptureArgs(s, o), { timeoutMs: this.timeoutMs, ...(o.signal ? { signal: o.signal } : {}) });
+    await run("gphoto2", buildCaptureArgs(s, o), {
+      timeoutMs: this.timeoutMs,
+      ...(o.signal ? { signal: o.signal } : {}),
+    });
     return pickCaptureFiles(o.outDir, await readdir(o.outDir));
   }
 }
