@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { killCameraBlockers, run } from "../proc.ts";
 import type { RawCapture } from "../types.ts";
 import type { Camera, CameraInfo, CaptureOptions } from "./camera.ts";
-import { CAMERA_KEYS, FIXED_SETTINGS } from "./settings.ts";
 import type { CameraKey, CameraSettings, ChoiceLists } from "./settings.ts";
+import { CAMERA_KEYS, FIXED_SETTINGS } from "./settings.ts";
 
 /** Paths verified on the EOS 1300D (docs/hardware/1300d.md). */
 export const CONFIG_PATHS = {
@@ -38,7 +38,7 @@ export type ConfigEntry = {
 };
 
 /** Parses the output of `gphoto2 --get-config …`: one entry per END-terminated block, in order. */
-export function parseGetConfig(out: string): ConfigEntry[] {
+export function parseGetConfig (out: string): ConfigEntry[] {
   const entries: ConfigEntry[] = [];
   let cur: ConfigEntry = {
     label: "",
@@ -65,11 +65,13 @@ export function parseGetConfig(out: string): ConfigEntry[] {
     else if (key === "Current") cur.current = value;
     else cur.choices.push(value.replace(/^\d+ /, ""));
   }
-  if (open) entries.push(cur);
+  if (open) {
+    entries.push(cur);
+  }
   return entries;
 }
 
-export function buildCaptureArgs(
+export function buildCaptureArgs (
   s: CameraSettings,
   o: { autofocus: boolean; outDir: string },
 ): string[] {
@@ -85,10 +87,11 @@ export function buildCaptureArgs(
     `${o.outDir}/capture.%C`,
     "--force-overwrite",
   );
+
   return args;
 }
 
-export function pickCaptureFiles(dir: string, names: string[]): RawCapture {
+export function pickCaptureFiles (dir: string, names: string[]): RawCapture {
   const jpg = names.find((n) => /\.jpg$/i.test(n));
   const raw = names.find((n) => /\.cr2$/i.test(n));
   if (!jpg || !raw)
@@ -104,11 +107,12 @@ const getConfigArgs = (
 
 export class GPhoto2Camera implements Camera {
   private timeoutMs: number;
-  constructor(opts: { timeoutMs?: number } = {}) {
+
+  constructor (opts: { timeoutMs?: number } = {}) {
     this.timeoutMs = opts.timeoutMs ?? 60_000; // max(60 s, 5 x ~4 s capture), see docs/hardware/1300d.md
   }
 
-  async info(): Promise<CameraInfo> {
+  async info (): Promise<CameraInfo> {
     await killCameraBlockers();
     const { stdout } = await run(
       "gphoto2",
@@ -125,7 +129,7 @@ export class GPhoto2Camera implements Camera {
     };
   }
 
-  async choices(): Promise<ChoiceLists> {
+  async choices (): Promise<ChoiceLists> {
     await killCameraBlockers();
     const { stdout } = await run("gphoto2", getConfigArgs(CAMERA_KEYS), {
       timeoutMs: this.timeoutMs,
@@ -138,7 +142,7 @@ export class GPhoto2Camera implements Camera {
     ) as ChoiceLists;
   }
 
-  async capture(s: CameraSettings, o: CaptureOptions): Promise<RawCapture> {
+  async capture (s: CameraSettings, o: CaptureOptions): Promise<RawCapture> {
     await killCameraBlockers();
     await run("gphoto2", buildCaptureArgs(s, o), {
       timeoutMs: this.timeoutMs,
