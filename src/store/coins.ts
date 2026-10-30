@@ -20,11 +20,23 @@ async function coinDirNames(root: string): Promise<string[]> {
   }
 }
 
-/** Highest existing coin directory + 1. Names starting with `_` and anything not matching COIN-dddd are ignored. */
-export async function nextCoinId(root: string): Promise<string> {
+/**
+ * Highest existing coin directory + 1, but always above `reservedUpTo` (the last ID handed out in this run), so a run
+ * never hands out an ID twice, not even the one of a coin it deleted (multi-coin spec 5.1).
+ * Names starting with `_` and anything not matching COIN-dddd are ignored.
+ */
+export async function nextCoinId(
+  root: string,
+  reservedUpTo: string | null = null,
+): Promise<string> {
   const nums = (await coinDirNames(root)).map((n) =>
     Number(COIN_DIR.exec(n)![1]),
   );
+  if (reservedUpTo !== null) {
+    const m = COIN_DIR.exec(reservedUpTo);
+    if (!m) throw new Error(`Keine gültige Münz-ID: ${reservedUpTo}`);
+    nums.push(Number(m[1]));
+  }
   return formatCoinId(nums.length ? Math.max(...nums) + 1 : 1);
 }
 

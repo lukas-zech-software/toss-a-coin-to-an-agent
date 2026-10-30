@@ -1,19 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import sharp from "sharp";
 import YAML from "yaml";
-import { runCoin } from "../../src/session/coin.ts";
-import { NO_COIN, OK, UNDER, makeSession } from "../fakes.ts";
 import {
-  LENIENT_THRESHOLDS,
-  fixture,
-  renderSvg,
-  skipUnlessFixtures,
-  tmpDir,
-} from "../helpers.ts";
+  abortPending,
+  captureBack,
+  captureFront,
+} from "../../src/session/coin.ts";
+import { NO_COIN, OK, UNDER, makeSession } from "../fakes.ts";
 
 const files = async (dir: string) =>
   [
@@ -22,18 +18,87 @@ const files = async (dir: string) =>
   ].sort();
 const fm = async (p: string) =>
   YAML.parse((await readFile(p, "utf8")).split(/^---\n/m)[1]!);
-test("happy path leaves exactly the final layout", async () => {
-  const s = await makeSession({
-    results: [UNDER, OK, OK],
-    script: ["enter", "enter", "Kratzer am Rand", "enter"],
-  });
-  const out = await runCoin(s.ctx);
-  assert.deepEqual(out, {
-    kind: "complete",
-    id: "COIN-0001",
-    endSession: false,
-  });
+
+const SLOT = { position: 1, id: "COIN-0001" };
+const md = (dir: string) => fm(join(dir, "COIN-0001.md"));
+
+/** Front of coin 1 (must succeed), then the session for the back. */
+async function pending(o: Parameters<typeof makeSession>[0]) {
+  const s = await makeSession(o);
+  const front = await captureFront(s.ctx, SLOT);
+  assert.ok(front.kind === "pending");
+  return { s, coin: front.coin, dir: join(s.root, "COIN-0001") };
+}
+
+test("front ok leaves the coin pending: attempt files, no Markdown", async () => {
+  const s = await makeSession({ results: [OK] });
+  const front = await captureFront(s.ctx, SLOT);
+  assert.ok(front.kind === "pending");
+  assert.equal(front.coin.position, 1);
+  assert.equal(front.coin.id, "COIN-0001");
   const dir = join(s.root, "COIN-0001");
+  assert.deepEqual(await files(dir), [
+    "COIN-0001_av_v1.jpg",
+    "originals/COIN-0001_av_v1.CR2",
+    "originals/COIN-0001_av_v1_original.jpg",
+  ]);
+  assert.equal(s.ui.countdowns, 1);
+  assert.ok(s.ui.output.includes("Erfasse Vorderseite von Münze 1 …"));
+  assert.ok(
+    s.ui.statuses.some((l) =>
+      l.startsWith("COIN-0001 · Münze 1 · Vorderseite · Versuch 1"),
+    ),
+  );
+});
+test("front ignored asks for a comment and ends the coin", async () => {
+  const s = await makeSession({ results: [NO_COIN], script: ["i", "leer"] });
+  const dir = join(s.root, "COIN-0001");
+  assert.deepEqual(await captureFront(s.ctx, SLOT), {
+    kind: "ended",
+    result: { position: 1, id: "COIN-0001", dir, status: "ignored" },
+  });
+  const f = await md(dir);
+  assert.equal(f.comment, "leer");
+  assert.equal(f.incomplete_reason, "ignored");
+  assert.equal(s.camera.calls.length, 1);
+});
+test("front deleted removes the folder", async () => {
+  const s = await makeSession({ results: [NO_COIN], script: ["l", "j"] });
+  const front = await captureFront(s.ctx, SLOT);
+  assert.ok(front.kind === "ended" && front.result?.status === "deleted");
+  assert.ok(!existsSync(join(s.root, "COIN-0001")));
+});
+test("q in the front's error menu writes aborted Markdown without a comment", async () => {
+  const s = await makeSession({ results: [NO_COIN], script: ["q"] });
+  const front = await captureFront(s.ctx, SLOT);
+  assert.ok(front.kind === "ended" && front.result?.status === "aborted");
+  const f = await md(join(s.root, "COIN-0001"));
+  assert.equal(f.incomplete_reason, "aborted");
+  assert.equal(f.comment, "");
+});
+test("ctrl-c before the front's folder exists creates nothing", async () => {
+  const s = await makeSession({ results: [OK] });
+  s.ui.abort();
+  assert.deepEqual(await captureFront(s.ctx, SLOT), {
+    kind: "ended",
+    result: null,
+  });
+  assert.deepEqual(
+    (await readdir(s.root)).filter((d) => d.startsWith("COIN-")),
+    [],
+  );
+});
+test("back ok: comment, final layout, complete Markdown", async () => {
+  const { s, coin, dir } = await pending({
+    results: [UNDER, OK, OK],
+    script: ["Kratzer am Rand"],
+  });
+  assert.deepEqual(await captureBack(s.ctx, coin, 3), {
+    position: 1,
+    id: "COIN-0001",
+    dir,
+    status: "complete",
+  });
   assert.deepEqual(await files(dir), [
     "COIN-0001.md",
     "COIN-0001_av.jpg",
@@ -43,182 +108,73 @@ test("happy path leaves exactly the final layout", async () => {
     "originals/COIN-0001_rv.CR2",
     "originals/COIN-0001_rv_original.jpg",
   ]);
-  const f = await fm(join(dir, "COIN-0001.md"));
+  const f = await md(dir);
   assert.equal(f.status, "complete");
   assert.equal(f.comment, "Kratzer am Rand");
   assert.equal(f.sides.av.attempts.length, 2);
   assert.equal(s.ui.countdowns, 2);
+  assert.ok(
+    s.ui.statuses.some((l) =>
+      l.startsWith("COIN-0001 · Münze 1/3 · Rückseite"),
+    ),
+  );
+  assert.ok(
+    s.ui.output.includes("Erfasse Rückseite von Münze 1 (COIN-0001) …"),
+  );
 });
-test("IDs continue after existing folders", async () => {
-  const s = await makeSession({
-    results: [OK, OK],
-    script: ["enter", "enter", "", "enter"],
-  });
-  await mkdir(join(s.root, "COIN-0004"));
-  await writeFile(join(s.root, "COIN-0004/COIN-0004.md"), "x");
-  await mkdir(join(s.root, "_calibration"));
-  assert.equal((await runCoin(s.ctx)).id, "COIN-0005");
-});
-test("duplicate rv: Enter discards and re-shoots rv", async () => {
-  const s = await makeSession({
+test("duplicate back: Enter discards and re-shoots", async () => {
+  const { s, coin, dir } = await pending({
     results: [OK, OK, OK],
     similarities: [0.97, 0.2],
-    script: ["enter", "enter", "enter", "", "enter"],
+    script: ["enter", ""],
   });
-  assert.equal((await runCoin(s.ctx)).kind, "complete");
+  assert.equal((await captureBack(s.ctx, coin, 3)).status, "complete");
   assert.ok(
     s.ui.output.some((l) =>
       l.includes("Rückseite gleicht der Vorderseite – Münze umgedreht?"),
     ),
   );
-  const f = await fm(join(s.root, "COIN-0001/COIN-0001.md"));
+  const f = await md(dir);
   assert.ok(f.sides.rv.warnings[0].startsWith("Doppelaufnahme verworfen"));
 });
-test("duplicate rv: i keeps the coin as incomplete", async () => {
-  const s = await makeSession({
+test("duplicate back: i keeps the coin incomplete (ignored)", async () => {
+  const { s, coin, dir } = await pending({
     results: [OK, OK],
     similarities: [0.97],
-    script: ["enter", "enter", "i", ""],
+    script: ["i", ""],
   });
-  assert.equal((await runCoin(s.ctx)).kind, "ignored");
-  const f = await fm(join(s.root, "COIN-0001/COIN-0001.md"));
+  assert.equal((await captureBack(s.ctx, coin, 3)).status, "ignored");
+  const f = await md(dir);
   assert.deepEqual([f.status, f.incomplete_reason], ["incomplete", "ignored"]);
   assert.match(f.last_error, /gleicht der Vorderseite/);
-  assert.ok(existsSync(join(s.root, "COIN-0001/COIN-0001_rv_v1.jpg")));
+  assert.ok(existsSync(join(dir, "COIN-0001_rv_v1.jpg")));
 });
-test("ignore on av asks for a comment and skips rv", async () => {
-  const s = await makeSession({
-    results: [NO_COIN],
-    script: ["enter", "i", "leer"],
+test("back deleted removes the whole coin including the front", async () => {
+  const { s, coin, dir } = await pending({
+    results: [OK, NO_COIN],
+    script: ["l", "j"],
   });
-  assert.equal((await runCoin(s.ctx)).kind, "ignored");
-  assert.equal(s.camera.calls.length, 1);
-  assert.equal(
-    (await fm(join(s.root, "COIN-0001/COIN-0001.md"))).comment,
-    "leer",
-  );
+  assert.equal((await captureBack(s.ctx, coin, 3)).status, "deleted");
+  assert.ok(!existsSync(dir));
 });
-test("delete removes the folder", async () => {
-  const s = await makeSession({
-    results: [NO_COIN],
-    script: ["enter", "l", "j"],
-  });
-  assert.deepEqual(await runCoin(s.ctx), {
-    kind: "deleted",
-    id: "COIN-0001",
-    endSession: false,
-  });
-  assert.ok(!existsSync(join(s.root, "COIN-0001")));
-});
-test("q at the flip prompt and abort during rv capture write incomplete md without comment", async () => {
-  const s = await makeSession({ results: [OK], script: ["enter", "q"] });
-  assert.deepEqual(await runCoin(s.ctx), {
-    kind: "aborted",
-    id: "COIN-0001",
-    endSession: true,
-  });
-  assert.equal(
-    (await fm(join(s.root, "COIN-0001/COIN-0001.md"))).incomplete_reason,
-    "aborted",
-  );
-  const t = await makeSession({
-    shots: [{}, { waitForAbort: true }],
-    results: [OK],
-    script: ["enter", "enter"],
-  });
-  setTimeout(() => t.ui.abort(), 30);
-  assert.equal((await runCoin(t.ctx)).kind, "aborted");
-  assert.equal(
-    (await fm(join(t.root, "COIN-0001/COIN-0001.md"))).status,
-    "incomplete",
-  );
-});
-test("q before the first capture creates nothing", async () => {
-  const s = await makeSession({ script: ["q"] });
-  assert.deepEqual(await runCoin(s.ctx), {
-    kind: "quit",
-    id: null,
-    endSession: true,
-  });
-  assert.deepEqual(
-    (await readdir(s.root)).filter((d) => d.startsWith("COIN-")),
-    [],
-  );
-});
-test("success menu opens Finder and Preview", async () => {
-  const s = await makeSession({
+test("ctrl-c at the back's comment prompt leaves the coin incomplete (aborted)", async () => {
+  const { s, coin, dir } = await pending({
     results: [OK, OK],
-    script: ["enter", "enter", "", "o", "p", "enter"],
+    script: ["ctrl-c"],
   });
-  await runCoin(s.ctx);
-  const dir = join(s.root, "COIN-0001");
-  assert.deepEqual(s.viewer.calls, [
-    ["finder", dir],
-    ["preview", join(dir, "COIN-0001_av.jpg"), join(dir, "COIN-0001_rv.jpg")],
-  ]);
+  assert.equal((await captureBack(s.ctx, coin, 3)).status, "aborted");
+  const f = await md(dir);
+  assert.equal(f.status, "incomplete");
+  assert.equal(f.incomplete_reason, "aborted");
+  assert.equal(f.comment, "");
 });
-test("q in the success menu ends the session", async () => {
-  const s = await makeSession({
-    results: [OK, OK],
-    script: ["enter", "enter", "", "q"],
-  });
-  assert.deepEqual(await runCoin(s.ctx), {
-    kind: "complete",
-    id: "COIN-0001",
-    endSession: true,
-  });
+test("abortPending writes aborted Markdown with the front only", async () => {
+  const { s, coin, dir } = await pending({ results: [OK] });
+  assert.equal((await abortPending(s.ctx, coin)).status, "aborted");
+  const f = await md(dir);
+  assert.equal(f.incomplete_reason, "aborted");
+  assert.ok(f.sides.av);
+  assert.equal(f.sides.rv, undefined);
+  assert.equal(f.comment, "");
+  assert.deepEqual(s.ui.prompts, []);
 });
-
-// End-to-end with the real pipeline: on synthetic scenes (always) and on the real-camera fixtures (when they exist).
-const scene = (body: string) =>
-  renderSvg(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="1296" height="864"><rect width="100%" height="100%" fill="#f2f2f2"/><circle cx="648" cy="432" r="200" fill="#5a4630"/>${body}</svg>`,
-    "jpeg",
-  );
-async function syntheticPair() {
-  const d = await tmpDir();
-  const av = join(d, "av.jpg"),
-    rv = join(d, "rv.jpg");
-  await writeFile(
-    av,
-    await scene(
-      `<path d="M528 432 H768 M648 312 V552" stroke="#e0c8a0" stroke-width="10"/>`,
-    ),
-  );
-  await writeFile(
-    rv,
-    await scene(
-      `<path d="M520 340 L776 524 M520 524 L776 340" stroke="#e0c8a0" stroke-width="10"/>`,
-    ),
-  );
-  return { av, rv };
-}
-const e2e = async (av: string, rv: string) => {
-  const s = await makeSession({
-    realPipeline: true,
-    thresholds: LENIENT_THRESHOLDS,
-    shots: [{ jpg: av }, { jpg: rv }],
-    script: ["enter", "enter", "", "enter"],
-  });
-  assert.equal((await runCoin(s.ctx)).kind, "complete");
-  const m = await sharp(join(s.root, "COIN-0001/COIN-0001_av.jpg")).metadata();
-  assert.equal(m.width, m.height);
-  const d = await makeSession({
-    realPipeline: true,
-    thresholds: LENIENT_THRESHOLDS,
-    shots: [{ jpg: av }, { jpg: av }],
-    script: ["enter", "enter", "i", ""],
-  });
-  assert.equal((await runCoin(d.ctx)).kind, "ignored"); // identical rv is caught as a duplicate
-};
-test("end-to-end with the real pipeline on synthetic scenes", async () => {
-  const p = await syntheticPair();
-  await e2e(p.av, p.rv);
-});
-test(
-  "end-to-end with the real pipeline on fixtures",
-  { skip: skipUnlessFixtures("good_av", "good_rv") },
-  async () => {
-    await e2e(fixture("good_av"), fixture("good_rv"));
-  },
-);

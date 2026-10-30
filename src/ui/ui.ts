@@ -34,14 +34,17 @@ export function parseKey(chunk: string): string | null {
   return null;
 }
 
+/** Parts joined with " · ": id, run-number label (e.g. "Münze 2/4"), side, "Versuch n", step. */
 export function formatStatus(p: {
   id: string;
+  label?: string;
   side?: Side;
   attempt?: number;
   step: string;
 }): string {
   return [
     p.id,
+    p.label ?? null,
     p.side ? SIDE_LABEL[p.side] : null,
     p.attempt !== undefined ? `Versuch ${p.attempt}` : null,
     p.step,

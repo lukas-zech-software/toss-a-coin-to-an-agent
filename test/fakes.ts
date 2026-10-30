@@ -191,6 +191,8 @@ const DEFAULT_QUALITY: QualityMetrics = {
 
 export class FakePipeline implements Pipeline {
   processed: ShotPaths[] = [];
+  /** [a, b] crop paths of every similarity() call, in call order. */
+  similarityCalls: Array<[string, string]> = [];
   private results: FakeResult[];
   private sims: number[];
   constructor(results: FakeResult[], similarities: number[] = []) {
@@ -254,7 +256,8 @@ export class FakePipeline implements Pipeline {
       quality: { ...DEFAULT_QUALITY },
     };
   }
-  async similarity(): Promise<number> {
+  async similarity(a: ProcessedShot, b: ProcessedShot): Promise<number> {
+    this.similarityCalls.push([a.paths.crop, b.paths.crop]);
     return this.sims.shift() ?? 0.1;
   }
 }

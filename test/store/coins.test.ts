@@ -28,6 +28,13 @@ test("IDs: format, next, gaps, ignored names", async () => {
   await writeFile(join(root, "COIN-0010"), "file, not dir");
   assert.equal(await nextCoinId(root), "COIN-0008");
 });
+test("nextCoinId never returns an ID at or below the reserved one", async () => {
+  const root = await tmpDir();
+  await mkdir(join(root, "COIN-0002"));
+  assert.equal(await nextCoinId(root, null), "COIN-0003");
+  assert.equal(await nextCoinId(root, "COIN-0003"), "COIN-0004"); // COIN-0003 was deleted in this run
+  assert.equal(await nextCoinId(root, "COIN-0001"), "COIN-0003");
+});
 test("findUnfinishedCoins lists coin dirs without markdown", async () => {
   const root = await tmpDir();
   await createCoinDir(root, "COIN-0001");

@@ -47,6 +47,16 @@ test("formatStatus", () => {
     formatStatus({ id: "COIN-0004", step: "Warte auf Enter" }),
     "COIN-0004 · Warte auf Enter",
   );
+  assert.equal(
+    formatStatus({
+      id: "COIN-0043",
+      label: "Münze 2/4",
+      side: "rv",
+      attempt: 1,
+      step: "Prüfe Schärfe …",
+    }),
+    "COIN-0043 · Münze 2/4 · Rückseite · Versuch 1 · Prüfe Schärfe …",
+  );
 });
 test("ScriptedUi enforces allowed keys and aborts on ctrl-c", async () => {
   const ui = new ScriptedUi(["x", "ctrl-c"]);

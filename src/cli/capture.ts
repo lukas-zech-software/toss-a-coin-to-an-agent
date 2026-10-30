@@ -6,7 +6,7 @@ import { runCalibration } from "../calibration/workflow.ts";
 import { GPhoto2Camera } from "../camera/gphoto2.ts";
 import { loadConfig } from "../config.ts";
 import { createPipeline } from "../image/pipeline.ts";
-import { runCoin } from "../session/coin.ts";
+import { runCapture } from "../session/run.ts";
 import { TerminalUi } from "../ui/terminal.ts";
 import { SystemViewer } from "../ui/viewer.ts";
 import { preflight } from "./preflight.ts";
@@ -31,10 +31,7 @@ try {
         run = false;
       else ctx.defaults = (await ensureDefaults(cfg.paths.coinsRoot)).settings;
     }
-    while (run) {
-      const outcome = await runCoin(ctx);
-      if (outcome.endSession) run = false;
-    }
+    if (run) await runCapture(ctx);
   }
 } catch (e) {
   if (e instanceof AbortError) ui.print("Abgebrochen");

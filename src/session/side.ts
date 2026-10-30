@@ -44,7 +44,7 @@ export function formatAttemptLine(a: AttemptRecord): string {
 /** One side of a coin: capture, check, correct automatically (spec 6.2), then the error menu (6.4). */
 export async function captureSide(
   ctx: SessionContext,
-  coin: { id: string; dir: string },
+  coin: { id: string; dir: string; label?: string },
   side: Side,
 ): Promise<SideOutcome> {
   const { cfg, ui } = ctx;
@@ -56,7 +56,15 @@ export async function captureSide(
   let technicalError: string | null = null;
 
   const status = (step: string): void =>
-    ui.status(formatStatus({ id: coin.id, side, attempt: n, step }));
+    ui.status(
+      formatStatus({
+        id: coin.id,
+        ...(coin.label !== undefined ? { label: coin.label } : {}),
+        side,
+        attempt: n,
+        step,
+      }),
+    );
   const lastError = (): string | null =>
     technicalError ??
     (attempts.length
