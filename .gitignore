@@ -10,3 +10,6 @@ archive/
 coins/
 samples/*
 !samples/manifest.json
+
+# IDE
+.idea/
