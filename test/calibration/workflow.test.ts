@@ -55,7 +55,7 @@ test("editParameters: step, direct entry, invalid value, back", async () => {
     "enter",
   ]);
   const r = await editParameters(ui, BASELINE, realChoices());
-  assert.deepEqual(r, { ...BASELINE, exposurecompensation: "1.5", iso: "400" });
+  assert.deepEqual(r, { ...BASELINE, exposurecompensation: "1", iso: "400" });
   assert.ok(ui.output.some((l) => l.includes("Ungültiger Wert: Custom")));
 });
 test("editParameters: scale end is reported, q cancels", async () => {
@@ -98,7 +98,7 @@ test("better → confirm: defaults and reference replaced, tmp removed", async (
   assert.equal(await runCalibration(s.ctx, start), "confirmed");
   assert.equal(
     (await ensureDefaults(s.root)).settings.exposurecompensation,
-    "1",
+    "0.6",
   );
   assert.notEqual(await readFile(referencePath(s.root), "utf8"), "old");
   assert.deepEqual(
@@ -133,7 +133,7 @@ test("better, continue, worse → offer best as reference", async () => {
   assert.equal(await runCalibration(s.ctx, start), "confirmed");
   assert.equal(
     (await ensureDefaults(s.root)).settings.exposurecompensation,
-    "1",
+    "0.6",
   );
   assert.ok(s.ui.prompts.some((p) => p.includes("Bestes Bild dieser Sitzung")));
 });

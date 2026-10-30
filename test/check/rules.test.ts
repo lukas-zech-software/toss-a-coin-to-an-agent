@@ -68,9 +68,9 @@ test("planNext: exposure steps follow the camera list", () => {
   const up = planNext(ev({ meanBrightness: 10 }), BASELINE, C, st(), STEPS);
   assert.ok(
     up.action === "retry" &&
-      up.settings.exposurecompensation === "1" &&
+      up.settings.exposurecompensation === "0.6" &&
       !up.autofocus &&
-      up.note === "Belichtungskorrektur 0.5 → 1",
+      up.note === "Belichtungskorrektur 0.3 → 0.6",
   );
   const down = planNext(ev({ clippingRatio: 0.5 }), BASELINE, C, st(), STEPS);
   assert.ok(
@@ -81,7 +81,7 @@ test("planNext: exposure steps follow the camera list", () => {
     exposurecompensation: 2,
   });
   assert.ok(
-    two.action === "retry" && two.settings.exposurecompensation === "1.5",
+    two.action === "retry" && two.settings.exposurecompensation === "1",
   );
 });
 test("planNext: blur → autofocus first, then ISO up, repeating", () => {

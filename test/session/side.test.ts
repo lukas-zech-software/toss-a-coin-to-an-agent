@@ -27,7 +27,7 @@ test("ok on first attempt uses defaults", async () => {
 test("underexposed → exposure +1 step without prompt or countdown", async () => {
   const { s, out } = await shoot({ results: [UNDER, OK] });
   assert.equal(out.kind, "ok");
-  assert.equal(s.camera.calls[1]!.settings.exposurecompensation, "1");
+  assert.equal(s.camera.calls[1]!.settings.exposurecompensation, "0.6");
   assert.deepEqual([s.ui.prompts.length, s.ui.countdowns], [0, 0]);
 });
 test("overexposed → exposure −1 step", async () => {
@@ -58,7 +58,7 @@ test("limit then w gives two more corrections in the same direction", async () =
   assert.equal(out.kind, "ignored");
   assert.deepEqual(
     s.camera.calls.map((c) => c.settings.exposurecompensation),
-    ["0.5", "1", "1.5", "2", "2.5"],
+    ["0.3", "0.6", "1", "1.3", "1.6"],
   );
 });
 test("conflict and detection failures go straight to the menu", async () => {
@@ -74,7 +74,7 @@ test("conflict and detection failures go straight to the menu", async () => {
 test("scale end goes to the menu", async () => {
   const { s, out } = await shoot({
     results: [UNDER, UNDER],
-    defaults: { exposurecompensation: "4.5" },
+    defaults: { exposurecompensation: "4.6" },
     script: ["i"],
   });
   assert.equal(out.attempts.length, 2);

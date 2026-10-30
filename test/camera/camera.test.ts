@@ -35,7 +35,7 @@ test("buildCaptureArgs: fixed + given settings by value, AF before capture, file
   for (const v of [
     "/main/imgsettings/imageformat=RAW + L",
     "/main/settings/capturetarget=Internal RAM",
-    "/main/capturesettings/exposurecompensation=0.5",
+    "/main/capturesettings/exposurecompensation=0.3",
     "/main/imgsettings/whitebalance=Manual",
   ])
     assert.equal(a[a.indexOf(v) - 1], "--set-config-value", v);
@@ -66,19 +66,19 @@ test("pickCaptureFiles is case-insensitive and demands both files", () => {
 });
 test("stepChoice walks the camera list, skips Auto, stops at the ends", () => {
   const c = realChoices();
-  assert.equal(stepChoice(c.exposurecompensation, "0.5", 1), "1");
-  assert.equal(stepChoice(c.exposurecompensation, "0.5", -1), "0");
+  assert.equal(stepChoice(c.exposurecompensation, "0.3", 1), "0.6");
+  assert.equal(stepChoice(c.exposurecompensation, "0.3", -1), "0");
   assert.equal(stepChoice(c.exposurecompensation, "5", 1), null);
   assert.equal(stepChoice(c.iso, "100", 1), "200");
   assert.equal(stepChoice(c.iso, "100", -1), null);
   assert.equal(stepChoice(c.iso, "6400", 1), null);
-  assert.equal(stepChoice(c.exposurecompensation, "0.3", 1), null);
+  assert.equal(stepChoice(c.exposurecompensation, "0.5", 1), null);
 });
 test("invalidSettings flags labels the camera does not offer", () => {
   assert.deepEqual(invalidSettings(BASELINE, realChoices()), []);
   assert.deepEqual(
     invalidSettings(
-      { ...BASELINE, whitebalance: "Custom", exposurecompensation: "0.3" },
+      { ...BASELINE, whitebalance: "Custom", exposurecompensation: "0.5" },
       realChoices(),
     ),
     ["exposurecompensation", "whitebalance"],
