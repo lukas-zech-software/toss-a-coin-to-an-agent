@@ -14,7 +14,7 @@ export type ChoiceLists = Record<CameraKey, string[]>;
 export const BASELINE: CameraSettings = {
   aperture: "8",
   iso: "100",
-  exposurecompensation: "0.5",
+  exposurecompensation: "0.3",
   whitebalance: "Manual",
   picturestyle: "Faithful",
   meteringmode: "Partial",
