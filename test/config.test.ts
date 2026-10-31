@@ -10,6 +10,8 @@ test("loads the committed config", () => {
   assert.equal(c.crop.marginRatio, 0.15);
   assert.equal(c.corrections.maxAutoPerFeature, 2);
   assert.equal(c.corrections.attemptsPerRetry, 2);
+  assert.equal(c.session.countdownSeconds, 1);
+  assert.equal(DEFAULT_CONFIG.session.countdownSeconds, 1);
   assert.ok(
     isAbsolute(c.paths.coinsRoot) && c.paths.coinsRoot.endsWith("/coins"),
   );

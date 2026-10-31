@@ -54,7 +54,7 @@ export const DEFAULT_CONFIG: Config = {
     attemptsPerRetry: 2,
     steps: { exposurecompensation: 1, iso: 1 },
   },
-  session: { countdownSeconds: 3 },
+  session: { countdownSeconds: 1 },
 };
 
 const DEFAULT_FILE = fileURLToPath(
