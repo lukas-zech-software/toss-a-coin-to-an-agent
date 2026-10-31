@@ -10,6 +10,7 @@ import {
   zoomView,
 } from "../identify/views.ts";
 import type { Scale } from "../identify/views.ts";
+import { numista, numistaUsage, RESERVE } from "../identify/numista.ts";
 
 /**
  * Photo scale of the fixed copy-stand setup: measured on 2026-10-30 from three coins of known diameter
@@ -22,15 +23,27 @@ export const USAGE = `Verwendung:
   npm run identify -- prepare <ID>
   npm run identify -- zoom <ID> <av|rv> <x> <y> <size> [--rotate <grad>] [--enhance]
   npm run identify -- write <ID> <result.json>
+  npm run identify -- numista search [<Wörter>] [--issuer <code>] [--year <wie geprägt>] [--date <Jahr|1900-1910>] [--km <KM-Nr.>] [--category coin|exonumia|banknote] [--page <n>]
+  npm run identify -- numista type <N#>
+  npm run identify -- numista issues <N#>
+  npm run identify -- numista issuers <Name>
+  npm run identify -- numista usage
 
   x, y   Mittelpunkt des Ausschnitts als Anteil der Bildbreite/-höhe (0–1)
-  size   Kantenlänge des Ausschnitts als Anteil der Bildkante (0–1]`;
+  size   Kantenlänge des Ausschnitts als Anteil der Bildkante (0–1]
+  N#     Numista-Typ-ID aus "numista search"`;
+
+const NUMISTA_FLAGS = ["issuer", "year", "date", "km", "category", "page"];
 
 export type IdentifyDeps = {
   coinsRoot: string;
   workDir: string;
   out: (text: string) => void;
   now?: () => Date;
+  numistaKey?: string | undefined;
+  /** Append-only request log for the monthly quota and the rate limit; none = no limit (tests). */
+  numistaUsageLog?: string;
+  fetch?: typeof fetch;
 };
 
 /** Returns the exit code: 0 ok, 1 failed (message printed), 2 wrong usage. */
@@ -40,6 +53,7 @@ export async function identifyMain(
 ): Promise<number> {
   const [cmd, id, ...rest] = args;
   try {
+    if (cmd === "numista") return await numistaCmd(id, rest, deps);
     if (cmd === "prepare" && id && rest.length === 0)
       return await prepare(id, deps);
     if (cmd === "zoom" && id) return await zoom(id, rest, deps);
@@ -82,6 +96,59 @@ async function prepare(id: string, deps: IdentifyDeps): Promise<number> {
       2,
     ),
   );
+  return 0;
+}
+
+async function numistaCmd(
+  sub: string | undefined,
+  rest: string[],
+  deps: IdentifyDeps,
+): Promise<number> {
+  const words: string[] = [];
+  const opts: Record<string, string> = {};
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i]!;
+    if (a.startsWith("--")) opts[a.slice(2)] = rest[++i] ?? "";
+    else words.push(a);
+  }
+  const flagsOk = Object.keys(opts).every((k) => NUMISTA_FLAGS.includes(k));
+  const noFlags = Object.keys(opts).length === 0;
+  const isId = words.length === 1 && /^\d+$/.test(words[0]!);
+  const usageOk =
+    sub === "search"
+      ? flagsOk && (words.length > 0 || !noFlags)
+      : sub === "type" || sub === "issues"
+        ? isId && noFlags
+        : sub === "issuers"
+          ? words.length > 0 && noFlags
+          : sub === "usage" && words.length === 0 && noFlags;
+  if (!usageOk) {
+    deps.out(USAGE);
+    return 2;
+  }
+  if (sub === "usage") {
+    const u = deps.numistaUsageLog
+      ? await numistaUsage(deps.numistaUsageLog, deps.now?.())
+      : null;
+    deps.out(JSON.stringify(u && { ...u, reserve: RESERVE }, null, 2));
+    return 0;
+  }
+  if (!deps.numistaKey) {
+    deps.out(
+      "Fehler: NUMISTA_API_KEY fehlt – kostenlosen Schlüssel auf https://en.numista.com/api/ anlegen und in .env eintragen (NUMISTA_API_KEY=…). Bis dahin Numista-Daten über WebSearch suchen.",
+    );
+    return 1;
+  }
+  const api = numista(deps.numistaKey, deps.fetch, deps.numistaUsageLog);
+  const data =
+    sub === "search"
+      ? await api.search({ ...opts, q: words.join(" ") })
+      : sub === "type"
+        ? await api.type(words[0]!)
+        : sub === "issues"
+          ? await api.issues(words[0]!)
+          : await api.issuers(words.join(" "));
+  deps.out(JSON.stringify(data, null, 2));
   return 0;
 }
 

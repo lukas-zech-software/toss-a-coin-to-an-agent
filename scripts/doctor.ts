@@ -4,8 +4,10 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import sharp from "sharp";
 import cvModule from "@techstark/opencv-js";
-import { loadConfig } from "../src/config.ts";
+import { loadConfig, loadDotEnv, NUMISTA_USAGE_LOG } from "../src/config.ts";
+import { numistaUsage, RESERVE } from "../src/identify/numista.ts";
 
+loadDotEnv();
 type Check = { name: string; ok: boolean; detail: string; warn?: boolean };
 const checks: Check[] = [];
 
@@ -76,6 +78,24 @@ checks.push(
         warn: true,
         detail:
           "nicht gefunden (optional – Vergleich fällt auf Vorschau zurück)",
+      },
+);
+
+// The Numista API key is optional too: without it the agent searches Numista data via WebSearch.
+const usage = await numistaUsage(NUMISTA_USAGE_LOG);
+checks.push(
+  process.env.NUMISTA_API_KEY
+    ? {
+        name: "numista",
+        ok: true,
+        warn: usage.remaining <= RESERVE,
+        detail: `API-Schlüssel gesetzt (.env) · ${usage.used}/${usage.limit} Anfragen im ${usage.month}${usage.remaining <= RESERVE ? " – Reserve erreicht, gesperrt bis Monatswechsel" : ""}`,
+      }
+    : {
+        name: "numista",
+        ok: true,
+        warn: true,
+        detail: "NUMISTA_API_KEY fehlt (optional – in .env eintragen)",
       },
 );
 

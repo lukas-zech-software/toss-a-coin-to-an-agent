@@ -13,3 +13,7 @@ samples/*
 
 # IDE
 .idea/
+
+# Secrets (NUMISTA_API_KEY) and personal Claude Code settings
+.env
+.claude/settings.local.json

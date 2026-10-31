@@ -130,3 +130,28 @@ test("unreadable JSON, unknown coins and wrong usage", async () => {
   assert.equal(await identifyMain([], deps), 2);
   assert.match(lines.pop()!, /Verwendung/);
 });
+
+test("numista: wrong usage, missing key, and a search printed as JSON", async () => {
+  const { deps, lines } = await setup();
+  assert.equal(await identifyMain(["numista", "type", "abc"], deps), 2);
+  assert.equal(
+    await identifyMain(["numista", "search", "--foo", "x"], deps),
+    2,
+  );
+  assert.equal(await identifyMain(["numista", "search", "peace"], deps), 1);
+  assert.match(lines.pop()!, /NUMISTA_API_KEY fehlt/);
+
+  const fakeFetch = (async () =>
+    new Response(
+      JSON.stringify({ count: 1, types: [{ id: 7, title: "T" }] }),
+    )) as typeof fetch;
+  const withKey = { ...deps, numistaKey: "KEY", fetch: fakeFetch };
+  assert.equal(
+    await identifyMain(["numista", "search", "peace", "dollar"], withKey),
+    0,
+  );
+  assert.equal(
+    JSON.parse(lines.pop()!).types[0].url,
+    "https://en.numista.com/catalogue/pieces7.html",
+  );
+});

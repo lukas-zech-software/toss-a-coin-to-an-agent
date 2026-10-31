@@ -1,6 +1,17 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+/** Loads secrets such as NUMISTA_API_KEY from .env in the repo root, if the file exists. */
+export function loadDotEnv(): void {
+  const file = fileURLToPath(new URL("../.env", import.meta.url));
+  if (existsSync(file)) process.loadEnvFile(file);
+}
+
+/** One line per Numista request: counts the monthly quota and spaces requests out. */
+export const NUMISTA_USAGE_LOG = fileURLToPath(
+  new URL("../tmp/numista-usage.log", import.meta.url),
+);
 
 export type Config = {
   paths: { coinsRoot: string; djv: string };
