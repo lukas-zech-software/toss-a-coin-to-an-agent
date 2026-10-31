@@ -48,11 +48,9 @@ test("three coins: fronts, then backs in the same order, all complete", async ()
       "enter",
       "r",
       "enter",
-      "",
       "enter",
-      "",
       "enter",
-      "",
+      "enter",
     ],
   });
   const ids = ["COIN-0001", "COIN-0002", "COIN-0003"];
@@ -68,9 +66,14 @@ test("three coins: fronts, then backs in the same order, all complete", async ()
   );
   assert.ok(
     s.ui.prompts.includes(
-      "Rückseite von Münze 2 (COIN-0002) einlegen und Enter drücken · q = beenden",
+      "Rückseite von Münze 2 (COIN-0002) einlegen und Enter drücken · k = Kommentar zu Münze 1 · q = beenden",
     ),
   );
+  assert.equal(
+    s.ui.prompts.at(-1),
+    "k = Kommentar zu Münze 3 · Enter = Zusammenfassung",
+  );
+  for (const id of ids) assert.equal((await mdOf(s, id)).comment, "");
   // each back is compared with its own front, in run order
   assert.deepEqual(
     (s.pipeline as FakePipeline).similarityCalls,
@@ -86,13 +89,40 @@ test("three coins: fronts, then backs in the same order, all complete", async ()
     ),
   ]);
 });
-test("one coin: switch to the backs right after the first front", async () => {
+test("one coin: switch to the backs right after the first front; k at the closing prompt adds the comment", async () => {
   const { s, results } = await run({
     results: [OK, OK],
-    script: ["enter", "r", "enter", "Kratzer"],
+    script: ["enter", "r", "enter", "k", "Kratzer", "enter"],
   });
   assert.deepEqual(rows(results), [[1, "COIN-0001", "complete"]]);
   assert.equal((await mdOf(s, "COIN-0001")).comment, "Kratzer");
+  // the closing prompt comes back after the comment
+  assert.deepEqual(s.ui.prompts.slice(-2), [
+    "k = Kommentar zu Münze 1 · Enter = Zusammenfassung",
+    "k = Kommentar zu Münze 1 · Enter = Zusammenfassung",
+  ]);
+});
+test("k at the next back prompt comments the previous coin; Enter then shoots right away", async () => {
+  const { s, results } = await run({
+    results: [OK, OK, OK, OK],
+    script: ["enter", "enter", "r", "enter", "k", "Kratzer", "enter", "enter"],
+  });
+  assert.deepEqual(statuses(results), ["complete", "complete"]);
+  assert.equal((await mdOf(s, "COIN-0001")).comment, "Kratzer");
+  assert.equal((await mdOf(s, "COIN-0002")).comment, "");
+  const back2 =
+    "Rückseite von Münze 2 (COIN-0002) einlegen und Enter drücken · k = Kommentar zu Münze 1 · q = beenden";
+  assert.equal(s.ui.prompts.filter((p) => p === back2).length, 2);
+  assert.equal(s.camera.calls.length, 4);
+});
+test("no closing prompt when the last back is not complete", async () => {
+  const { s, results } = await run({
+    results: [OK, OK, OK, NO_COIN],
+    script: ["enter", "enter", "r", "enter", "enter", "i", "weg"],
+  });
+  assert.deepEqual(statuses(results), ["complete", "ignored"]);
+  assert.ok(!s.ui.prompts.some((p) => p.includes("Enter = Zusammenfassung")));
+  assert.equal((await mdOf(s, "COIN-0002")).comment, "weg");
 });
 test("ignored and deleted fronts keep their number and ID and are skipped in phase 2", async () => {
   const { s, results } = await run({
@@ -108,9 +138,8 @@ test("ignored and deleted fronts keep their number and ID and are skipped in pha
       "enter",
       "r",
       "enter",
-      "",
       "enter",
-      "",
+      "enter",
     ],
   });
   assert.deepEqual(rows(results), [
@@ -131,7 +160,7 @@ test("ignored and deleted fronts keep their number and ID and are skipped in pha
   );
   assert.ok(
     s.ui.prompts.includes(
-      "Rückseite von Münze 4 (COIN-0004) einlegen und Enter drücken · q = beenden",
+      "Rückseite von Münze 4 (COIN-0004) einlegen und Enter drücken · k = Kommentar zu Münze 1 · q = beenden",
     ),
   );
   assert.ok(
@@ -150,7 +179,7 @@ test("ignored and deleted fronts keep their number and ID and are skipped in pha
 test("q at a back prompt: that coin and all later pending coins become incomplete (aborted) without a comment", async () => {
   const { s, results } = await run({
     results: [OK, OK, OK, OK],
-    script: ["enter", "enter", "enter", "r", "enter", "", "q"],
+    script: ["enter", "enter", "enter", "r", "enter", "q"],
   });
   assert.deepEqual(statuses(results), ["complete", "aborted", "aborted"]);
   for (const id of ["COIN-0002", "COIN-0003"]) {
@@ -226,7 +255,7 @@ test("q at the first prompt creates nothing", async () => {
 });
 test("IDs continue after existing folders", async () => {
   const { results } = await run(
-    { results: [OK, OK], script: ["enter", "r", "enter", ""] },
+    { results: [OK, OK], script: ["enter", "r", "enter", "enter"] },
     async (s) => {
       await mkdir(join(s.root, "COIN-0004"));
       await writeFile(join(s.root, "COIN-0004/COIN-0004.md"), "x");
@@ -281,7 +310,7 @@ const e2e = async (av: string, rv: string) => {
     realPipeline: true,
     thresholds: LENIENT_THRESHOLDS,
     shots: [{ jpg: av }, { jpg: rv }],
-    script: ["enter", "r", "enter", ""],
+    script: ["enter", "r", "enter", "enter"],
   });
   assert.deepEqual(statuses(ok.results), ["complete"]);
   const m = await sharp(

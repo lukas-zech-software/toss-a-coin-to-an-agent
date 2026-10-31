@@ -1,5 +1,6 @@
 import { AbortError } from "../abort.ts";
 import { nextCoinId } from "../store/coins.ts";
+import { setCoinComment } from "../store/markdown.ts";
 import { formatStatus } from "../ui/ui.ts";
 import { abortPending, captureBack, captureFront } from "./coin.ts";
 import type { CoinResult, PendingCoin } from "./coin.ts";
@@ -74,11 +75,37 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
     }
   }
 
-  /** Phase 2: every number in order; only coins with a successful front are shot, the others are skipped with a notice. */
+  /**
+   * A key prompt that also offers `k` = comment for the last complete coin (none = plain prompt). `k` asks for the
+   * comment, writes it into that coin's Markdown and shows the prompt again; any other allowed key is returned.
+   */
+  async function keyWithComment(
+    text: (offer: string) => string, // offer = "k = Kommentar zu Münze N", or "" without a coin to comment on
+    allowed: readonly string[],
+    last: CoinResult | null,
+  ): Promise<string> {
+    if (!last) return ui.key(text(""), allowed);
+    const offer = `k = Kommentar zu Münze ${last.position}`;
+    for (;;) {
+      const k = await ui.key(text(offer), [...allowed, "k"]);
+      if (k !== "k") return k;
+      const comment = await ui.line(
+        `Kommentar zu Münze ${last.position} (${last.id}): `,
+      );
+      await setCoinComment(last.dir, last.id, comment);
+    }
+  }
+
+  /**
+   * Phase 2: every number in order; only coins with a successful front are shot, the others are skipped with a notice.
+   * A complete coin gets no comment prompt of its own: the next back prompt (or, after the last one, a closing prompt)
+   * offers `k` for it, so Enter always goes straight on.
+   */
   async function backs(): Promise<void> {
     if (!slots.some((s) => s.kind === "pending")) return;
     const total = slots.length;
     let first = true;
+    let last: CoinResult | null = null; // the last coin that ended complete, still open for a comment
     for (const [i, slot] of slots.entries()) {
       if (slot.kind === "ended") {
         const { position, id, status } = slot.result;
@@ -95,13 +122,26 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
           step: "Warte auf Enter",
         }),
       );
-      const prompt = `${first ? "Bitte Objektträger umdrehen. " : ""}Rückseite von Münze ${coin.position} (${coin.id}) einlegen und Enter drücken · q = beenden`;
+      const intro = first ? "Bitte Objektträger umdrehen. " : "";
       first = false;
-      if ((await ui.key(prompt, ["enter", "q"])) === "q") return;
+      const k = await keyWithComment(
+        (offer) =>
+          `${intro}Rückseite von Münze ${coin.position} (${coin.id}) einlegen und Enter drücken · ${offer ? `${offer} · ` : ""}q = beenden`,
+        ["enter", "q"],
+        last,
+      );
+      if (k === "q") return;
       const result = await captureBack(ctx, coin, total);
       slots[i] = { kind: "ended", result };
       if (result.status === "aborted") return;
+      last = result.status === "complete" ? result : null;
     }
+    if (last)
+      await keyWithComment(
+        (offer) => `${offer} · Enter = Zusammenfassung`,
+        ["enter"],
+        last,
+      );
   }
 
   try {

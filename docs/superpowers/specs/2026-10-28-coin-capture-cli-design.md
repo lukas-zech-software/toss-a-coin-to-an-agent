@@ -80,16 +80,17 @@ Für jede Aufnahme (Münze wie Kalibrierung) läuft dieselbe Kette (`APPROACH.md
 Start → Startprüfung Kalibrierung (§9.1)
   ┌─────────────────────────────────────────────────────────┐
   │ "Neue Münze: Bitte Vorderseite einlegen und Enter drücken."
-  │ Enter → "Erfasse Vorderseite …" → Countdown 3 s → Aufnahme + Prüfung (§6.2)
+  │ Enter → "Erfasse Vorderseite …" → Countdown (Standard 1 s) → Aufnahme + Prüfung (§6.2)
   │   Fehler nicht behebbar → Fehlermenü (§6.4)
   │ "Vorderseite erfasst. Bitte Münze umdrehen und Enter drücken."
-  │ Enter → "Erfasse Rückseite …" → Countdown 3 s → Aufnahme + Prüfung
+  │ Enter → "Erfasse Rückseite …" → Countdown (Standard 1 s) → Aufnahme + Prüfung
   │   + Doppelaufnahme-Prüfung (§6.3)
   │ Abschluss (§6.5) → nächste Münze
   └─────────────────────────────────────────────────────────┘
 ```
 
 - Der Countdown läuft nur nach einem Enter des Users; automatische Korrektur-Nachschüsse erfolgen ohne Countdown. [Annahme]
+- Countdown-Länge: `session.countdownSeconds` in `coin-capture.config.json`, Standard 1 s (vorher 3 s); 0 = kein Countdown. [entschieden 2026-10-30]
 - Der Münzordner wird bei der ersten Aufnahme der Vorderseite angelegt. [Annahme]
 - Jede Seite startet mit den Standardparametern aus `defaults.json`, nicht mit den korrigierten Werten der anderen Seite. [Annahme]
 
@@ -132,7 +133,7 @@ Technische Fehler (Kamera nicht gefunden, gphoto2-Fehler, USB belegt) zeigen die
 
 ### 6.5 Abschluss einer Münze [entschieden]
 
-1. Abfrage eines optionalen Kommentars (leere Eingabe = kein Kommentar) – immer, bei erfolgreicher wie bei ignorierter Münze.
+1. Abfrage eines optionalen Kommentars (leere Eingabe = kein Kommentar) – bei ignorierter Münze. Bei erfolgreicher Münze keine Abfrage; der Kommentar wird im Mehrmünzen-Lauf per `k` am nächsten Prompt nachgetragen (Mehrmünzen-Design §5.3).
 2. Markdown-Datei schreiben (§8).
 3. Bei Erfolg: Zwischenversuche löschen, nur finale Dateien behalten (§7).
 4. Nur bei Erfolg Menü: `o` Ordner im Finder öffnen · `p` beide Bilder in der Vorschau öffnen · `Enter` weiter zur nächsten Münze.

@@ -82,10 +82,12 @@ Phase 2 – Rückseiten (alle Nummern des Laufs in Reihenfolge; nur Münzen mit 
   │ sonst Enter → "Erfasse Rückseite von Münze N (COIN-…) …" → Countdown
   │   → Rückseite aufnehmen + prüfen + Doppelaufnahme-Prüfung gegen
   │   die eigene Vorderseite (wie bisher, Haupt-Design §6.3)
-  │ ok → Kommentarabfrage → Münze abschließen (complete)
-  │ "Rückseite von Münze 3 (COIN-0044) einlegen und Enter drücken · q = beenden"
+  │ ok → Münze sofort abschließen (complete, Kommentar leer)
+  │ "Rückseite von Münze 3 (COIN-0044) einlegen und Enter drücken · k = Kommentar zu Münze 2 · q = beenden"
+  │   k → Kommentar zu Münze 2 eingeben → derselbe Prompt erneut
   └────────────────────────────────────────────────────────────────────┘
-  Letzte Nummer erledigt → Zusammenfassung → Exit 0
+  Letzte Nummer erledigt (complete) → "k = Kommentar zu Münze N · Enter = Zusammenfassung"
+  → Zusammenfassung → Exit 0
 ```
 
 ### 5.1 Nummer (Laufposition) und ID [entschieden: Nummer und Position bleiben; Details Annahme]
@@ -110,7 +112,8 @@ Phase 2 – Rückseiten (alle Nummern des Laufs in Reihenfolge; nur Münzen mit 
 - Durchlaufen werden alle Nummern dieses Laufs **in der Reihenfolge ihrer Vorderseiten**. Aufgenommen werden nur Münzen mit erfolgreicher Vorderseite; die anderen werden mit Hinweis übersprungen (§5.1). Es gibt keine Möglichkeit, eine andere Münze zu wählen oder zu überspringen. [entschieden]
 - Jeder Prompt nennt Nummer und ID, damit Lukas sieht, welche Münze erwartet wird: `Rückseite von Münze 2 (COIN-0043) einlegen und Enter drücken · q = beenden`. Der erste Prompt der Phase beginnt zusätzlich mit „Bitte Objektträger umdrehen. “. [entschieden: Inhalt; Annahme: genauer Wortlaut]
 - Prüfung, Korrektur, Fehlermenü und Doppelaufnahme-Prüfung der Rückseite sind unverändert; verglichen wird mit der Vorderseite **derselben** Münze. [Annahme]
-- Rückseite ok → Kommentarabfrage → Markdown `complete` (wie bisher Haupt-Design §6.5 Punkte 1–3). Nur dann ist die Münze `complete`. [entschieden]
+- Rückseite ok → Markdown `complete` sofort, **ohne Kommentarabfrage** (Haupt-Design §6.5 Punkte 2–3). Nur dann ist die Münze `complete`. [entschieden]
+- **Kommentar per `k`** (ersetzt die Kommentarabfrage nach erfolgreicher Rückseite, 2026-10-30): Der nächste Rückseiten-Prompt bietet zusätzlich `k = Kommentar zu Münze N` für die zuletzt `complete` abgeschlossene Münze. `k` fragt den Kommentar ab, schreibt ihn in deren Markdown (Frontmatter `comment` und „Notizen“) und zeigt denselben Prompt erneut; erneutes `k` überschreibt ihn. `Enter` nimmt sofort die nächste Rückseite auf. Ist die letzte Rückseite des Laufs `complete`, folgt ein Abschluss-Prompt `k = Kommentar zu Münze N · Enter = Zusammenfassung`. Nach ignorierter, gelöschter oder abgebrochener Rückseite gibt es kein `k` (ignorierte Münzen werden wie bisher sofort nach dem Kommentar gefragt). [entschieden]
 - Rückseite **ignoriert** (`i`, im Fehlermenü oder an der Doppelaufnahme-Meldung): diese Münze `incomplete` (`ignored`) mit Kommentarabfrage, **weiter mit der nächsten Nummer**. [Annahme]
 - Rückseite **gelöscht** (`l`): ganze Münze (inkl. Vorderseite) gelöscht, Status `gelöscht` in der Zusammenfassung, weiter mit der nächsten Nummer. [Annahme]
 - Das bisherige Abschlussmenü pro Münze (`o` Finder · `p` Vorschau · `Enter` nächste Münze) entfällt. [Annahme]

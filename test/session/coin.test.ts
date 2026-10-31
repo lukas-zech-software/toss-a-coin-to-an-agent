@@ -88,10 +88,9 @@ test("ctrl-c before the front's folder exists creates nothing", async () => {
     [],
   );
 });
-test("back ok: comment, final layout, complete Markdown", async () => {
+test("back ok: no comment prompt, final layout, complete Markdown with an empty comment", async () => {
   const { s, coin, dir } = await pending({
     results: [UNDER, OK, OK],
-    script: ["Kratzer am Rand"],
   });
   assert.deepEqual(await captureBack(s.ctx, coin, 3), {
     position: 1,
@@ -110,7 +109,7 @@ test("back ok: comment, final layout, complete Markdown", async () => {
   ]);
   const f = await md(dir);
   assert.equal(f.status, "complete");
-  assert.equal(f.comment, "Kratzer am Rand");
+  assert.equal(f.comment, "");
   assert.equal(f.sides.av.attempts.length, 2);
   assert.equal(s.ui.countdowns, 2);
   assert.ok(
@@ -126,7 +125,7 @@ test("duplicate back: Enter discards and re-shoots", async () => {
   const { s, coin, dir } = await pending({
     results: [OK, OK, OK],
     similarities: [0.97, 0.2],
-    script: ["enter", ""],
+    script: ["enter"],
   });
   assert.equal((await captureBack(s.ctx, coin, 3)).status, "complete");
   assert.ok(
@@ -156,17 +155,6 @@ test("back deleted removes the whole coin including the front", async () => {
   });
   assert.equal((await captureBack(s.ctx, coin, 3)).status, "deleted");
   assert.ok(!existsSync(dir));
-});
-test("ctrl-c at the back's comment prompt leaves the coin incomplete (aborted)", async () => {
-  const { s, coin, dir } = await pending({
-    results: [OK, OK],
-    script: ["ctrl-c"],
-  });
-  assert.equal((await captureBack(s.ctx, coin, 3)).status, "aborted");
-  const f = await md(dir);
-  assert.equal(f.status, "incomplete");
-  assert.equal(f.incomplete_reason, "aborted");
-  assert.equal(f.comment, "");
 });
 test("abortPending writes aborted Markdown with the front only", async () => {
   const { s, coin, dir } = await pending({ results: [OK] });

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import YAML from "yaml";
 import type { CameraInfo } from "../camera/camera.ts";
@@ -141,9 +141,11 @@ export function buildFrontmatter(r: CoinRecordInput): Record<string, unknown> {
   return fm;
 }
 
+const render = (fm: Record<string, unknown>, id: string, comment: string) =>
+  `---\n${YAML.stringify(fm)}---\n\n# ${id}\n\n## Notizen\n\n${comment}\n`;
+
 export function renderCoinMarkdown(r: CoinRecordInput): string {
-  const body = `# ${r.id}\n\n## Notizen\n\n${r.comment}\n`;
-  return `---\n${YAML.stringify(buildFrontmatter(r))}---\n\n${body}`;
+  return render(buildFrontmatter(r), r.id, r.comment);
 }
 
 /** Writes `<coinDir>/<id>.md`; never overwrites an existing file (spec 8). */
@@ -151,4 +153,18 @@ export async function writeCoinMarkdown(r: CoinRecordInput): Promise<string> {
   const path = join(r.coinDir, `${r.id}.md`);
   await writeFile(path, renderCoinMarkdown(r), { flag: "wx" });
   return path;
+}
+
+/** Replaces the comment (frontmatter and "Notizen") of a coin's existing Markdown; everything else stays as written. */
+export async function setCoinComment(
+  coinDir: string,
+  id: string,
+  comment: string,
+): Promise<void> {
+  const path = join(coinDir, `${id}.md`);
+  const m = /^---\n([\s\S]*?\n)---\n/.exec(await readFile(path, "utf8"));
+  if (!m) throw new Error(`Kein Frontmatter in ${path}`);
+  const fm = YAML.parse(m[1]!) as Record<string, unknown>;
+  fm.comment = comment;
+  await writeFile(path, render(fm, id, comment));
 }

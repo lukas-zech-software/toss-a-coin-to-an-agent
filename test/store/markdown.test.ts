@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
 import { BASELINE } from "../../src/camera/settings.ts";
@@ -7,6 +8,7 @@ import type { Finding } from "../../src/check/rules.ts";
 import { attemptPaths, finalPaths } from "../../src/store/coins.ts";
 import {
   renderCoinMarkdown,
+  setCoinComment,
   writeCoinMarkdown,
 } from "../../src/store/markdown.ts";
 import type { CoinRecordInput } from "../../src/store/markdown.ts";
@@ -187,4 +189,15 @@ test("writeCoinMarkdown never overwrites", async () => {
   const r = base(dir);
   assert.equal(await writeCoinMarkdown(r), join(dir, "COIN-0001.md"));
   await assert.rejects(writeCoinMarkdown(r), /EEXIST/);
+});
+test("setCoinComment replaces only the comment of an existing Markdown", async () => {
+  const dir = await tmpDir();
+  const r = base(dir);
+  const path = await writeCoinMarkdown(r);
+  const c = 'Kratzer am Rand # "alt"';
+  await setCoinComment(dir, "COIN-0001", c);
+  assert.equal(
+    await readFile(path, "utf8"),
+    renderCoinMarkdown({ ...r, comment: c }),
+  );
 });

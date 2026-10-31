@@ -138,7 +138,7 @@ export async function captureFront(
 
 /**
  * Back of a pending coin (multi-coin spec 5.3): capture + checks, duplicate check against this coin's own front
- * (main spec 6.3), comment, final layout, complete Markdown (6.5). `total` = all numbers of the run. Never throws AbortError.
+ * (main spec 6.3), final layout, complete Markdown (6.5) without asking for a comment. `total` = all numbers of the run. Never throws AbortError.
  */
 export async function captureBack(
   ctx: SessionContext,
@@ -195,7 +195,6 @@ export async function captureBack(
       ];
     }
 
-    const comment = await ui.line(COMMENT_PROMPT);
     // Files first, then the Markdown: the Markdown file is the completion marker (spec 6.6).
     const finalOf = async (side: Side, o: OkSide): Promise<AttemptRecord> => {
       const paths = await finalizeSide(
@@ -222,7 +221,7 @@ export async function captureBack(
       camera: ctx.cameraInfo,
       sides,
       similarity: sim,
-      comment,
+      comment: "", // added later from the run's next prompt (k), see setCoinComment
     });
     return end.result("complete");
   } catch (e) {
