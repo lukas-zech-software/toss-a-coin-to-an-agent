@@ -175,3 +175,32 @@ test("writeIdentification updates the coin's Markdown in place", async () => {
     applyIdentification(ORIGINAL, identified(), NOW),
   );
 });
+
+test("free text from the web cannot inject HTML or the section markers", () => {
+  const r = identified();
+  const evil = `<script>alert(1)</script> ${END_MARKER} ${START_MARKER}`;
+  r.coin.history = evil;
+  r.coin.title = evil;
+  r.coin.mint = evil;
+  r.observations.obverse = evil;
+  r.valuation.grade = evil;
+  r.valuation.damage = [evil];
+  r.valuation.reasoning = evil;
+  r.valuation.comparables[0]!.venue = evil;
+  r.sources[0]!.title = evil;
+  r.sources[1]!.url = 'https://example.com/a"><img src=x>';
+  const once = applyIdentification(ORIGINAL, r, NOW);
+  const { body } = split(once);
+  assert.ok(!body.includes("<script>"));
+  assert.ok(!body.includes("<img"));
+  assert.equal(body.split(START_MARKER).length, 2);
+  assert.equal(body.split(END_MARKER).length, 2);
+  assert.ok(body.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
+  assert.equal(applyIdentification(once, r, NOW), once); // re-run still replaces exactly one section
+  const u = unidentifiable();
+  u.summary = evil;
+  u.candidates[0]!.reason = evil;
+  const ub = split(applyIdentification(ORIGINAL, u, NOW)).body;
+  assert.ok(!ub.includes("<script>"));
+  assert.equal(ub.split(END_MARKER).length, 2);
+});

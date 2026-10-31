@@ -147,16 +147,24 @@ const num = (v: number, digits = 2): string =>
 const money = (v: number, currency = "EUR"): string =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(v);
 const pct = (v: number): string => `${num(v, 1)} %`;
+/**
+ * Free text comes from the agent, which read it from web pages: escape < and > so it can neither inject HTML
+ * nor fake the section markers (which would break the next re-run's replacement).
+ */
+const text = (s: string): string =>
+  s.trim().replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 /** One table cell: no line breaks, no column breaks. */
 const cell = (s: string): string =>
-  s
+  text(s)
     .replace(/\s*\n\s*/g, " ")
     .replaceAll("|", "\\|")
     .trim() || "–";
 const linkText = (s: string): string =>
-  s.replace(/\s*\n\s*/g, " ").replace(/[[\]]/g, "\\$&");
+  text(s)
+    .replace(/\s*\n\s*/g, " ")
+    .replace(/[[\]]/g, "\\$&");
 const href = (url: string): string =>
-  url.replace(/[()\s]/g, (ch) => encodeURIComponent(ch));
+  url.replace(/[()\s<>"]/g, (ch) => encodeURIComponent(ch));
 const link = (s: Source): string => `[${linkText(s.title)}](${href(s.url)})`;
 
 const PRICE_TYPE_LABEL: Record<PriceType, string> = {
@@ -185,8 +193,8 @@ function observations(r: IdentifyResult, images: Images): string {
     ob = o.obverse_image;
   return [
     "### Beobachtungen\n",
-    `- **Vorderseite** (${images[ob]}): ${o.obverse.trim()}`,
-    `- **Rückseite** (${images[other(ob)]}): ${o.reverse.trim()}`,
+    `- **Vorderseite** (${images[ob]}): ${text(o.obverse)}`,
+    `- **Rückseite** (${images[other(ob)]}): ${text(o.reverse)}`,
     ...(o.diameter_mm !== null
       ? [`- **Durchmesser laut Foto:** ca. ${num(o.diameter_mm, 1)} mm (±3 %)`]
       : []),
@@ -223,14 +231,14 @@ function identifiedParts(r: IdentifyResult, images: Images): string[] {
   const parts = [
     "## Bestimmung\n",
     `**Status:** bestimmt – Konfidenz ${pct(r.confidence)}  `,
-    `**Münze:** ${c.title.trim()}\n`,
+    `**Münze:** ${text(c.title)}\n`,
     "| Merkmal | Angabe |",
     "| --- | --- |",
     ...rows.map(([k, v]) => `| ${k} | ${cell(v)} |`),
     "",
     observations(r, images),
     "### Geschichte\n",
-    `${c.history.trim()}\n`,
+    `${text(c.history)}\n`,
     "### Quellen\n",
     sourceList(r.sources),
   ];
@@ -253,8 +261,8 @@ function comparableTable(list: Comparable[]): string[] {
 function valuationParts(v: Valuation): string[] {
   const parts = [
     "## Bewertung\n",
-    `**Erhaltung (nach Fotos):** ${v.grade.trim()}  `,
-    `**Sichtbare Schäden:** ${v.damage.length ? v.damage.map((d) => d.trim()).join("; ") : "keine erkennbar"}\n`,
+    `**Erhaltung (nach Fotos):** ${text(v.grade)}  `,
+    `**Sichtbare Schäden:** ${v.damage.length ? v.damage.map(text).join("; ") : "keine erkennbar"}\n`,
   ];
   const estimate = v.estimate_eur
     ? `${money(v.estimate_eur.low)} – ${money(v.estimate_eur.high)}`
@@ -281,7 +289,7 @@ function valuationParts(v: Valuation): string[] {
         `**Grobe Einschätzung (ohne ausreichende Vergleichsverkäufe):** ${estimate}\n`,
       );
   }
-  parts.push(`${v.reasoning.trim()}\n`);
+  parts.push(`${text(v.reasoning)}\n`);
   return parts;
 }
 
@@ -290,7 +298,7 @@ function unidentifiableParts(r: IdentifyResult, images: Images): string[] {
   const parts = [
     "## Bestimmung\n",
     `**Status:** nicht bestimmbar – keine Zuordnung mit mehr als ${MIN_CONFIDENCE_EXCLUSIVE} % Sicherheit (beste Konfidenz ${pct(r.confidence)}). Alle folgenden Angaben sind Vermutungen und nicht sicher genug für eine Bestimmung.\n`,
-    `${r.summary.trim()}\n`,
+    `${text(r.summary)}\n`,
     observations(r, images),
     "### Kandidaten (nicht sicher genug)\n",
   ];
