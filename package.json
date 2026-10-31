@@ -11,6 +11,7 @@
     "doctor": "node scripts/doctor.ts",
     "capture": "node src/cli/capture.ts",
     "calibrate": "node src/cli/calibrate.ts",
+    "identify": "node src/cli/identify.ts",
     "test": "node --test \"test/**/*.test.ts\"",
     "lint": "prettier --write .",
     "typecheck": "tsc",
