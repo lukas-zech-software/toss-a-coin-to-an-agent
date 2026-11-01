@@ -3,9 +3,7 @@ import type { Side } from "../types.ts";
 import { SIDE_LABEL } from "./ui.ts";
 
 export type RotationChoice =
-  | { kind: "angle"; deg: number }
-  | { kind: "later" }
-  | { kind: "quit" };
+  { kind: "angle"; deg: number } | { kind: "later" } | { kind: "quit" };
 
 export type RotationViewOptions = {
   source: CropSource;
