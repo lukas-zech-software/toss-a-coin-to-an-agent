@@ -3,6 +3,8 @@
 Stand: 2026-10-30 · Grundlage: Auftrag von Lukas (`/goal`, 2026-10-30) und `2026-10-28-coin-capture-cli-design.md` §13.
 Lukas hat die Rückfragen übersprungen. Kennzeichnung: **[entschieden]** = steht im Auftrag · **[Annahme]** = Entscheidung von Claude, von Lukas noch zu prüfen.
 
+> **Geändert am 2026-10-31 (Auftrag von Lukas):** Die Bewertung (Phase 3, `valuation`, „## Bewertung“) ist aus dem coin-identifier entfernt. Preise schätzt nur noch der coin-appraiser (`2026-10-31-appraisal-and-auction-poc.md`), der nach jeder Bestimmung läuft. Der Identifier bestimmt und dokumentiert nur noch; ein neuer Lauf löscht alte `valuation`-Einträge. Die Abschnitte zur Bewertung unten gelten nicht mehr.
+
 ## 1. Zweck
 
 Ein Agent nimmt **einen** Münzordner mit erfolgreich aufgenommener Vorder- und Rückseite, bestimmt die Münze per Websuche so, wie es ein erfahrener Numismatiker tun würde, dokumentiert sie und schätzt ihren Wert anhand **tatsächlich verkaufter** Vergleichsstücke. [entschieden]

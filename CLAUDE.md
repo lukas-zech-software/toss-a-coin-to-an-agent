@@ -1,6 +1,6 @@
 # toss-a-coin-to-an-agent
 
-Coin capture pipeline (gphoto2 + sharp + OpenCV.js) and a coin-identification agent (`.claude/agents/coin-identifier.md`). Single developer, macOS. Specs and plans: `docs/superpowers/`.
+Coin capture pipeline (gphoto2 + sharp + OpenCV.js) and three agents that run in turn: `coin-identifier` (identifies), `coin-appraiser` (grade, damage, prices) and `coin-lister` (listing texts in German and English) in `.claude/agents/`. Single developer, macOS. Specs and plans: `docs/superpowers/`.
 
 ## Commands
 
@@ -8,6 +8,8 @@ Coin capture pipeline (gphoto2 + sharp + OpenCV.js) and a coin-identification ag
 - Live camera test (Canon 1300D attached): `COIN_LIVE_CAMERA=1 node --test test/camera/gphoto2.live.test.ts`
 - Hooks already run prettier + tsc after every edit and `npm test` before stopping (`.claude/hooks/`).
 - Numista API: `NUMISTA_API_KEY=…` in `.env` (gitignored, Claude may not read it), loaded by `npm run identify` and `npm run doctor`. Client: `src/identify/numista.ts` (≈1 request/s, monthly count in `tmp/numista-usage.log`, refuses below a 10 % reserve; `npm run identify -- numista usage`).
+- Listing folder `coins/<ID>/listing/` (`listing.json` + `description.de.md` + `description.en.md`): written by the coin-lister, with the identification and all prices copied in. It is the only input for platform adapters. Format: `docs/coin-listing-format.md`, code: `src/listing/format.ts`.
+- Platform adapters (dry run, send nothing): `npm run listing -- <ID> --platform ebay|delcampe|catawiki [--sandbox]` (`src/listing/`). `--platform local [--price <EUR>]` writes a printable A5 info card to `tmp/listing/<ID>/karte.html`.
 - Claude usage limits (5 h / 7 d): `tmp/claude-usage.json`, written by the status line wrapper `.claude/statusline-usage.sh` (set in `.claude/settings.local.json`).
 
 ## Code rules

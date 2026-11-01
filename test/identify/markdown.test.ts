@@ -39,7 +39,7 @@ const split = (md: string) => {
   return { fm: YAML.parse(m[1]!) as Record<string, any>, body: m[2]! };
 };
 
-test("identified: capture fields stay, described flips, identification and valuation are added", () => {
+test("identified: capture fields stay, described flips, identification is added", () => {
   const { fm } = split(applyIdentification(ORIGINAL, identified(), NOW));
   const before = YAML.parse(ORIGINAL.split("---\n")[1]!);
   for (const k of [
@@ -62,15 +62,20 @@ test("identified: capture fields stay, described flips, identification and valua
   assert.equal(id.mintage, "51.737.000");
   assert.deepEqual(id.catalog, ["KM# 150", "Numista N# 1489"]);
   assert.equal(id.sources.length, 2);
-  const v = fm.valuation;
-  assert.equal(v.state, "estimated");
-  assert.equal(v.currency, "EUR");
-  assert.deepEqual(v.realized, { n: 3, min: 32, median: 37, max: 45 });
-  assert.deepEqual(v.estimate, { low: 25, high: 32 });
-  assert.equal(v.comparables.length, 3);
 });
 
-test("identified: body keeps the notes and adds Bestimmung, Geschichte, Quellen and Bewertung", () => {
+test("prices are not the identifier's: an old valuation is dropped, the appraisal stays", () => {
+  const old = ORIGINAL.replace(
+    "similarity_av_rv: 0.84\n",
+    "similarity_av_rv: 0.84\nvaluation:\n  state: estimated\nappraisal:\n  grade: vz\n",
+  );
+  const { fm, body } = split(applyIdentification(old, identified(), NOW));
+  assert.equal("valuation" in fm, false);
+  assert.deepEqual(fm.appraisal, { grade: "vz" });
+  assert.ok(!body.includes("## Bewertung"));
+});
+
+test("identified: body keeps the notes and adds Bestimmung, Geschichte and Quellen", () => {
   const { body } = split(applyIdentification(ORIGINAL, identified(), NOW));
   assert.ok(body.startsWith("\n# COIN-0001\n\n## Notizen\n\nspanusch\n"));
   const start = body.indexOf(START_MARKER),
@@ -90,20 +95,12 @@ test("identified: body keeps the notes and adds Bestimmung, Geschichte, Quellen 
     "### Quellen",
     "1. [Numista – 1 Dollar Peace](https://en.numista.com/1489)",
     "2. [PCGS CoinFacts – 1922 $1](https://www.pcgs.com/coinfacts/coin/1922-1/7356)",
-    "## Bewertung",
-    "ss (VF-20)",
-    "Grünspan-Flecken auf der Rückseite",
-    "https://coins.ha.com/itm/a/1.s",
-    "inkl. Aufgeld",
-    "verkauft (Art unbekannt)",
-    "Min 32,00 € · Median 37,00 € · Max 45,00 €",
-    "25,00 € – 32,00 €",
   ])
-    assert.ok(s.replaceAll(" ", " ").includes(needle), `missing: ${needle}`);
+    assert.ok(s.includes(needle), `missing: ${needle}`);
   assert.ok(!s.includes("nicht bestimmbar"));
 });
 
-test("unidentifiable: says so, lists candidates as uncertain, no valuation", () => {
+test("unidentifiable: says so, lists candidates as uncertain", () => {
   const md = applyIdentification(ORIGINAL, unidentifiable(), NOW);
   const { fm, body } = split(md);
   assert.equal(fm.described, true);
@@ -111,7 +108,6 @@ test("unidentifiable: says so, lists candidates as uncertain, no valuation", () 
   assert.equal(fm.identification.confidence, 70);
   assert.equal(fm.identification.candidates.length, 2);
   assert.ok(fm.identification.summary.includes("Münzstätte"));
-  assert.equal("valuation" in fm, false);
   assert.equal("title" in fm.identification, false);
   for (const needle of [
     "nicht bestimmbar",
@@ -123,7 +119,6 @@ test("unidentifiable: says so, lists candidates as uncertain, no valuation", () 
     "| Österreich, Taler 1755, Günzburg | 20 % |",
   ])
     assert.ok(body.includes(needle), `missing: ${needle}`);
-  assert.ok(!body.includes("## Bewertung"));
 });
 
 test("re-running replaces the previous result instead of appending", () => {
@@ -131,24 +126,7 @@ test("re-running replaces the previous result instead of appending", () => {
   assert.equal(applyIdentification(once, identified(), NOW), once);
   const flipped = applyIdentification(once, unidentifiable(), NOW);
   assert.equal(flipped.split(START_MARKER).length, 2);
-  assert.equal(split(flipped).fm.valuation, undefined);
-  assert.ok(!flipped.includes("## Bewertung"));
   assert.ok(flipped.includes("## Notizen\n\nspanusch\n"));
-});
-
-test("insufficient data: no statistics, says why", () => {
-  const r = identified();
-  r.valuation.state = "insufficient_data";
-  r.valuation.comparables = r.valuation.comparables.slice(0, 1);
-  r.valuation.estimate_eur = null;
-  r.valuation.reasoning = "Nur ein Verkauf gefunden.";
-  const { fm, body } = split(applyIdentification(ORIGINAL, r, NOW));
-  assert.equal(fm.valuation.state, "insufficient_data");
-  assert.equal(fm.valuation.realized, null);
-  assert.equal(fm.valuation.estimate, null);
-  assert.ok(body.includes("weniger als zwei"));
-  assert.ok(body.includes("Nur ein Verkauf gefunden."));
-  assert.ok(!body.includes("Median"));
 });
 
 test("table cells cannot break the table", () => {
@@ -183,10 +161,6 @@ test("free text from the web cannot inject HTML or the section markers", () => {
   r.coin.title = evil;
   r.coin.mint = evil;
   r.observations.obverse = evil;
-  r.valuation.grade = evil;
-  r.valuation.damage = [evil];
-  r.valuation.reasoning = evil;
-  r.valuation.comparables[0]!.venue = evil;
   r.sources[0]!.title = evil;
   r.sources[1]!.url = 'https://example.com/a"><img src=x>';
   const once = applyIdentification(ORIGINAL, r, NOW);

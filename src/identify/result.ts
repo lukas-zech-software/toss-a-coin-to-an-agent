@@ -1,19 +1,10 @@
-// The coin-identifier agent's result (identification spec §5): types, validation and price statistics.
+// The coin-identifier agent's result (identification spec §5): types and validation. Prices are the coin-appraiser's job.
 // The agent writes this as JSON; `npm run identify -- write` validates it before anything touches the Markdown.
 import type { Side } from "../types.ts";
 
 /** Strictly above this confidence (in %) a coin counts as identified. */
 export const MIN_CONFIDENCE_EXCLUSIVE = 90;
 export const SOURCES = { min: 2, max: 5 } as const;
-export const COMPARABLES = { min: 2, max: 5 } as const;
-/** hammer = without premium; incl_premium = with buyer's premium; fixed_price = sold at a fixed price; sold = sold, format not visible. */
-export const PRICE_TYPES = [
-  "hammer",
-  "incl_premium",
-  "fixed_price",
-  "sold",
-] as const;
-export type PriceType = (typeof PRICE_TYPES)[number];
 
 export type Source = { title: string; url: string };
 export type Candidate = { title: string; confidence: number; reason: string };
@@ -38,24 +29,6 @@ export type CoinDetails = {
   mintage: string;
   history: string;
 };
-export type Comparable = {
-  url: string;
-  venue: string;
-  date: string;
-  grade: string;
-  price: number;
-  currency: string;
-  price_eur: number;
-  price_type: PriceType;
-};
-export type Valuation = {
-  state: "estimated" | "insufficient_data";
-  grade: string;
-  damage: string[];
-  comparables: Comparable[];
-  estimate_eur: { low: number; high: number } | null;
-  reasoning: string;
-};
 export type IdentifyResult = {
   id: string;
   state: "identified" | "unidentifiable";
@@ -65,7 +38,6 @@ export type IdentifyResult = {
   summary: string;
   candidates: Candidate[];
   sources: Source[];
-  valuation: Valuation | null;
 };
 
 export type Validation =
@@ -87,8 +59,6 @@ const isUrl = (v: unknown): boolean => {
     return false;
   }
 };
-const DATE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
-const CURRENCY = /^[A-Z]{3}$/;
 
 /** Collects every problem instead of stopping at the first, so the agent can fix them in one go. */
 export function validateResult(raw: unknown): Validation {
@@ -136,6 +106,8 @@ export function validateResult(raw: unknown): Validation {
   if (state !== "identified" && state !== "unidentifiable")
     err('state muss "identified" oder "unidentifiable" sein');
   const conf = confidence(raw.confidence, "confidence");
+  if ("valuation" in raw)
+    err("valuation: Preise schätzt der coin-appraiser – das Feld weglassen");
 
   // observations
   if (!isObj(raw.observations)) err("observations fehlt");
@@ -174,7 +146,6 @@ export function validateResult(raw: unknown): Validation {
         `bestimmte Münzen brauchen ${SOURCES.min} bis ${SOURCES.max} Quellen (sources), gefunden: ${sources.length}`,
       );
     validateCoin(raw.coin, err, text, optionalNum);
-    validateValuation(raw.valuation, err, text, objList);
   } else if (state === "unidentifiable") {
     if (conf !== null && conf > MIN_CONFIDENCE_EXCLUSIVE)
       err(
@@ -191,8 +162,6 @@ export function validateResult(raw: unknown): Validation {
       err(
         `höchstens ${SOURCES.max} Quellen (sources), gefunden: ${sources.length}`,
       );
-    if (raw.valuation !== null && raw.valuation !== undefined)
-      err("valuation: nicht bestimmbare Münzen werden nicht bewertet (null)");
   }
 
   return errors.length
@@ -230,112 +199,11 @@ function validateCoin(
   optionalNum(coin, "diameter_mm", "coin.diameter_mm");
 }
 
-function validateValuation(
-  v: unknown,
-  err: Err,
-  text: Text,
-  objList: (v: unknown, path: string) => Obj[],
-): void {
-  if (!isObj(v)) return err("valuation fehlt (Pflicht bei state identified)");
-  text(v, "grade", "valuation.grade");
-  text(v, "reasoning", "valuation.reasoning");
-  if (!Array.isArray(v.damage) || !v.damage.every(isText))
-    err("valuation.damage muss eine Liste sein (leer, wenn keine Schäden)");
-  const comps = objList(v.comparables, "valuation.comparables");
-  comps.forEach((c, i) => {
-    const p = `valuation.comparables[${i + 1}]`;
-    if (!isUrl(c.url)) err(`${p}.url muss ein http(s)-Link sein`);
-    text(c, "venue", `${p}.venue`);
-    text(c, "grade", `${p}.grade`);
-    if (typeof c.date !== "string" || !DATE.test(c.date))
-      err(`${p}.date muss JJJJ-MM-TT (oder JJJJ-MM / JJJJ) sein`);
-    if (!(isNum(c.price) && c.price > 0))
-      err(`${p}.price muss eine positive Zahl sein`);
-    if (!(isNum(c.price_eur) && c.price_eur > 0))
-      err(`${p}.price_eur muss eine positive Zahl sein`);
-    if (typeof c.currency !== "string" || !CURRENCY.test(c.currency))
-      err(`${p}.currency muss ein ISO-Code wie EUR oder USD sein`);
-    if (!PRICE_TYPES.includes(c.price_type as PriceType))
-      err(`${p}.price_type muss ${PRICE_TYPES.join(" | ")} sein`);
-  });
-  // One aggregator page (e.g. a price history) may list several sales; the same sale twice is an error.
-  const seen = new Set<string>();
-  for (const c of comps) {
-    const key = `${String(c.url)}|${String(c.date)}|${String(c.price)}`;
-    if (seen.has(key))
-      err(
-        `valuation.comparables: derselbe Verkauf doppelt: ${String(c.url)} (${String(c.date)}, ${String(c.price)})`,
-      );
-    seen.add(key);
-  }
-
-  if (v.state === "estimated") {
-    if (comps.length < COMPARABLES.min || comps.length > COMPARABLES.max)
-      err(
-        `valuation: ${COMPARABLES.min} bis ${COMPARABLES.max} verkaufte Vergleichsstücke nötig, gefunden: ${comps.length} – bei weniger als ${COMPARABLES.min} state "insufficient_data"`,
-      );
-    const e = v.estimate_eur;
-    if (
-      !isObj(e) ||
-      !isNum(e.low) ||
-      !isNum(e.high) ||
-      e.low <= 0 ||
-      e.low > e.high
-    )
-      err("valuation.estimate_eur muss {low, high} mit 0 < low <= high sein");
-  } else if (v.state === "insufficient_data") {
-    if (comps.length >= COMPARABLES.min)
-      err(
-        `valuation.state insufficient_data, aber ${comps.length} Vergleichsstücke – dann state "estimated"`,
-      );
-    const e = v.estimate_eur;
-    if (
-      e !== null &&
-      e !== undefined &&
-      (!isObj(e) ||
-        !isNum(e.low) ||
-        !isNum(e.high) ||
-        e.low <= 0 ||
-        e.low > e.high)
-    )
-      err(
-        "valuation.estimate_eur muss null oder {low, high} mit 0 < low <= high sein",
-      );
-  } else err('valuation.state muss "estimated" oder "insufficient_data" sein');
-}
-
 /** Fills optional parts with their empty form so rendering never sees undefined. */
 function normalise(r: IdentifyResult): IdentifyResult {
   return {
     ...r,
     coin: r.coin ?? null,
     summary: r.summary ?? "",
-    valuation: r.valuation
-      ? { ...r.valuation, estimate_eur: r.valuation.estimate_eur ?? null }
-      : null,
-  };
-}
-
-export type PriceStats = {
-  n: number;
-  min: number;
-  median: number;
-  max: number;
-};
-
-/** Min, median and max in whole cents (median of an even count = mean of the middle pair, half a cent rounds up). */
-export function priceStats(values: number[]): PriceStats | null {
-  if (!values.length) return null;
-  const cents = values.map((v) => Math.round(v * 100)).sort((a, b) => a - b);
-  const mid = cents.length >> 1;
-  const median =
-    cents.length % 2
-      ? cents[mid]!
-      : Math.round((cents[mid - 1]! + cents[mid]!) / 2);
-  return {
-    n: cents.length,
-    min: cents[0]! / 100,
-    median: median / 100,
-    max: cents[cents.length - 1]! / 100,
   };
 }

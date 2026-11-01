@@ -1,8 +1,14 @@
-// npm run identify – helper commands for the coin-identifier agent (identification spec §3.1).
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-import { writeIdentification } from "../identify/markdown.ts";
-import { priceStats, validateResult } from "../identify/result.ts";
+// npm run identify – helper commands for the coin-identifier, coin-appraiser and coin-lister agents
+// (identification spec §3.1).
+import { existsSync } from "node:fs";
+import { mkdir, readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import {
+  END_MARKER as IDENT_END,
+  START_MARKER as IDENT_START,
+  writeIdentification,
+} from "../identify/markdown.ts";
+import { validateResult } from "../identify/result.ts";
 import {
   estimateDiameterMm,
   loadCoin,
@@ -11,6 +17,21 @@ import {
 } from "../identify/views.ts";
 import type { Scale } from "../identify/views.ts";
 import { numista, numistaUsage, RESERVE } from "../identify/numista.ts";
+import {
+  priceStats,
+  validateAppraisal,
+  writeAppraisal,
+} from "../identify/appraisal.ts";
+import {
+  descriptionErrors,
+  descriptionFile,
+  LANGS,
+  LISTING_DIR,
+  LISTING_FILE,
+  validateTexts,
+  writeListing,
+} from "../listing/format.ts";
+import type { ListingTexts, Texts } from "../listing/format.ts";
 
 /**
  * Photo scale of the fixed copy-stand setup: measured on 2026-10-30 from three coins of known diameter
@@ -23,6 +44,10 @@ export const USAGE = `Verwendung:
   npm run identify -- prepare <ID>
   npm run identify -- zoom <ID> <av|rv> <x> <y> <size> [--rotate <grad>] [--enhance]
   npm run identify -- write <ID> <result.json>
+  npm run identify -- appraise <ID>
+  npm run identify -- write-appraisal <ID> <appraisal.json>
+  npm run identify -- describe <ID>
+  npm run identify -- write-listing <ID> <texts.json>
   npm run identify -- numista search [<Wörter>] [--issuer <code>] [--year <wie geprägt>] [--date <Jahr|1900-1910>] [--km <KM-Nr.>] [--category coin|exonumia|banknote] [--page <n>]
   npm run identify -- numista type <N#>
   npm run identify -- numista issues <N#>
@@ -59,6 +84,14 @@ export async function identifyMain(
     if (cmd === "zoom" && id) return await zoom(id, rest, deps);
     if (cmd === "write" && id && rest.length === 1)
       return await write(id, rest[0]!, deps);
+    if (cmd === "appraise" && id && rest.length === 0)
+      return await appraise(id, deps);
+    if (cmd === "write-appraisal" && id && rest.length === 1)
+      return await writeAppraisalCmd(id, rest[0]!, deps);
+    if (cmd === "describe" && id && rest.length === 0)
+      return await describe(id, deps);
+    if (cmd === "write-listing" && id && rest.length === 1)
+      return await writeListingCmd(id, rest[0]!, deps);
   } catch (e) {
     deps.out(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
     return 1;
@@ -95,6 +128,168 @@ async function prepare(id: string, deps: IdentifyDeps): Promise<number> {
       null,
       2,
     ),
+  );
+  return 0;
+}
+
+const COIN_FACTS = [
+  "title",
+  "issuer",
+  "denomination",
+  "year",
+  "mint",
+  "catalog",
+  "material",
+  "weight_g",
+  "diameter_mm",
+  "mintage",
+  "sources",
+  "confidence",
+];
+const pick = (o: Record<string, unknown>, keys: string[]) =>
+  Object.fromEntries(keys.map((k) => [k, o[k] ?? null]));
+
+async function readJson(file: string): Promise<unknown> {
+  try {
+    return JSON.parse(await readFile(file, "utf8"));
+  } catch (e) {
+    throw new Error(`${file} ist kein lesbares JSON – ${(e as Error).message}`);
+  }
+}
+
+/** Intake for the coin-appraiser: the identified coin's facts plus the photo views. Refuses unidentified coins. */
+async function appraise(id: string, deps: IdentifyDeps): Promise<number> {
+  const coin = await loadCoin(deps.coinsRoot, id);
+  const ident = coin.frontmatter.identification as
+    Record<string, unknown> | undefined;
+  if (ident?.state !== "identified") {
+    deps.out(
+      `Fehler: ${id} ist nicht bestimmt (identification.state: ${String(ident?.state ?? "fehlt")}) – geschätzt werden nur bestimmte Münzen. Erst den coin-identifier laufen lassen.`,
+    );
+    return 1;
+  }
+  const dir = join(deps.workDir, id);
+  const views = await prepareViews(coin, dir);
+  deps.out(
+    JSON.stringify(
+      {
+        id,
+        markdown: coin.mdPath,
+        coin: pick(ident, COIN_FACTS),
+        obverse_image: ident.obverse_image ?? null,
+        views,
+        appraisal_path: join(dir, "appraisal.json"),
+        zoom: `npm run identify -- zoom ${id} <av|rv> <x> <y> <size> [--rotate <grad>] [--enhance]`,
+        write: `npm run identify -- write-appraisal ${id} ${join(dir, "appraisal.json")}`,
+      },
+      null,
+      2,
+    ),
+  );
+  return 0;
+}
+
+async function writeAppraisalCmd(
+  id: string,
+  file: string,
+  deps: IdentifyDeps,
+): Promise<number> {
+  const v = validateAppraisal(await readJson(file));
+  const errors = v.ok ? [] : [...v.errors];
+  if (v.ok && v.value.id !== id)
+    errors.push(`id im Ergebnis (${v.value.id}) passt nicht zu ${id}`);
+  if (!v.ok || errors.length) {
+    deps.out(
+      `Schätzung ungültig – Markdown NICHT geändert:\n${errors.map((e) => `- ${e}`).join("\n")}`,
+    );
+    return 1;
+  }
+  const coin = await loadCoin(deps.coinsRoot, id);
+  const a = v.value;
+  await writeAppraisal(coin.mdPath, a, deps.now?.() ?? new Date());
+  const s = priceStats(a.prices.map((p) => p.price_eur));
+  deps.out(
+    `${id}: ${
+      a.estimate_eur && s
+        ? `Preise Min ${s.min} € · Median ${s.median} € · Max ${s.max} € (n = ${s.n}); Schätzung ${a.estimate_eur.low}–${a.estimate_eur.high} €`
+        : "keine Schätzung (zu wenige belegte Preise)"
+    }\nGeschrieben: ${coin.mdPath}\nAngebotstexte: als Nächstes den coin-lister laufen lassen`,
+  );
+  return 0;
+}
+
+/** Intake for the coin-lister: identification, grade and damage, and where its files go. No photos. */
+async function describe(id: string, deps: IdentifyDeps): Promise<number> {
+  const coin = await loadCoin(deps.coinsRoot, id);
+  const fm = coin.frontmatter;
+  const ident = (fm.identification ?? {}) as Record<string, unknown>;
+  const a = fm.appraisal as Record<string, unknown> | undefined;
+  if (ident.state !== "identified" || !a) {
+    deps.out(
+      `Fehler: ${id} ist ${ident.state !== "identified" ? "nicht bestimmt – erst den coin-identifier" : "nicht geschätzt – erst den coin-appraiser"} laufen lassen.`,
+    );
+    return 1;
+  }
+  const md = await readFile(coin.mdPath, "utf8");
+  const s = md.indexOf(IDENT_START),
+    e = md.indexOf(IDENT_END);
+  const dir = join(deps.workDir, id);
+  await mkdir(dir, { recursive: true });
+  deps.out(
+    JSON.stringify(
+      {
+        id,
+        coin: pick(ident, COIN_FACTS),
+        condition: { grade: a.grade ?? null, damage: a.damage ?? [] },
+        identification_section:
+          s >= 0 && e > s ? md.slice(s + IDENT_START.length, e).trim() : "",
+        texts_path: join(dir, "texts.json"),
+        description_paths: Object.fromEntries(
+          LANGS.map((l) => [l, join(dir, descriptionFile(l))]),
+        ),
+        listing_dir: join(coin.dir, LISTING_DIR),
+        format_doc: "docs/coin-listing-format.md",
+        write: `npm run identify -- write-listing ${id} ${join(dir, "texts.json")}`,
+      },
+      null,
+      2,
+    ),
+  );
+  return 0;
+}
+
+async function writeListingCmd(
+  id: string,
+  file: string,
+  deps: IdentifyDeps,
+): Promise<number> {
+  const raw = await readJson(file);
+  const errors = validateTexts(raw);
+  const t = raw as ListingTexts;
+  if (!errors.length && t.id !== id)
+    errors.push(`id im Ergebnis (${t.id}) passt nicht zu ${id}`);
+  const descriptions = {} as Texts;
+  for (const lang of LANGS) {
+    const path = join(dirname(file), descriptionFile(lang));
+    descriptions[lang] = existsSync(path) ? await readFile(path, "utf8") : "";
+    errors.push(...descriptionErrors(lang, descriptions[lang]));
+  }
+  if (errors.length) {
+    deps.out(
+      `Angebotstexte ungültig – nichts geschrieben:\n${errors.map((e) => `- ${e}`).join("\n")}`,
+    );
+    return 1;
+  }
+  const coin = await loadCoin(deps.coinsRoot, id);
+  const dir = await writeListing(
+    coin.dir,
+    coin.frontmatter,
+    t,
+    descriptions,
+    deps.now?.() ?? new Date(),
+  );
+  deps.out(
+    `${id}: Angebotsdaten geschrieben\nErgebnis: ${dir}/ (${[LISTING_FILE, ...LANGS.map(descriptionFile)].join(", ")})`,
   );
   return 0;
 }
@@ -215,18 +410,8 @@ async function write(
   );
   const head =
     r.state === "identified"
-      ? `${id}: bestimmt (${r.confidence} %) – ${r.coin!.title}`
+      ? `${id}: bestimmt (${r.confidence} %) – ${r.coin!.title}\nPreis: als Nächstes den coin-appraiser laufen lassen`
       : `${id}: nicht bestimmbar (beste Konfidenz ${r.confidence} %)`;
-  const val = r.valuation;
-  const stats =
-    val?.state === "estimated"
-      ? priceStats(val.comparables.map((c) => c.price_eur))
-      : null;
-  const tail = !val
-    ? ""
-    : stats
-      ? `\nBewertung: Vergleichspreise Min ${stats.min} € · Median ${stats.median} € · Max ${stats.max} € (n = ${stats.n}); Schätzung ${val.estimate_eur!.low}–${val.estimate_eur!.high} €`
-      : "\nBewertung: zu wenige Vergleichsverkäufe (insufficient_data)";
-  deps.out(`${head}${tail}\nGeschrieben: ${path}`);
+  deps.out(`${head}\nGeschrieben: ${path}`);
   return 0;
 }
