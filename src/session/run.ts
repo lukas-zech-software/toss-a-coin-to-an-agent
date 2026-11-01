@@ -20,6 +20,17 @@ const SUMMARY_STATUS: Record<
   aborted: "incomplete (aborted)",
 };
 
+/** Printed before the first prompt when the terminal cannot show images (rotation spec 7.3). */
+export const NO_IMAGES_HINTS: readonly string[] = [
+  "Hinweis: Dieses Terminal kann keine Bilder anzeigen (z. B. das Terminal von WebStorm). Empfohlen: iTerm2 (oder WezTerm, Ghostty, Kitty). Der Drehschritt ist in diesem Lauf abgeschaltet.",
+  "Hinweis: Drehung nachholen mit „npm run rotate“ (alle Münzen ohne Drehung) oder „npm run rotate -- <ID>“.",
+];
+
+/** End note after the summary when sides of this run have no angle (rotation spec 7.3). */
+export function formatUnrotated(n: number): string {
+  return `${n} ${n === 1 ? "Seite" : "Seiten"} ohne Drehung – nachholen mit „npm run rotate“.`;
+}
+
 /** One line per number of the run (multi-coin spec 5.4), without the "Zusammenfassung:" header. */
 export function formatSummary(results: readonly CoinResult[]): string[] {
   return results.map((r) =>
@@ -38,6 +49,8 @@ type Slot =
  * One run (multi-coin spec 5): the fronts of any number of coins, then their backs in the same order, then the summary.
  * Quitting (q, Ctrl+C, a coin that ends aborted) saves every coin still waiting for its back as incomplete (aborted).
  * Prints the summary, returns one result per number in order. Never throws AbortError.
+ * Rotation spec 7.3: without images two hints before the first prompt; sides left without an angle (no images, s) get
+ * an end note after the summary.
  */
 export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
   const { ui } = ctx;
@@ -133,7 +146,8 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
       if (k === "q") return;
       const result = await captureBack(ctx, coin, total);
       slots[i] = { kind: "ended", result };
-      if (result.status === "aborted") return;
+      // Ctrl+C in the back's rotation view: the coin is complete, but the run ends (rotation spec 7.1)
+      if (result.status === "aborted" || ui.signal.aborted) return;
       last = result.status === "complete" ? result : null;
     }
     if (last)
@@ -144,6 +158,7 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
       );
   }
 
+  if (ui.images === null) for (const line of NO_IMAGES_HINTS) ui.print(line);
   try {
     if (await fronts()) await backs();
   } catch (e) {
@@ -161,5 +176,7 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
     ui.print("Zusammenfassung:");
     for (const line of formatSummary(results)) ui.print(line);
   } else ui.print("Keine Münze erfasst.");
+  const unrotated = results.reduce((sum, r) => sum + r.unrotated, 0);
+  if (unrotated > 0) ui.print(formatUnrotated(unrotated));
   return results;
 }

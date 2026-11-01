@@ -9,7 +9,7 @@ import {
   captureBack,
   captureFront,
 } from "../../src/session/coin.ts";
-import { NO_COIN, OK, UNDER, makeSession } from "../fakes.ts";
+import { FakePipeline, NO_COIN, OK, UNDER, makeSession } from "../fakes.ts";
 
 const files = async (dir: string) =>
   [
@@ -55,7 +55,13 @@ test("front ignored asks for a comment and ends the coin", async () => {
   const dir = join(s.root, "COIN-0001");
   assert.deepEqual(await captureFront(s.ctx, SLOT), {
     kind: "ended",
-    result: { position: 1, id: "COIN-0001", dir, status: "ignored" },
+    result: {
+      position: 1,
+      id: "COIN-0001",
+      dir,
+      status: "ignored",
+      unrotated: 0,
+    },
   });
   const f = await md(dir);
   assert.equal(f.comment, "leer");
@@ -97,6 +103,7 @@ test("back ok: no comment prompt, final layout, complete Markdown with an empty 
     id: "COIN-0001",
     dir,
     status: "complete",
+    unrotated: 2, // no images: neither side has an angle
   });
   assert.deepEqual(await files(dir), [
     "COIN-0001.md",
@@ -165,4 +172,122 @@ test("abortPending writes aborted Markdown with the front only", async () => {
   assert.equal(f.sides.rv, undefined);
   assert.equal(f.comment, "");
   assert.deepEqual(s.ui.prompts, []);
+});
+
+test("front accepted: rotation view, crop turned, angle kept with the pending coin", async () => {
+  const s = await makeSession({
+    results: [OK],
+    images: "iterm",
+    rotations: [37],
+  });
+  const front = await captureFront(s.ctx, SLOT);
+  assert.ok(front.kind === "pending");
+  assert.equal(front.coin.avRotation, 37);
+  assert.deepEqual(
+    s.ui.rotationViews.map((v) => [v.header, v.startDeg, v.allowQuit]),
+    [["COIN-0001 · Münze 1 · Vorderseite", 0, false]],
+  );
+  assert.deepEqual((s.pipeline as FakePipeline).rotated, [
+    { crop: join(s.root, "COIN-0001", "COIN-0001_av_v1.jpg"), deg: 37 },
+  ]);
+  assert.ok(s.ui.output.includes("Vorderseite: Drehung +37°"));
+  assert.ok(
+    s.ui.statuses.includes(
+      "COIN-0001 · Münze 1 · Vorderseite · Versuch 1 · Drehung",
+    ),
+  );
+});
+test("0° and s leave the crop untouched", async () => {
+  const zero = await makeSession({
+    results: [OK],
+    images: "iterm",
+    rotations: [0],
+  });
+  const a = await captureFront(zero.ctx, SLOT);
+  assert.ok(a.kind === "pending");
+  assert.equal(a.coin.avRotation, 0);
+  assert.deepEqual((zero.pipeline as FakePipeline).rotated, []);
+  assert.ok(zero.ui.output.includes("Vorderseite: Drehung 0°"));
+
+  const later = await makeSession({
+    results: [OK],
+    images: "iterm",
+    rotations: ["s"],
+  });
+  const b = await captureFront(later.ctx, SLOT);
+  assert.ok(b.kind === "pending");
+  assert.equal(b.coin.avRotation, null);
+  assert.ok(later.ui.output.includes("Vorderseite: Drehung später"));
+  assert.deepEqual((later.pipeline as FakePipeline).rotated, []);
+});
+test("no rotation view for an ignored front or without images", async () => {
+  const ignored = await makeSession({
+    results: [NO_COIN],
+    script: ["i", "leer"],
+    images: "iterm",
+    rotations: [],
+  });
+  const a = await captureFront(ignored.ctx, SLOT);
+  assert.ok(a.kind === "ended" && a.result?.status === "ignored");
+  assert.deepEqual(ignored.ui.rotationViews, []);
+
+  const plain = await makeSession({ results: [OK] });
+  const b = await captureFront(plain.ctx, SLOT);
+  assert.ok(b.kind === "pending");
+  assert.equal(b.coin.avRotation, null);
+  assert.deepEqual(plain.ui.rotationViews, []);
+  assert.ok(!plain.ui.output.some((l) => l.includes("Drehung")));
+});
+test("ctrl-c in the front's rotation view ends the coin aborted, rotation null", async () => {
+  const s = await makeSession({
+    results: [OK],
+    images: "iterm",
+    rotations: ["ctrl-c"],
+  });
+  const front = await captureFront(s.ctx, SLOT);
+  assert.ok(front.kind === "ended" && front.result !== null);
+  assert.equal(front.result.status, "aborted");
+  assert.equal(front.result.unrotated, 1);
+  const f = await md(join(s.root, "COIN-0001"));
+  assert.equal(f.incomplete_reason, "aborted");
+  assert.equal(f.sides.av.rotation_deg, null);
+});
+test("back: rotation view only for the accepted re-shot; Markdown has both angles", async () => {
+  const { s, coin, dir } = await pending({
+    results: [OK, OK, OK],
+    similarities: [0.97, 0.2],
+    script: ["enter"],
+    images: "iterm",
+    rotations: [0, 180],
+  });
+  const r = await captureBack(s.ctx, coin, 3);
+  assert.equal(r.status, "complete");
+  assert.equal(r.unrotated, 0);
+  assert.equal(s.ui.rotationViews.length, 2);
+  assert.equal(
+    s.ui.rotationViews[1]!.header,
+    "COIN-0001 · Münze 1/3 · Rückseite",
+  );
+  assert.deepEqual((s.pipeline as FakePipeline).rotated, [
+    { crop: join(dir, "COIN-0001_rv_v1.jpg"), deg: 180 },
+  ]);
+  const f = await md(dir);
+  assert.equal(f.sides.av.rotation_deg, 0);
+  assert.equal(f.sides.rv.rotation_deg, 180);
+});
+test("ctrl-c in the back's rotation view still completes the coin", async () => {
+  const { s, coin, dir } = await pending({
+    results: [OK, OK],
+    images: "iterm",
+    rotations: [37, "ctrl-c"],
+  });
+  const r = await captureBack(s.ctx, coin, 3);
+  assert.equal(r.status, "complete");
+  assert.equal(r.unrotated, 1);
+  assert.ok(s.ui.signal.aborted);
+  const f = await md(dir);
+  assert.equal(f.status, "complete");
+  assert.equal(f.sides.av.rotation_deg, 37);
+  assert.equal(f.sides.rv.rotation_deg, null);
+  assert.ok(existsSync(join(dir, "COIN-0001_rv.jpg")));
 });

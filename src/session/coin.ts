@@ -9,6 +9,7 @@ import { writeCoinMarkdown } from "../store/markdown.ts";
 import type { SideData } from "../store/markdown.ts";
 import type { AttemptRecord, Side } from "../types.ts";
 import type { SessionContext } from "./context.ts";
+import { rotateSide } from "./rotation-step.ts";
 import { captureSide } from "./side.ts";
 import type { SideOutcome } from "./side.ts";
 
@@ -20,6 +21,8 @@ export type CoinResult = {
   id: string;
   dir: string;
   status: CoinStatus;
+  /** Sides with an accepted shot but no angle (rotation spec 7.3); 0 for a deleted coin. */
+  unrotated: number;
 };
 /** A coin whose front is done and whose back is still due: a folder with attempt files, no Markdown yet. */
 export type PendingCoin = {
@@ -28,6 +31,7 @@ export type PendingCoin = {
   dir: string;
   startedAt: Date;
   av: OkSide;
+  avRotation: number | null; // the front's angle, written with the coin's Markdown (rotation spec 7.1)
 };
 export type FrontOutcome =
   | { kind: "pending"; coin: PendingCoin }
@@ -40,10 +44,16 @@ const sideData = (o: SideOutcome, warnings: string[] = []): SideData => ({
   final: o.kind === "ok" ? o.final : null,
   warnings,
 });
+/** The pending coin's front as SideData, with its angle. */
+const avData = (coin: PendingCoin): SideData => ({
+  ...sideData(coin.av),
+  rotationDeg: coin.avRotation,
+});
 
 /**
- * The ways a coin ends without being complete, shared by both halves. `sides` is read when the Markdown is written,
- * so the caller keeps it up to date. Remembers whether the Markdown (the completion marker) exists already.
+ * The ways a coin ends without being complete, shared by both halves. `sides` is read when the Markdown is written
+ * and when a result is built (`unrotated`), so the caller keeps it up to date, angles included. Remembers whether the
+ * Markdown (the completion marker) exists already.
  */
 function endings(
   ctx: SessionContext,
@@ -56,6 +66,12 @@ function endings(
     id: coin.id,
     dir: coin.dir,
     status,
+    unrotated:
+      status === "deleted"
+        ? 0
+        : Object.values(sides).filter(
+            (d) => d.final !== null && (d.rotationDeg ?? null) === null,
+          ).length,
   });
   async function write(
     reason: "ignored" | "aborted",
@@ -121,15 +137,23 @@ export async function captureFront(
     const dir = await createCoinDir(cfg.paths.coinsRoot, slot.id); // the folder exists from the first capture on
     end = endings(ctx, { ...slot, dir, startedAt }, sides);
 
-    const av = await captureSide(
-      ctx,
-      { id: slot.id, dir, label: `Münze ${slot.position}` },
-      "av",
-    );
+    const label = `Münze ${slot.position}`;
+    const av = await captureSide(ctx, { id: slot.id, dir, label }, "av");
     sides.av = sideData(av);
-    if (av.kind === "ok")
-      return { kind: "pending", coin: { ...slot, dir, startedAt, av } };
-    return { kind: "ended", result: await end.forSide(av) };
+    if (av.kind !== "ok")
+      return { kind: "ended", result: await end.forSide(av) };
+    // Ctrl+C in the view: the coin still waits for its back and ends aborted like any Ctrl+C here (rotation spec 7.1)
+    const avRotation = await rotateSide(
+      ctx,
+      { id: slot.id, label },
+      "av",
+      av.final,
+    );
+    sides.av.rotationDeg = avRotation;
+    return {
+      kind: "pending",
+      coin: { ...slot, dir, startedAt, av, avRotation },
+    };
   } catch (e) {
     if (!(e instanceof AbortError)) throw e;
     return { kind: "ended", result: end ? await end.aborted() : null };
@@ -148,7 +172,7 @@ export async function captureBack(
   const { cfg, ui, pipeline } = ctx;
   const { id, dir } = coin;
   const maxSimilarity = cfg.thresholds.maxSimilarity;
-  const sides: Partial<Record<Side, SideData>> = { av: sideData(coin.av) };
+  const sides: Partial<Record<Side, SideData>> = { av: avData(coin) };
   const end = endings(ctx, coin, sides);
   const label = `Münze ${coin.position}/${total}`;
   const confirmDelete = async (): Promise<boolean> =>
@@ -195,6 +219,16 @@ export async function captureBack(
       ];
     }
 
+    // Both sides are accepted now: Ctrl+C in the back's view still completes the coin, the back without an angle
+    // (rotation spec 7.1). The run sees the aborted signal and stops after this coin.
+    let rvDeg: number | null;
+    try {
+      rvDeg = await rotateSide(ctx, { id, label }, "rv", rv.final);
+    } catch (e) {
+      if (!(e instanceof AbortError)) throw e;
+      rvDeg = null;
+    }
+
     // Files first, then the Markdown: the Markdown file is the completion marker (spec 6.6).
     const finalOf = async (side: Side, o: OkSide): Promise<AttemptRecord> => {
       const paths = await finalizeSide(
@@ -208,8 +242,18 @@ export async function captureBack(
     };
     const avFinal = await finalOf("av", coin.av);
     const rvFinal = await finalOf("rv", rv);
-    sides.av = { attempts: coin.av.attempts, final: avFinal, warnings: [] };
-    sides.rv = { attempts: rv.attempts, final: rvFinal, warnings: rvWarnings };
+    sides.av = {
+      attempts: coin.av.attempts,
+      final: avFinal,
+      warnings: [],
+      rotationDeg: coin.avRotation,
+    };
+    sides.rv = {
+      attempts: rv.attempts,
+      final: rvFinal,
+      warnings: rvWarnings,
+      rotationDeg: rvDeg,
+    };
     await writeCoinMarkdown({
       id,
       coinDir: dir,
@@ -235,5 +279,5 @@ export async function abortPending(
   ctx: SessionContext,
   coin: PendingCoin,
 ): Promise<CoinResult> {
-  return endings(ctx, coin, { av: sideData(coin.av) }).aborted();
+  return endings(ctx, coin, { av: avData(coin) }).aborted();
 }

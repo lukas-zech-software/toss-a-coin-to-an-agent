@@ -6,7 +6,12 @@ import { join } from "node:path";
 import sharp from "sharp";
 import YAML from "yaml";
 import type { CoinResult } from "../../src/session/coin.ts";
-import { formatSummary, runCapture } from "../../src/session/run.ts";
+import {
+  NO_IMAGES_HINTS,
+  formatSummary,
+  formatUnrotated,
+  runCapture,
+} from "../../src/session/run.ts";
 import { FakePipeline, NO_COIN, OK, makeSession } from "../fakes.ts";
 import {
   LENIENT_THRESHOLDS,
@@ -87,6 +92,7 @@ test("three coins: fronts, then backs in the same order, all complete", async ()
     ...ids.map(
       (id, i) => `Münze ${i + 1} · ${id} · complete · ${join(s.root, id)}`,
     ),
+    formatUnrotated(6), // no images: every side is still unrotated
   ]);
 });
 test("one coin: switch to the backs right after the first front; k at the closing prompt adds the comment", async () => {
@@ -267,10 +273,34 @@ test("IDs continue after existing folders", async () => {
 test("formatSummary formats every status", () => {
   assert.deepEqual(
     formatSummary([
-      { position: 1, id: "COIN-0042", dir: "/c/COIN-0042", status: "complete" },
-      { position: 2, id: "COIN-0043", dir: "/c/COIN-0043", status: "deleted" },
-      { position: 3, id: "COIN-0044", dir: "/c/COIN-0044", status: "ignored" },
-      { position: 4, id: "COIN-0045", dir: "/c/COIN-0045", status: "aborted" },
+      {
+        position: 1,
+        id: "COIN-0042",
+        dir: "/c/COIN-0042",
+        status: "complete",
+        unrotated: 0,
+      },
+      {
+        position: 2,
+        id: "COIN-0043",
+        dir: "/c/COIN-0043",
+        status: "deleted",
+        unrotated: 0,
+      },
+      {
+        position: 3,
+        id: "COIN-0044",
+        dir: "/c/COIN-0044",
+        status: "ignored",
+        unrotated: 0,
+      },
+      {
+        position: 4,
+        id: "COIN-0045",
+        dir: "/c/COIN-0045",
+        status: "aborted",
+        unrotated: 0,
+      },
     ]),
     [
       "Münze 1 · COIN-0042 · complete · /c/COIN-0042",
@@ -278,6 +308,69 @@ test("formatSummary formats every status", () => {
       "Münze 3 · COIN-0044 · incomplete (ignored) · /c/COIN-0044",
       "Münze 4 · COIN-0045 · incomplete (aborted) · /c/COIN-0045",
     ],
+  );
+});
+
+test("terminal without images: two hints first, no view, rotation null, end note", async () => {
+  const { s } = await run({
+    results: [OK, OK],
+    script: ["enter", "r", "enter", "enter"],
+  });
+  assert.deepEqual(s.ui.output.slice(0, 2), NO_IMAGES_HINTS);
+  assert.equal(s.ui.rotationViews.length, 0);
+  const f = await mdOf(s, "COIN-0001");
+  assert.ok(
+    "rotation_deg" in f.sides.av &&
+      f.sides.av.rotation_deg === null &&
+      f.sides.rv.rotation_deg === null,
+  );
+  assert.equal(
+    s.ui.output.at(-1),
+    "2 Seiten ohne Drehung – nachholen mit „npm run rotate“.",
+  );
+});
+test("with images: no hints, no end note when every side has an angle", async () => {
+  const { s, results } = await run({
+    results: [OK, OK],
+    script: ["enter", "r", "enter", "enter"],
+    images: "iterm",
+    rotations: [5, -5],
+  });
+  assert.deepEqual(statuses(results), ["complete"]);
+  assert.equal(s.ui.rotationViews.length, 2);
+  assert.ok(!s.ui.output.some((l) => l.startsWith("Hinweis:")));
+  assert.ok(!s.ui.output.some((l) => l.includes("ohne Drehung")));
+});
+test("ctrl-c in a back's rotation view: that coin complete, the coins still waiting aborted", async () => {
+  const { s, results } = await run({
+    results: [OK, OK, OK],
+    script: ["enter", "enter", "r", "enter"],
+    images: "iterm",
+    rotations: [10, 20, "ctrl-c"],
+  });
+  assert.deepEqual(statuses(results), ["complete", "aborted"]);
+  const one = await mdOf(s, "COIN-0001");
+  assert.deepEqual(
+    [one.sides.av.rotation_deg, one.sides.rv.rotation_deg],
+    [10, null],
+  );
+  const two = await mdOf(s, "COIN-0002");
+  assert.equal(two.incomplete_reason, "aborted");
+  assert.equal(two.sides.av.rotation_deg, 20);
+  assert.ok(s.ui.output.includes("Zusammenfassung:"));
+  assert.equal(
+    s.ui.output.at(-1),
+    "1 Seite ohne Drehung – nachholen mit „npm run rotate“.",
+  );
+});
+test("formatUnrotated", () => {
+  assert.equal(
+    formatUnrotated(1),
+    "1 Seite ohne Drehung – nachholen mit „npm run rotate“.",
+  );
+  assert.equal(
+    formatUnrotated(3),
+    "3 Seiten ohne Drehung – nachholen mit „npm run rotate“.",
   );
 });
 
