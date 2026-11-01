@@ -40,6 +40,11 @@ export async function nextCoinId(
   return formatCoinId(nums.length ? Math.max(...nums) + 1 : 1);
 }
 
+/** Sorted `COIN-dddd` folder names under the coins root. */
+export async function listCoinIds(root: string): Promise<string[]> {
+  return (await coinDirNames(root)).sort();
+}
+
 /** Coin folders without their Markdown file (e.g. after a crash). Never modified, only reported. */
 export async function findUnfinishedCoins(root: string): Promise<string[]> {
   return (await coinDirNames(root))

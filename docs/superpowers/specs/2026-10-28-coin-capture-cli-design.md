@@ -228,7 +228,7 @@ Kommentar des Users (oder leer).
 
 - Pfade relativ zum Münzordner.
 - Bei `incomplete`: `images`/`originals` listen alle Versuchsdateien; zusätzlich `incomplete_reason` (z. B. `ignored`, `aborted`) und die letzte Fehlermeldung.
-- Die Datei muss so gebaut sein, dass Projekt 2 später Felder ergänzen kann, ohne die vorhandenen zu ändern. Das Capture-Tool verändert eine fertige Markdown-Datei nie wieder.
+- Die Datei muss so gebaut sein, dass Projekt 2 später Felder ergänzen kann, ohne die vorhandenen zu ändern. Das Capture-Tool verändert eine fertige Markdown-Datei nie wieder. (Überholt: Kommentar (`k`) und Drehung (`rotate`) dürfen eine fertige Datei ändern, siehe `2026-11-01-coin-rotation-design.md` §9.2.)
 
 ## 9. Kalibrierung
 

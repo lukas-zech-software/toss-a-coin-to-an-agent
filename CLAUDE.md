@@ -5,6 +5,7 @@ Coin capture pipeline (gphoto2 + sharp + OpenCV.js) and a coin-identification ag
 ## Commands
 
 - `npm run typecheck` · `npm test` · `npm run lint` (prettier --write) · `npm run doctor` (checks external binaries)
+- `npm run rotate [-- <ID>]`: rotate coin images by hand (one complete coin, or every side without `rotation_deg`); needs an image terminal (iTerm2, WezTerm, Ghostty, Kitty).
 - Live camera test (Canon 1300D attached): `COIN_LIVE_CAMERA=1 node --test test/camera/gphoto2.live.test.ts`
 - Hooks already run prettier + tsc after every edit and `npm test` before stopping (`.claude/hooks/`).
 - Numista API: `NUMISTA_API_KEY=…` in `.env` (gitignored, Claude may not read it), loaded by `npm run identify` and `npm run doctor`. Client: `src/identify/numista.ts` (≈1 request/s, monthly count in `tmp/numista-usage.log`, refuses below a 10 % reserve; `npm run identify -- numista usage`).
