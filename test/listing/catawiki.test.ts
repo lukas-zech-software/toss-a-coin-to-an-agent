@@ -19,3 +19,13 @@ test("Catawiki CSV: header plus one English row, warning below the minimum value
   assert.ok(!csv.includes("**"), "Markdown is turned into plain text");
   assert.match(warnings.join(), /unter dem Catawiki-Mindestwert/);
 });
+
+test("Catawiki CSV: a text starting like a formula is neutralised", () => {
+  const listing = listingSample();
+  listing.title.en = '=HYPERLINK("http://x","y")';
+  const { csv } = catawikiCsv(listing, description("en"), {
+    obverse: "/c/rv.jpg",
+    reverse: "/c/av.jpg",
+  });
+  assert.match(csv, /"'=HYPERLINK\(""http:\/\/x"",""y""\)"/);
+});

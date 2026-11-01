@@ -26,8 +26,17 @@ export const CATAWIKI_COLUMNS = [
   "image_reverse",
 ] as const;
 
-const field = (v: unknown): string =>
-  `"${(v === null || v === undefined ? "" : Array.isArray(v) ? v.join(", ") : String(v)).replaceAll('"', '""')}"`;
+const field = (v: unknown): string => {
+  const s =
+    v === null || v === undefined
+      ? ""
+      : Array.isArray(v)
+        ? v.join(", ")
+        : String(v);
+  // The texts come from an agent that read web pages: a leading = + - @ would run as a formula in a spreadsheet.
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return `"${safe.replaceAll('"', '""')}"`;
+};
 
 /** One CSV (header + one row, English texts) plus warnings, e.g. an estimate below Catawiki's minimum. */
 export function catawikiCsv(
