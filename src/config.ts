@@ -13,6 +13,9 @@ export const NUMISTA_USAGE_LOG = fileURLToPath(
   new URL("../tmp/numista-usage.log", import.meta.url),
 );
 
+export const IMAGE_SETTINGS = ["auto", "off", "iterm", "kitty"] as const;
+export type ImageSetting = (typeof IMAGE_SETTINGS)[number];
+
 export type Config = {
   paths: { coinsRoot: string; djv: string };
   detection: {
@@ -37,6 +40,7 @@ export type Config = {
     steps: { exposurecompensation: number; iso: number };
   };
   session: { countdownSeconds: number };
+  display: { images: ImageSetting };
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -66,6 +70,7 @@ export const DEFAULT_CONFIG: Config = {
     steps: { exposurecompensation: 1, iso: 1 },
   },
   session: { countdownSeconds: 1 },
+  display: { images: "auto" },
 };
 
 const DEFAULT_FILE = fileURLToPath(
@@ -104,6 +109,10 @@ export function loadConfig(file: string = DEFAULT_FILE): Config {
     parsed,
     "",
   ) as unknown as Config;
+  if (!(IMAGE_SETTINGS as readonly string[]).includes(cfg.display.images))
+    throw new Error(
+      "Konfigurationswert display.images muss auto, off, iterm oder kitty sein",
+    );
   const root = cfg.paths.coinsRoot;
   return {
     ...cfg,

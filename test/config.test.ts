@@ -38,3 +38,11 @@ test("unknown key is rejected (typo guard)", async () => {
   await writeFile(f, JSON.stringify({ tresholds: {} }));
   assert.throws(() => loadConfig(f), /tresholds/);
 });
+test("display.images defaults to auto", () => {
+  assert.equal(loadConfig().display.images, "auto");
+});
+test("display.images only accepts auto, off, iterm, kitty", async () => {
+  const f = join(await tmpDir(), "c.json");
+  await writeFile(f, JSON.stringify({ display: { images: "sixel" } }));
+  assert.throws(() => loadConfig(f), /display\.images/);
+});

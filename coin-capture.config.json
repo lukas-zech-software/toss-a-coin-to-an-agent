@@ -24,5 +24,6 @@
     "attemptsPerRetry": 2,
     "steps": { "exposurecompensation": 1, "iso": 1 }
   },
-  "session": { "countdownSeconds": 1 }
+  "session": { "countdownSeconds": 1 },
+  "display": { "images": "auto" }
 }
