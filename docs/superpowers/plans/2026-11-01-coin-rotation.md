@@ -62,7 +62,7 @@
   - `export function kittyImage(data: Buffer, rows: number): string`
   - `export const KITTY_CLEAR: string`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `test/config.test.ts`, added next to the existing tests:
 
@@ -140,12 +140,12 @@ test("kittyImage: PNG in 4096-byte base64 chunks, rows only, responses suppresse
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/config.test.ts test/ui/graphics.test.ts`
 Expected: FAIL. `display` is an unknown config key, and `src/ui/graphics.ts` is missing.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - `config.ts`:
   - Add `display: { images: "auto" }` to `DEFAULT_CONFIG`.
@@ -163,12 +163,12 @@ Expected: FAIL. `display` is an unknown config key, and `src/ui/graphics.ts` is 
   - **`imageCells`:** `rows = max(1, min(rows − 3, floor(columns / 2)))`, `cols = 2·rows`.
   - **Kitty:** sends only `r=`, so Kitty computes the columns from the image's aspect ratio and never distorts it.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/config.test.ts test/ui/graphics.test.ts && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/config.ts coin-capture.config.json src/ui/graphics.ts test/config.test.ts test/ui/graphics.test.ts
@@ -214,7 +214,7 @@ region = [round(cx − L/2), round(cy − L/2), L, L]
 - **Final file:** write it as JPEG at `jpegQuality` to `${dst}.tmp`. Copy the EXIF from the original with `run("exiftool", ["-overwrite_original", "-TagsFromFile", src.original, "-exif:all", tmp])`, because raw buffers carry no EXIF (§6 "EXIF wie bei `cropToFile`"). Then `rename(tmp, dst)`. On any error, remove the tmp file and rethrow.
 - `previewFrame` with `guides`: composite an SVG with one vertical and one horizontal 2-px line through the centre, colour `#ff3030`, opacity 0.8. Only in the frame, never in the file. JPEG quality 85.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Synthetic scene via `renderSvg(…, "jpeg")` from `test/helpers.ts`:
 
@@ -262,19 +262,19 @@ test("previewFrame: edge-sized, rotated like the file, guides only on request", 
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/image/straighten.test.ts`
 Expected: FAIL. The module `src/image/straighten.ts` does not exist.
 
-- [ ] **Step 3: Implement `src/image/straighten.ts`, then add `rotateCrop` to `Pipeline`, `createPipeline` and `FakePipeline`.**
+- [x] **Step 3: Implement `src/image/straighten.ts`, then add `rotateCrop` to `Pipeline`, `createPipeline` and `FakePipeline`.**
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/image/straighten.test.ts && npm run typecheck && npm test`
 Expected: PASS. Measure `writeRotatedCrop` on a 3456×5184 image once by hand. If it takes more than about 2 s, note it in the commit message; don't optimise speculatively.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/image/straighten.ts src/image/pipeline.ts test/fakes.ts test/image/straighten.test.ts
@@ -313,7 +313,7 @@ git commit -m "feat: re-render the crop rotated from the original, paper continu
   - `export function viewKeyLine(allowQuit: boolean): string`
   - `export function formatRotationResult(side: Side, deg: number | null): string`
 
-- [ ] **Step 1: Write the failing tests** (`test/ui/rotation.test.ts`; `splitKeys` tests go in `test/ui/ui.test.ts`)
+- [x] **Step 1: Write the failing tests** (`test/ui/rotation.test.ts`; `splitKeys` tests go in `test/ui/ui.test.ts`)
 
 ```ts
 test("splitKeys", () => {
@@ -392,19 +392,19 @@ test("view header and key line (§5.1)", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/ui/ui.test.ts test/ui/rotation.test.ts`
 Expected: FAIL. `splitKeys` and `src/ui/rotation.ts` are missing, and `parseKey` returns `null` for arrows.
 
-- [ ] **Step 3: Implement.** `formatDeg` uses an ASCII `-`; 0 has no sign. `applyViewKey` normalises after every step.
+- [x] **Step 3: Implement.** `formatDeg` uses an ASCII `-`; 0 has no sign. `applyViewKey` normalises after every step.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/ui/ui.test.ts test/ui/rotation.test.ts && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/ui/ui.ts src/ui/rotation.ts test/ui/ui.test.ts test/ui/rotation.test.ts
@@ -457,7 +457,7 @@ git commit -m "feat: arrow keys and rotation view state"
 6. `done` resolves with the choice right away, even if a frame is still being drawn. Enter accepts the latest state.
 7. Always, in `finally`: write (kitty ? `KITTY_CLEAR` : "") + `\x1b[?25h\x1b[?1049l`, then `applyRegion()` (scroll region + status line), and remove the resize listener and the waiter.
 
-- [ ] **Step 1: Write the failing tests** (`test/ui/terminal.test.ts`, reusing `fakeTty()`, which takes the new options):
+- [x] **Step 1: Write the failing tests** (`test/ui/terminal.test.ts`, reusing `fakeTty()`, which takes the new options):
 
 ```ts
 const SRC = { original: "/x.jpg", cx: 1, cy: 1, size: 10 };
@@ -504,12 +504,12 @@ test("rotationView without images throws; non-TTY forces images to null", async 
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/ui/terminal.test.ts`
 Expected: FAIL. `rotationView` does not exist.
 
-- [ ] **Step 3: Implement the `Ui` additions, then `TerminalUi`, `ScriptedUi` and `makeSession`.**
+- [x] **Step 3: Implement the `Ui` additions, then `TerminalUi`, `ScriptedUi` and `makeSession`.**
 
 In `src/cli/capture.ts`, construct the UI as:
 
@@ -523,7 +523,7 @@ new TerminalUi({
 });
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/ui/terminal.test.ts && npm run typecheck && npm test`
 Expected: PASS. The existing session tests are unchanged, because `ScriptedUi` defaults to `images: null` and nothing calls the view yet.
@@ -546,7 +546,7 @@ Expected: PASS. The existing session tests are unchanged, because `ScriptedUi` d
 
   Hold → for 2 s; the image must follow without a backlog. Ctrl+C must leave a clean terminal. If no interactive terminal is available, say so in the report instead of claiming the check.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/ui/ui.ts src/ui/terminal.ts src/cli/capture.ts test/fakes.ts test/ui/terminal.test.ts
@@ -571,7 +571,7 @@ git commit -m "feat: interactive rotation view in the terminal (iTerm2/Kitty)"
 
 **Approach:** use `YAML.parseDocument(frontmatter)`, then `doc.setIn(["sides", side, "rotation_deg"], deg)`, then `doc.toString()`. This leaves the other frontmatter lines as they are. Don't use `setCoinComment`, which rebuilds the whole body (§9.2).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 test("complete record: rotation_deg first in each side, null when missing", () => {
@@ -594,19 +594,19 @@ test("setRotation rejects a file without frontmatter or without that side", asyn
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/store/markdown.test.ts`
 Expected: FAIL. There is no `rotation_deg` and no `setRotation`.
 
-- [ ] **Step 3: Implement.**
+- [x] **Step 3: Implement.**
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/store/markdown.test.ts && npm run typecheck && npm test`
 Expected: PASS. Existing tests that compare whole `sides` objects need the new key added.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/store/markdown.ts test/store/markdown.test.ts
@@ -660,7 +660,7 @@ git commit -m "feat: rotation_deg per side in the coin Markdown, setRotation kee
   - `backs()` stops after a result when `result.status === "aborted" || ui.signal.aborted`.
   - After the summary lines, print `formatUnrotated(sum of unrotated)` when the sum > 0.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `test/session/coin.test.ts` (FakePipeline via `s.pipeline as FakePipeline`):
 
@@ -754,19 +754,19 @@ test("formatUnrotated", () => {
 
 Update the existing summary `deepEqual` (three coins, no images) so it ends with `formatUnrotated(6)`. Add `unrotated: 0` to the literal `CoinResult`s of the `formatSummary` test.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/session/coin.test.ts test/session/run.test.ts`
 Expected: FAIL. `avRotation`, `unrotated`, `NO_IMAGES_HINTS` and `formatUnrotated` are missing.
 
-- [ ] **Step 3: Implement `rotation-step.ts`, then the `coin.ts` and `run.ts` changes.**
+- [x] **Step 3: Implement `rotation-step.ts`, then the `coin.ts` and `run.ts` changes.**
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm run typecheck && npm test`
 Expected: PASS, including `test/cli/capture-main.test.ts`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/session/rotation-step.ts src/session/coin.ts src/session/run.ts test/session/coin.test.ts test/session/run.test.ts
@@ -835,7 +835,7 @@ git commit -m "feat: rotation view after each accepted side in the capture run"
 - `ui = new TerminalUi({ images: detectImageProtocol({ setting: cfg.display.images, env: process.env, tty: Boolean(process.stdin.isTTY && process.stdout.isTTY) }) })`;
 - `process.exitCode = await rotateMain(process.argv.slice(2), { cfg, ui })`, followed by `ui.close()` in `finally`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Test helper `completeCoin(root, id, o: { rotation?: Partial<Record<Side, number | null | "absent">>; status?: string; body?: string })` in `test/cli/rotate-main.test.ts`:
 
@@ -889,21 +889,21 @@ test("coinRotationTargets: source from the Markdown and the crop size", async ()
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/store/rotation.test.ts test/cli/rotate-main.test.ts`
 Expected: FAIL. The modules are missing.
 
-- [ ] **Step 3: Implement `listCoinIds`, `src/store/rotation.ts`, `rotate-main.ts`, `rotate.ts`, the `package.json` script, the CLAUDE.md line and the main-design note.**
+- [x] **Step 3: Implement `listCoinIds`, `src/store/rotation.ts`, `rotate-main.ts`, `rotate.ts`, the `package.json` script, the CLAUDE.md line and the main-design note.**
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm run typecheck && npm test && npm run lint`
 Expected: PASS. Prettier changes nothing it shouldn't.
 
-- [ ] **Step 5: Smoke test without images.** Run `TERMINAL_EMULATOR=JetBrains-JediTerm npm run rotate`. It must print `NO_IMAGES` and exit 1 (`echo $?` → 1), and `git status` shows no change under `coins/`.
+- [x] **Step 5: Smoke test without images.** Run `TERMINAL_EMULATOR=JetBrains-JediTerm npm run rotate`. It must print `NO_IMAGES` and exit 1 (`echo $?` → 1), and `git status` shows no change under `coins/`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/store/rotation.ts src/store/coins.ts src/cli/rotate-main.ts src/cli/rotate.ts package.json CLAUDE.md docs/superpowers/specs/2026-10-28-coin-capture-cli-design.md test/store/rotation.test.ts test/cli/rotate-main.test.ts
