@@ -23,6 +23,11 @@ import type {
   RawCapture,
   ShotPaths,
 } from "../src/types.ts";
+import type { ImageProtocol } from "../src/ui/graphics.ts";
+import type {
+  RotationChoice,
+  RotationViewOptions,
+} from "../src/ui/rotation.ts";
 import type { Ui } from "../src/ui/ui.ts";
 import type { CompareHandle, Viewer } from "../src/ui/viewer.ts";
 import { FIXTURES, TEST_THRESHOLDS, testConfig, tmpDir } from "./helpers.ts";
@@ -87,15 +92,26 @@ export class FakeCamera implements Camera {
 }
 
 // ---- UI fakes (Task 16) ----
+/** One rotation view: a number accepts that angle, "s" = later, "q" = quit, "ctrl-c" aborts. */
+export type RotationStep = number | "s" | "q" | "ctrl-c";
+
 export class ScriptedUi implements Ui {
   output: string[] = [];
   statuses: string[] = [];
   prompts: string[] = [];
   countdowns = 0;
+  rotationViews: RotationViewOptions[] = [];
+  readonly images: ImageProtocol | null;
   private script: string[];
+  private rotations: RotationStep[];
   private controller = new AbortController();
-  constructor(script: string[]) {
+  constructor(
+    script: string[],
+    o: { images?: ImageProtocol | null; rotations?: RotationStep[] } = {},
+  ) {
     this.script = [...script];
+    this.images = o.images ?? null;
+    this.rotations = [...(o.rotations ?? [])];
   }
   get signal(): AbortSignal {
     return this.controller.signal;
@@ -137,6 +153,28 @@ export class ScriptedUi implements Ui {
   async countdown(): Promise<void> {
     if (this.signal.aborted) throw new AbortError();
     this.countdowns++;
+  }
+  async rotationView(o: RotationViewOptions): Promise<RotationChoice> {
+    if (this.signal.aborted) throw new AbortError();
+    this.rotationViews.push(o);
+    if (this.images === null)
+      throw new Error(
+        `ScriptedUi: rotation view without images at '${o.header}'`,
+      );
+    const step = this.rotations.shift();
+    if (step === undefined)
+      throw new Error(`ScriptedUi: rotation script exhausted at '${o.header}'`);
+    if (step === "ctrl-c") {
+      this.abort();
+      throw new AbortError();
+    }
+    if (step === "s") return { kind: "later" };
+    if (step === "q") {
+      if (!o.allowQuit)
+        throw new Error(`ScriptedUi: 'q' not allowed at '${o.header}'`);
+      return { kind: "quit" };
+    }
+    return { kind: "angle", deg: step };
   }
   close(): void {}
 }
@@ -275,6 +313,8 @@ export async function makeSession(
     realPipeline?: boolean;
     thresholds?: Thresholds;
     defaults?: Partial<CameraSettings>;
+    images?: ImageProtocol | null;
+    rotations?: RotationStep[];
   } = {},
 ) {
   const root = await tmpDir();
@@ -287,7 +327,10 @@ export async function makeSession(
   const pipeline: Pipeline = o.realPipeline
     ? createPipeline(cfg, { orientRaw: async () => {} })
     : new FakePipeline(results, o.similarities);
-  const ui = new ScriptedUi(o.script ?? []);
+  const ui = new ScriptedUi(o.script ?? [], {
+    images: o.images ?? null,
+    rotations: o.rotations ?? [],
+  });
   const viewer = new FakeViewer();
   const incomingDir = join(root, ".incoming");
   await mkdir(incomingDir, { recursive: true });

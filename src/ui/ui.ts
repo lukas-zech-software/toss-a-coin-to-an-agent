@@ -1,4 +1,6 @@
 import type { Side } from "../types.ts";
+import type { ImageProtocol } from "./graphics.ts";
+import type { RotationChoice, RotationViewOptions } from "./rotation.ts";
 
 export interface Ui {
   status(text: string): void; // persistent status line
@@ -6,6 +8,8 @@ export interface Ui {
   key(prompt: string, allowed: readonly string[]): Promise<string>; // "enter" for Enter; throws AbortError on Ctrl+C
   line(prompt: string): Promise<string>;
   countdown(seconds: number): Promise<void>; // "3 … 2 … 1 …", abortable
+  readonly images: ImageProtocol | null; // null: no images, no rotation view
+  rotationView(o: RotationViewOptions): Promise<RotationChoice>; // throws AbortError on Ctrl+C, Error without images
   readonly signal: AbortSignal; // aborted on Ctrl+C
   close(): void;
 }

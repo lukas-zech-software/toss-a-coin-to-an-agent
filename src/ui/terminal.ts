@@ -1,10 +1,41 @@
 import { createInterface } from "node:readline";
 import type { Interface } from "node:readline";
 import { AbortError } from "../abort.ts";
-import { parseKey } from "./ui.ts";
+import { previewBase, previewFrame } from "../image/straighten.ts";
+import type { CropSource, PreviewBase } from "../image/straighten.ts";
+import { imageCells, itermImage, KITTY_CLEAR, kittyImage } from "./graphics.ts";
+import type { ImageProtocol } from "./graphics.ts";
+import {
+  applyViewKey,
+  normalizeDeg,
+  viewHeader,
+  viewKeyLine,
+} from "./rotation.ts";
+import type {
+  RotationChoice,
+  RotationViewOptions,
+  ViewState,
+} from "./rotation.ts";
+import { parseKey, splitKeys } from "./ui.ts";
 import type { Ui } from "./ui.ts";
 
-type Io = { input?: NodeJS.ReadStream; output?: NodeJS.WriteStream };
+/** Renders the rotation view's images; injectable so tests need no image files. */
+export type FrameRenderer = {
+  base(src: CropSource): Promise<PreviewBase>;
+  frame(
+    base: PreviewBase,
+    deg: number,
+    guides: boolean,
+    format: "png" | "jpeg",
+  ): Promise<Buffer>;
+};
+
+type Io = {
+  input?: NodeJS.ReadStream;
+  output?: NodeJS.WriteStream;
+  images?: ImageProtocol | null; // forced to null without a TTY
+  frames?: FrameRenderer;
+};
 type Waiter = {
   onChunk?: (chunk: string) => void;
   onLine?: (line: string) => void;
@@ -13,12 +44,16 @@ type Waiter = {
 
 /**
  * Terminal UI. TTY mode: raw single-key input and a persistent inverse status line on the last terminal row
- * (scroll region above it). Non-TTY mode (pipes, tests): line based input and `» status` lines.
+ * (scroll region above it); the rotation view runs on the alternate screen. Non-TTY mode (pipes, tests):
+ * line based input and `» status` lines, no images.
  */
 export class TerminalUi implements Ui {
+  readonly images: ImageProtocol | null;
   private input: NodeJS.ReadStream;
   private output: NodeJS.WriteStream;
   private tty: boolean;
+  private frames: FrameRenderer;
+  private inView = false;
   private controller = new AbortController();
   private waiter: Waiter | null = null;
   private lastStatus = "";
@@ -31,6 +66,8 @@ export class TerminalUi implements Ui {
     this.input = io.input ?? process.stdin;
     this.output = io.output ?? process.stdout;
     this.tty = Boolean(this.input.isTTY && this.output.isTTY);
+    this.images = this.tty ? (io.images ?? null) : null;
+    this.frames = io.frames ?? { base: previewBase, frame: previewFrame };
     process.on("SIGINT", this.onSigint);
     if (this.tty) {
       this.input.setRawMode(true);
@@ -78,7 +115,7 @@ export class TerminalUi implements Ui {
     this.drawStatus();
   }
   private onResize = (): void => {
-    this.applyRegion();
+    if (!this.inView) this.applyRegion(); // the rotation view redraws itself and restores the region on leaving
   };
 
   private drawStatus(): void {
@@ -210,6 +247,99 @@ export class TerminalUi implements Ui {
       });
     }
     this.output.write("\n");
+  }
+
+  /**
+   * Full-screen image of the coin, turned with the arrow keys (spec §5.1). Keys update the angle at once;
+   * at most one frame is rendered at a time, and when it is done the latest state is drawn, so a held key
+   * never builds a backlog.
+   */
+  async rotationView(o: RotationViewOptions): Promise<RotationChoice> {
+    if (this.signal.aborted) throw new AbortError();
+    if (this.images === null)
+      throw new Error("Dieses Terminal kann keine Bilder anzeigen");
+    const kitty = this.images === "kitty";
+    const base = await this.frames.base(o.source);
+    if (this.signal.aborted) throw new AbortError(); // Ctrl+C while the base was loading
+
+    let state: ViewState = { deg: normalizeDeg(o.startDeg), guides: true };
+    let open = true; // false once the view has ended: frames still in flight are discarded
+    let drawing = false;
+    let stale = true; // the screen does not show the latest state or terminal size yet
+    const { promise, resolve, reject } =
+      Promise.withResolvers<RotationChoice>();
+    const end = (): void => {
+      open = false;
+      if (this.waiter === waiter) this.waiter = null;
+    };
+
+    const draw = async (): Promise<void> => {
+      try {
+        while (stale && open) {
+          stale = false;
+          const s = state;
+          const cells = imageCells(this.columns, this.rows);
+          const img = await this.frames.frame(
+            base,
+            s.deg,
+            s.guides,
+            kitty ? "png" : "jpeg",
+          );
+          if (!open) return;
+          const image = kitty
+            ? kittyImage(img, cells.rows)
+            : itermImage(img, cells);
+          this.output.write(
+            `\x1b[H\x1b[2J${kitty ? KITTY_CLEAR : ""}${viewHeader(o.header, s.deg)}\n${image}\n${viewKeyLine(o.allowQuit)}`,
+          );
+        }
+      } finally {
+        drawing = false;
+      }
+    };
+    const redraw = (): void => {
+      stale = true;
+      if (drawing || !open) return;
+      drawing = true;
+      draw().catch(reject);
+    };
+
+    const waiter: Waiter = {
+      reject,
+      onChunk: (chunk) => {
+        for (const seq of splitKeys(chunk)) {
+          const key = parseKey(seq);
+          if (key === "ctrl-c") {
+            this.abort();
+            return;
+          }
+          const r = key === null ? null : applyViewKey(state, key, o.allowQuit);
+          if (r === null) continue;
+          if ("done" in r) {
+            end();
+            resolve(r.done);
+            return;
+          }
+          state = r.state;
+          redraw();
+        }
+      },
+    };
+
+    this.output.write("\x1b[?1049h\x1b[r\x1b[?25l"); // alternate screen, no scroll region, cursor hidden
+    try {
+      this.inView = true;
+      this.waiter = waiter;
+      this.output.on("resize", redraw);
+      redraw();
+      return await promise;
+    } finally {
+      end();
+      this.output.off("resize", redraw);
+      this.inView = false;
+      this.output.write(`${kitty ? KITTY_CLEAR : ""}\x1b[?25h\x1b[?1049l`);
+      this.applyRegion();
+    }
   }
 
   close(): void {
