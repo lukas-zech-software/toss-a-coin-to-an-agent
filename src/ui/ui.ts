@@ -15,8 +15,45 @@ export const SIDE_LABEL: Record<Side, string> = {
   rv: "Rückseite",
 };
 
-/** One keypress chunk -> logical key, or null when it is not a key we understand (e.g. arrow keys). */
+/** Split one input chunk into key sequences: CSI, SS3, a lone ESC, or one code point. */
+export function splitKeys(chunk: string): string[] {
+  const keys: string[] = [];
+  let i = 0;
+  while (i < chunk.length) {
+    if (chunk[i] === "\u001b") {
+      const rest = chunk.slice(i);
+      const seq =
+        /^\u001b\[[0-?]*[ -/]*[@-~]/.exec(rest)?.[0] ??
+        /^\u001bO./u.exec(rest)?.[0] ??
+        "\u001b";
+      keys.push(seq);
+      i += seq.length;
+    } else {
+      const ch = String.fromCodePoint(chunk.codePointAt(i)!);
+      keys.push(ch);
+      i += ch.length;
+    }
+  }
+  return keys;
+}
+
+const ESCAPE_KEYS: Record<string, string> = {
+  "\u001b[C": "right",
+  "\u001bOC": "right",
+  "\u001b[D": "left",
+  "\u001bOD": "left",
+  "\u001b[A": "up",
+  "\u001bOA": "up",
+  "\u001b[B": "down",
+  "\u001bOB": "down",
+  "\u001b[1;2C": "shift-right",
+  "\u001b[1;2D": "shift-left",
+};
+
+/** One key sequence -> logical key, or null when it is not a key we understand. */
 export function parseKey(chunk: string): string | null {
+  const arrow = ESCAPE_KEYS[chunk];
+  if (arrow) return arrow;
   switch (chunk) {
     case "\r":
     case "\n":

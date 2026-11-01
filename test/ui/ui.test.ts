@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AbortError } from "../../src/abort.ts";
-import { formatStatus, parseKey } from "../../src/ui/ui.ts";
+import { formatStatus, parseKey, splitKeys } from "../../src/ui/ui.ts";
 import { SystemViewer } from "../../src/ui/viewer.ts";
 import { ScriptedUi } from "../fakes.ts";
 
@@ -29,8 +29,32 @@ test("parseKey", () => {
       "3",
       "escape",
       "backspace",
-      null,
+      "up",
     ],
+  );
+});
+test("splitKeys", () => {
+  assert.deepEqual(splitKeys("\x1b[C\x1b[C\x1b[1;2D"), [
+    "\x1b[C",
+    "\x1b[C",
+    "\x1b[1;2D",
+  ]);
+  assert.deepEqual(splitKeys("ab\r"), ["a", "b", "\r"]);
+  assert.deepEqual(splitKeys("\x1bOA\x1b"), ["\x1bOA", "\x1b"]);
+});
+test("parseKey: arrows and shift+arrows", () => {
+  assert.deepEqual(
+    [
+      "\x1b[C",
+      "\x1bOC",
+      "\x1b[D",
+      "\x1b[A",
+      "\x1b[B",
+      "\x1b[1;2C",
+      "\x1b[1;2D",
+      "\x1b[5~",
+    ].map(parseKey),
+    ["right", "right", "left", "up", "down", "shift-right", "shift-left", null],
   );
 });
 test("formatStatus", () => {
