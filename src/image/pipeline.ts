@@ -16,6 +16,7 @@ import { readExif } from "./exif.ts";
 import { measureQuality } from "./quality.ts";
 import { orientRaw, rotateJpg } from "./rotate.ts";
 import { similarity } from "./similarity.ts";
+import { cropSource, writeRotatedCrop } from "./straighten.ts";
 
 export type ImageTools = {
   rotateJpg(src: string, dst: string): Promise<void>;
@@ -32,6 +33,7 @@ export interface Pipeline {
     jpg: string,
   ): Promise<{ detection: Detection; quality: QualityMetrics | null }>; // for an existing crop, e.g. reference.jpg
   similarity(a: ProcessedShot, b: ProcessedShot): Promise<number>; // throws unless both found
+  rotateCrop(shot: ProcessedShot, deg: number): Promise<void>; // re-renders shot.paths.crop from the original, clockwise
 }
 
 async function moveFile(from: string, to: string): Promise<void> {
@@ -131,6 +133,15 @@ export function createPipeline(
         { image: a.paths.original, circle: a.detection.circle },
         { image: b.paths.original, circle: b.detection.circle },
         cfg.similarity.gridSize,
+      );
+    },
+
+    async rotateCrop(shot, deg) {
+      await writeRotatedCrop(
+        cropSource(shot),
+        deg,
+        shot.paths.crop,
+        cfg.crop.jpegQuality,
       );
     },
   };

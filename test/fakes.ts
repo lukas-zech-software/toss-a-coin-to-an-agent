@@ -193,6 +193,7 @@ export class FakePipeline implements Pipeline {
   processed: ShotPaths[] = [];
   /** [a, b] crop paths of every similarity() call, in call order. */
   similarityCalls: Array<[string, string]> = [];
+  rotated: Array<{ crop: string; deg: number }> = [];
   private results: FakeResult[];
   private sims: number[];
   constructor(results: FakeResult[], similarities: number[] = []) {
@@ -259,6 +260,9 @@ export class FakePipeline implements Pipeline {
   async similarity(a: ProcessedShot, b: ProcessedShot): Promise<number> {
     this.similarityCalls.push([a.paths.crop, b.paths.crop]);
     return this.sims.shift() ?? 0.1;
+  }
+  async rotateCrop(shot: ProcessedShot, deg: number): Promise<void> {
+    this.rotated.push({ crop: shot.paths.crop, deg });
   }
 }
 
