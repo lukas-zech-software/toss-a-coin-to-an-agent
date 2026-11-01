@@ -1,5 +1,6 @@
 {
   "permissions": {
+    "allow": ["Read(./coins/**)"],
     "deny": [
       "Edit(./coins/**)",
       "Read(./coins/**/originals/**)",

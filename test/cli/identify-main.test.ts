@@ -5,7 +5,12 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { identifyMain } from "../../src/cli/identify-main.ts";
 import { renderSvg, tmpDir } from "../helpers.ts";
-import { identified } from "../identify/samples.ts";
+import {
+  appraisal,
+  description,
+  identified,
+  texts,
+} from "../identify/samples.ts";
 
 const MD = `---
 id: COIN-0001
@@ -106,17 +111,17 @@ test("write refuses a result for another coin", async () => {
   assert.match(lines.join("\n"), /COIN-0002.*COIN-0001/);
 });
 
-test("write applies a valid result and reports the price statistics", async () => {
+test("write applies a valid result and points to the coin-appraiser for the price", async () => {
   const { deps, lines, dir, root } = await setup();
   const file = join(root, "result.json");
   await writeFile(file, JSON.stringify(identified()));
   assert.equal(await identifyMain(["write", "COIN-0001", file], deps), 0);
   const out = lines.join("\n");
   assert.match(out, /bestimmt \(97 %\)/);
-  assert.match(out, /Min 32 € · Median 37 € · Max 45 € \(n = 3\)/);
+  assert.match(out, /coin-appraiser/);
   const md = await readFile(join(dir, "COIN-0001.md"), "utf8");
   assert.match(md, /described: true/);
-  assert.match(md, /## Bewertung/);
+  assert.match(md, /## Bestimmung/);
 });
 
 test("unreadable JSON, unknown coins and wrong usage", async () => {
@@ -154,4 +159,54 @@ test("numista: wrong usage, missing key, and a search printed as JSON", async ()
     JSON.parse(lines.pop()!).types[0].url,
     "https://en.numista.com/catalogue/pieces7.html",
   );
+});
+
+test("appraise refuses a coin that is not identified", async () => {
+  const { deps, lines } = await setup();
+  assert.equal(await identifyMain(["appraise", "COIN-0001"], deps), 1);
+  assert.match(lines.pop()!, /nicht bestimmt/);
+});
+
+test("identifier → appraiser → lister: each step writes its part; the lister needs both descriptions", async () => {
+  const { deps, lines, dir, root } = await setup();
+  const step = async (args: string[], code = 0) => {
+    assert.equal(await identifyMain(args, deps), code, lines.join("\n"));
+    return lines.pop()!;
+  };
+  const result = join(root, "result.json");
+  await writeFile(result, JSON.stringify(identified()));
+  await step(["write", "COIN-0001", result]);
+  assert.match(await step(["describe", "COIN-0001"], 1), /nicht geschätzt/);
+
+  const appraisalFile = join(root, "appraisal.json");
+  await writeFile(appraisalFile, JSON.stringify(appraisal()));
+  assert.match(
+    await step(["write-appraisal", "COIN-0001", appraisalFile]),
+    /coin-lister/,
+  );
+  assert.equal(existsSync(join(dir, "listing")), false);
+
+  const intake = JSON.parse(await step(["describe", "COIN-0001"]));
+  assert.deepEqual(intake.condition.damage, appraisal().damage);
+  assert.match(intake.identification_section, /## Bestimmung/);
+  assert.equal("views" in intake, false);
+
+  await writeFile(intake.texts_path, JSON.stringify(texts()));
+  await writeFile(intake.description_paths.de, description("de"));
+  assert.match(
+    await step(["write-listing", "COIN-0001", intake.texts_path], 1),
+    /nichts geschrieben[\s\S]*description\.en\.md/,
+  );
+  assert.equal(existsSync(join(dir, "listing")), false);
+
+  await writeFile(intake.description_paths.en, description("en"));
+  assert.match(
+    await step(["write-listing", "COIN-0001", intake.texts_path]),
+    /Ergebnis: .*listing\/ \(listing\.json/,
+  );
+  const listing = JSON.parse(
+    await readFile(join(dir, "listing", "listing.json"), "utf8"),
+  );
+  assert.equal(listing.coin.title, identified().coin.title);
+  assert.equal(listing.price.sources.length, 2);
 });

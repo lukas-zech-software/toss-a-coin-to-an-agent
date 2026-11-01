@@ -1,9 +1,13 @@
 import type { IdentifyResult } from "../../src/identify/result.ts";
+import YAML from "yaml";
+import { applyAppraisal } from "../../src/identify/appraisal.ts";
+import type { Appraisal } from "../../src/identify/appraisal.ts";
+import { buildListing } from "../../src/listing/format.ts";
+import type { Listing, ListingTexts } from "../../src/listing/format.ts";
 
 /** A complete, valid "identified" result as the agent would write it. */
 export const identified = (): IdentifyResult & {
   coin: NonNullable<IdentifyResult["coin"]>;
-  valuation: NonNullable<IdentifyResult["valuation"]>;
 } => ({
   id: "COIN-0001",
   state: "identified",
@@ -40,46 +44,6 @@ export const identified = (): IdentifyResult & {
       url: "https://www.pcgs.com/coinfacts/coin/1922-1/7356",
     },
   ],
-  valuation: {
-    state: "estimated",
-    grade: "ss (VF-20)",
-    damage: ["Grünspan-Flecken auf der Rückseite", "Kratzer im Feld"],
-    comparables: [
-      {
-        url: "https://coins.ha.com/itm/a/1.s",
-        venue: "Heritage Auctions",
-        date: "2025-03-12",
-        grade: "VF20",
-        price: 40,
-        currency: "USD",
-        price_eur: 37,
-        price_type: "incl_premium",
-      },
-      {
-        url: "https://www.ebay.de/itm/2",
-        venue: "eBay (verkauft)",
-        date: "2026-09-01",
-        grade: "ss",
-        price: 32,
-        currency: "EUR",
-        price_eur: 32,
-        price_type: "sold",
-      },
-      {
-        url: "https://www.numisbids.com/sale/3/lot/4",
-        venue: "Künker via Numisbids",
-        date: "2024-06-20",
-        grade: "ss-vz",
-        price: 45,
-        currency: "EUR",
-        price_eur: 45,
-        price_type: "hammer",
-      },
-    ],
-    estimate_eur: { low: 25, high: 32 },
-    reasoning:
-      "Vergleichsstücke in ss erzielten 32–45 €. Wegen Grünspan und Kratzern liegt dieses Stück am unteren Rand; Silberwert ca. 25 € als Untergrenze.",
-  },
 });
 
 /** A complete, valid "unidentifiable" result. */
@@ -112,5 +76,85 @@ export const unidentifiable = (): IdentifyResult & {
     },
   ],
   sources: [{ title: "Numista", url: "https://en.numista.com/123" }],
-  valuation: null,
 });
+
+export const price = (n: number, type = "hammer") => ({
+  url: `https://example.com/lot/${n}`,
+  venue: "Auktion",
+  date: "2025-05-20",
+  grade: "VF",
+  price: n,
+  currency: "EUR",
+  price_eur: n,
+  price_type: type as Appraisal["prices"][number]["price_type"],
+});
+
+/** A complete, valid coin-appraiser result. */
+export const appraisal = (): Appraisal => ({
+  id: "COIN-0001",
+  grade: "ss (VF-20)",
+  damage: ["Kratzer auf der Wange"],
+  prices: [price(30), price(40, "asking")],
+  melt_eur: 20,
+  estimate_eur: { low: 25, high: 35 },
+  reasoning: "Begründung.",
+});
+
+/** A complete, valid coin-lister result (besides the two descriptions). */
+export const texts = (): ListingTexts => ({
+  id: "COIN-0001",
+  title: {
+    de: "USA 1 Dollar 1922 Peace Dollar Philadelphia Silber ss",
+    en: "USA 1922 Peace Dollar Philadelphia silver VF",
+  },
+  summary: {
+    de: "Silberdollar zum Gedenken an das Ende des Ersten Weltkriegs, geprägt 1922 in Philadelphia. Ehrlich getragenes Stück mit einem Kratzer auf der Wange.",
+    en: "Silver dollar commemorating the end of World War I, struck in 1922 in Philadelphia. Honestly worn, with one scratch on the cheek.",
+  },
+  specifics: {
+    country: { de: "USA", en: "United States" },
+    denomination: { de: "1 Dollar", en: "1 Dollar" },
+    year: { de: "1922", en: "1922" },
+    mint: {
+      de: "Philadelphia (ohne Münzzeichen)",
+      en: "Philadelphia (no mint mark)",
+    },
+    material: { de: "Silber 900/1000", en: "Silver .900" },
+    grade: { de: "ss (VF-20)", en: "VF-20" },
+  },
+});
+
+/** A buyer-facing description long enough to pass the check. */
+export const description = (lang: "de" | "en"): string =>
+  `# ${texts().title[lang]}\n\n${"Sie erhalten genau die abgebildete Münze. ".repeat(6)}\n\n## Erhaltung\n\n- **ss (VF-20)**\n- Kratzer auf der Wange\n`;
+
+const IDENTIFIED_MD = `---
+id: COIN-0001
+status: complete
+images:
+  av: COIN-0001_av.jpg
+  rv: COIN-0001_rv.jpg
+identification:
+  state: identified
+  checked_at: 2026-10-31T10:00:00+01:00
+  obverse_image: COIN-0001_rv.jpg
+  title: Testmünze
+  weight_g: 26.73
+  catalog:
+    - KM# 150
+---
+
+# COIN-0001
+`;
+
+/** An identified and appraised coin's Markdown, as the CLIs leave it. */
+export const appraisedMd = (now = new Date(2026, 9, 31, 12, 0, 0)): string =>
+  applyAppraisal(IDENTIFIED_MD, appraisal(), now);
+
+/** The listing the coin-lister's write command builds for appraisedMd(). */
+export const listingSample = (): Listing =>
+  buildListing(
+    texts(),
+    YAML.parse(/^---\n([\s\S]*?\n)---\n/.exec(appraisedMd())![1]!),
+    new Date(2026, 10, 1, 9, 0, 0),
+  );

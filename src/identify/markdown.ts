@@ -1,19 +1,14 @@
 // Writes a validated identification result into a coin's Markdown (identification spec §5).
-// Capture fields stay untouched; `described` flips to true; `identification`/`valuation` are added or replaced;
+// Capture fields stay untouched; `described` flips to true; `identification` is added or replaced;
 // the readable part lives between two markers after "## Notizen", so a re-run replaces exactly that part.
+// Prices are not written here: the coin-appraiser has its own section (appraisal.ts).
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
 import { isoLocal } from "../store/markdown.ts";
 import type { Side } from "../types.ts";
-import { MIN_CONFIDENCE_EXCLUSIVE, priceStats } from "./result.ts";
-import type {
-  Comparable,
-  IdentifyResult,
-  PriceType,
-  Source,
-  Valuation,
-} from "./result.ts";
+import { MIN_CONFIDENCE_EXCLUSIVE } from "./result.ts";
+import type { IdentifyResult, Source } from "./result.ts";
 
 export const START_MARKER = "<!-- coin-identifier:start -->";
 export const END_MARKER = "<!-- coin-identifier:end -->";
@@ -33,9 +28,7 @@ export function applyIdentification(
 
   fm.described = true;
   fm.identification = identificationFrontmatter(r, now, images);
-  if (r.state === "identified" && r.valuation)
-    fm.valuation = valuationFrontmatter(r.valuation);
-  else delete fm.valuation;
+  delete fm.valuation; // written by older identifier versions; prices now live in `appraisal`
 
   const section = `${START_MARKER}\n\n${renderSection(r, now, images)}\n${END_MARKER}`;
   return `---\n${YAML.stringify(fm)}---\n${replaceSection(md.slice(m[0].length), section)}`;
@@ -114,47 +107,19 @@ function identificationFrontmatter(
   };
 }
 
-function valuationFrontmatter(v: Valuation): Record<string, unknown> {
-  return {
-    state: v.state,
-    currency: "EUR",
-    grade: v.grade,
-    damage: v.damage,
-    realized:
-      v.state === "estimated"
-        ? priceStats(v.comparables.map((c) => c.price_eur))
-        : null,
-    estimate: v.estimate_eur
-      ? { low: v.estimate_eur.low, high: v.estimate_eur.high }
-      : null,
-    comparables: v.comparables.map((c) => ({
-      url: c.url,
-      venue: c.venue,
-      date: c.date,
-      grade: c.grade,
-      price: c.price,
-      currency: c.currency,
-      price_eur: c.price_eur,
-      price_type: c.price_type,
-    })),
-  };
-}
-
 // ---------- readable section (German, like "## Notizen") ----------
 
-const num = (v: number, digits = 2): string =>
+export const num = (v: number, digits = 2): string =>
   new Intl.NumberFormat("de-DE", { maximumFractionDigits: digits }).format(v);
-const money = (v: number, currency = "EUR"): string =>
-  new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(v);
 const pct = (v: number): string => `${num(v, 1)} %`;
 /**
  * Free text comes from the agent, which read it from web pages: escape < and > so it can neither inject HTML
  * nor fake the section markers (which would break the next re-run's replacement).
  */
-const text = (s: string): string =>
+export const text = (s: string): string =>
   s.trim().replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 /** One table cell: no line breaks, no column breaks. */
-const cell = (s: string): string =>
+export const cell = (s: string): string =>
   text(s)
     .replace(/\s*\n\s*/g, " ")
     .replaceAll("|", "\\|")
@@ -163,16 +128,9 @@ const linkText = (s: string): string =>
   text(s)
     .replace(/\s*\n\s*/g, " ")
     .replace(/[[\]]/g, "\\$&");
-const href = (url: string): string =>
+export const href = (url: string): string =>
   url.replace(/[()\s<>"]/g, (ch) => encodeURIComponent(ch));
 const link = (s: Source): string => `[${linkText(s.title)}](${href(s.url)})`;
-
-const PRICE_TYPE_LABEL: Record<PriceType, string> = {
-  hammer: "Zuschlag",
-  incl_premium: "inkl. Aufgeld",
-  fixed_price: "Festpreis-Verkauf",
-  sold: "verkauft (Art unbekannt)",
-};
 
 const sortedCandidates = (r: IdentifyResult) =>
   [...r.candidates].sort((a, b) => b.confidence - a.confidence);
@@ -228,7 +186,7 @@ function identifiedParts(r: IdentifyResult, images: Images): string[] {
     ["Gewicht", c.weight_g !== null ? `${num(c.weight_g)} g` : "–"],
     ["Durchmesser", diameter],
   ];
-  const parts = [
+  return [
     "## Bestimmung\n",
     `**Status:** bestimmt – Konfidenz ${pct(r.confidence)}  `,
     `**Münze:** ${text(c.title)}\n`,
@@ -242,55 +200,6 @@ function identifiedParts(r: IdentifyResult, images: Images): string[] {
     "### Quellen\n",
     sourceList(r.sources),
   ];
-  if (r.valuation) parts.push(...valuationParts(r.valuation));
-  return parts;
-}
-
-function comparableTable(list: Comparable[]): string[] {
-  return [
-    "| # | Datum | Plattform | Erhaltung | Preis | in EUR | Art | Link |",
-    "| ---: | --- | --- | --- | ---: | ---: | --- | --- |",
-    ...list.map(
-      (c, i) =>
-        `| ${i + 1} | ${cell(c.date)} | ${cell(c.venue)} | ${cell(c.grade)} | ${money(c.price, c.currency)} | ${money(c.price_eur)} | ${PRICE_TYPE_LABEL[c.price_type]} | [Verkauf](${href(c.url)}) |`,
-    ),
-    "",
-  ];
-}
-
-function valuationParts(v: Valuation): string[] {
-  const parts = [
-    "## Bewertung\n",
-    `**Erhaltung (nach Fotos):** ${text(v.grade)}  `,
-    `**Sichtbare Schäden:** ${v.damage.length ? v.damage.map(text).join("; ") : "keine erkennbar"}\n`,
-  ];
-  const estimate = v.estimate_eur
-    ? `${money(v.estimate_eur.low)} – ${money(v.estimate_eur.high)}`
-    : null;
-  if (v.state === "estimated") {
-    const s = priceStats(v.comparables.map((c) => c.price_eur))!;
-    parts.push(
-      "**Verkaufte Vergleichsstücke** (nur tatsächlich bezahlte Preise):\n",
-      ...comparableTable(v.comparables),
-      `**Vergleichspreise (n = ${s.n}):** Min ${money(s.min)} · Median ${money(s.median)} · Max ${money(s.max)}  `,
-      `**Schätzung für diese Münze:** ${estimate}\n`,
-    );
-  } else {
-    parts.push(
-      "**Keine belastbare Bewertung:** weniger als zwei tatsächlich verkaufte Exemplare genau dieser Münze gefunden.\n",
-    );
-    if (v.comparables.length)
-      parts.push(
-        "**Gefundener Verkauf:**\n",
-        ...comparableTable(v.comparables),
-      );
-    if (estimate)
-      parts.push(
-        `**Grobe Einschätzung (ohne ausreichende Vergleichsverkäufe):** ${estimate}\n`,
-      );
-  }
-  parts.push(`${text(v.reasoning)}\n`);
-  return parts;
 }
 
 function unidentifiableParts(r: IdentifyResult, images: Images): string[] {
