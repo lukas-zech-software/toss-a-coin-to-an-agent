@@ -4,6 +4,7 @@ import { join, relative } from "node:path";
 import YAML from "yaml";
 import type { CameraInfo } from "../camera/camera.ts";
 import { CAMERA_KEYS } from "../camera/settings.ts";
+import { SIDE_LABEL } from "../ui/ui.ts";
 import type { AttemptRecord, QualityMetrics, Side } from "../types.ts";
 
 export const TOOL_VERSION: string = (
@@ -16,6 +17,8 @@ export type SideData = {
   attempts: AttemptRecord[];
   final: AttemptRecord | null;
   warnings: string[];
+  /** Degrees, -179..180, + = clockwise; null/absent = not yet set. */
+  rotationDeg?: number | null;
 };
 export type CoinRecordInput = {
   id: string;
@@ -101,6 +104,7 @@ export function buildFrontmatter(r: CoinRecordInput): Record<string, unknown> {
     const src = d.final ?? d.attempts[d.attempts.length - 1]!;
     const det = src.shot.detection;
     sides[s] = {
+      ...(d.final !== null ? { rotation_deg: d.rotationDeg ?? null } : {}),
       settings: {
         ...Object.fromEntries(CAMERA_KEYS.map((k) => [k, src.settings[k]])),
         focal_length_mm: src.shot.exif.focalLengthMm,
@@ -167,4 +171,25 @@ export async function setCoinComment(
   const fm = YAML.parse(m[1]!) as Record<string, unknown>;
   fm.comment = comment;
   await writeFile(path, render(fm, id, comment));
+}
+
+/** Sets `sides.<side>.rotation_deg` in the frontmatter only; the body stays byte-identical. */
+export async function setRotation(
+  coinDir: string,
+  id: string,
+  side: Side,
+  deg: number,
+): Promise<void> {
+  const path = join(coinDir, `${id}.md`);
+  const text = await readFile(path, "utf8");
+  const m = /^---\n([\s\S]*?\n)---\n/.exec(text);
+  if (!m) throw new Error(`Kein Frontmatter in ${path}`);
+  const doc = YAML.parseDocument(m[1]!);
+  if (!YAML.isMap(doc.getIn(["sides", side])))
+    throw new Error(`${id}: keine Daten für ${SIDE_LABEL[side]} in ${path}`);
+  doc.setIn(["sides", side, "rotation_deg"], deg);
+  await writeFile(
+    path,
+    `---\n${doc.toString()}---\n${text.slice(m[0].length)}`,
+  );
 }

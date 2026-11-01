@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
 import { BASELINE } from "../../src/camera/settings.ts";
@@ -9,6 +9,7 @@ import { attemptPaths, finalPaths } from "../../src/store/coins.ts";
 import {
   renderCoinMarkdown,
   setCoinComment,
+  setRotation,
   writeCoinMarkdown,
 } from "../../src/store/markdown.ts";
 import type { CoinRecordInput } from "../../src/store/markdown.ts";
@@ -199,5 +200,88 @@ test("setCoinComment replaces only the comment of an existing Markdown", async (
   assert.equal(
     await readFile(path, "utf8"),
     renderCoinMarkdown({ ...r, comment: c }),
+  );
+});
+
+test("complete record: rotation_deg first in each side, null when missing", () => {
+  const r = base("/c");
+  const { fm } = parse(
+    renderCoinMarkdown({
+      ...r,
+      sides: { ...r.sides, av: { ...r.sides.av!, rotationDeg: 37 } },
+    }),
+  );
+  assert.equal(fm.sides.av.rotation_deg, 37);
+  assert.equal(Object.keys(fm.sides.av)[0], "rotation_deg");
+  assert.equal(fm.sides.rv.rotation_deg, null);
+});
+test("incomplete record: rotation_deg only for sides with an accepted shot", () => {
+  const r = base("/c");
+  const a = att(1, shot("/c", null, "av")),
+    b = att(1, shot("/c", 1, "rv"));
+  const { fm } = parse(
+    renderCoinMarkdown({
+      ...r,
+      status: "incomplete",
+      incompleteReason: "aborted",
+      lastError: "x",
+      sides: {
+        av: { attempts: [a], final: a, warnings: [], rotationDeg: 12 },
+        rv: { attempts: [b], final: null, warnings: [] },
+      },
+    }),
+  );
+  assert.equal(fm.sides.av.rotation_deg, 12);
+  assert.ok(!("rotation_deg" in fm.sides.rv));
+});
+test("setRotation changes only that value; the body stays byte-identical", async () => {
+  const dir = await tmpDir();
+  const path = await writeCoinMarkdown({
+    ...base(dir),
+    comment: 'Kratzer "links" – Ümlaut: ja',
+  });
+  const md = await readFile(path, "utf8");
+  const m = /^---\n([\s\S]*?\n)---\n/.exec(md)!;
+  const fm0 = YAML.parse(m[1]!) as Record<string, unknown>;
+  fm0.valuation = { low: 1, high: 2 };
+  const bodyBefore =
+    md.slice(m[0].length) +
+    '\n<!-- coin-identifier:start -->\n## Bestimmung\nÜmlaut – "x"\n<!-- coin-identifier:end -->\n';
+  await writeFile(path, `---\n${YAML.stringify(fm0)}---\n${bodyBefore}`);
+  const before = parse(await readFile(path, "utf8"));
+
+  await setRotation(dir, "COIN-0001", "rv", -90);
+  const after = parse(await readFile(path, "utf8"));
+  assert.equal(after.fm.sides.rv.rotation_deg, -90);
+  assert.equal(after.body, before.body);
+  assert.equal(
+    (await readFile(path, "utf8")).slice(
+      (await readFile(path, "utf8")).indexOf("---\n", 4) + 4,
+    ),
+    bodyBefore,
+  );
+  before.fm.sides.rv.rotation_deg = -90;
+  assert.deepEqual(after.fm, before.fm);
+
+  await setRotation(dir, "COIN-0001", "rv", 0);
+  const again = parse(await readFile(path, "utf8"));
+  assert.equal(again.fm.sides.rv.rotation_deg, 0);
+  assert.equal(again.body, before.body);
+});
+test("setRotation rejects a file without frontmatter or without that side", async () => {
+  const dir = await tmpDir();
+  const path = join(dir, "COIN-0001.md");
+  await writeFile(path, "# no frontmatter\n");
+  await assert.rejects(
+    setRotation(dir, "COIN-0001", "av", 1),
+    /Kein Frontmatter/,
+  );
+  await writeFile(
+    path,
+    "---\nid: COIN-0001\nsides:\n  av:\n    x: 1\n---\n\nbody\n",
+  );
+  await assert.rejects(
+    setRotation(dir, "COIN-0001", "rv", 1),
+    /COIN-0001: keine Daten für Rückseite/,
   );
 });
