@@ -1,7 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { AbortError } from "../../src/abort.ts";
 import { DEFAULT_CONFIG } from "../../src/config.ts";
 import { ToolError } from "../../src/proc.ts";
@@ -190,4 +193,41 @@ test("createSound: no sound without a TTY or when disabled", () => {
     NULL_SOUND,
   );
   assert.ok(createSound(cfg, { tty: true, warn }) instanceof AfplaySound);
+});
+
+test("a crash while ticking leaves no tick playing", async () => {
+  const dir = await tmpDir();
+  const src = (p: string): string =>
+    pathToFileURL(join(process.cwd(), "src", p)).href;
+  const child = join(dir, "crash.mjs");
+  // The child ticks with a stand-in for afplay (sleep 30 that honours the abort signal), then crashes.
+  await writeFile(
+    child,
+    `import { spawn } from "node:child_process";
+import { AbortError } from "${src("abort.ts")}";
+import { DEFAULT_CONFIG } from "${src("config.ts")}";
+import { AfplaySound } from "${src("sound/afplay.ts")}";
+const run = (cmd, args, opts = {}) => new Promise((resolve, reject) => {
+  const p = spawn("/bin/sleep", ["30"], { signal: opts.signal, stdio: "ignore" });
+  p.on("error", (e) => reject(e.name === "AbortError" ? new AbortError() : e));
+  p.on("spawn", () => { console.log("pid " + p.pid); setTimeout(() => { throw new Error("crash"); }, 50); });
+  p.on("exit", () => resolve({ stdout: "", stderr: "" }));
+});
+new AfplaySound(DEFAULT_CONFIG.sound, { warn: () => {}, tickFile: ${JSON.stringify(join(dir, "tick.wav"))}, run }).busy(true);
+`,
+  );
+  const out = await new Promise<string>((resolve) => {
+    execFile(process.execPath, [child], (_err, stdout) => resolve(stdout));
+  });
+  const pid = Number(/pid (\d+)/.exec(out)?.[1]);
+  assert.ok(pid > 0, `child printed no pid: ${out}`);
+  await new Promise((r) => setTimeout(r, 200));
+  let alive = true;
+  try {
+    process.kill(pid, 0);
+  } catch {
+    alive = false;
+  }
+  if (alive) process.kill(pid, "SIGKILL");
+  assert.equal(alive, false, "the tick process outlived the crashed program");
 });

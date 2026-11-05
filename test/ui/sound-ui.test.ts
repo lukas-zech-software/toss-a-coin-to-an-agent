@@ -104,3 +104,13 @@ test("close stops the tick, cancels a pending start and closes the inner ui", as
   assert.equal(ui.images, "iterm");
   assert.equal(ui.signal, inner.signal);
 });
+test("silence keeps the tick off for good, the terminal stays open", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const { sound, ui, inner } = setup(["enter"]);
+  await ui.key("p", ["enter"]);
+  ui.silence();
+  t.mock.timers.tick(1000);
+  await ui.countdown(1);
+  assert.deepEqual(sound.log, ["tick on", "tick off"]);
+  assert.equal(inner.closed, false);
+});

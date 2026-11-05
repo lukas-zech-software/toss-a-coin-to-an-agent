@@ -47,7 +47,8 @@ try {
   );
 } finally {
   if (process.exitCode === 1) sound.cue("problem"); // audio spec §3.2
-  ui.close(); // stops the tick
+  ui.silence(); // tick off; the terminal keeps raw mode and Ctrl+C handling while the camera closes
   await camera.close();
+  ui.close();
   await sound.close(); // lets the problem chime finish (at most 2 s)
 }

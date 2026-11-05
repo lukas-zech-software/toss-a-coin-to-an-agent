@@ -18,6 +18,13 @@ const CUE_TIMEOUT_MS = 10_000;
 const CUE_WAIT_MS = 2000;
 
 /**
+ * Stop functions of every sound not closed yet. Node does not kill child processes when it exits, so on any exit
+ * (also a crash) they abort their afplay calls; run() kills the children synchronously (spec §4: no sound after the end).
+ */
+const live = new Set<() => void>();
+let exitHookInstalled = false;
+
+/**
  * Sound through macOS afplay (audio spec §5): cues fire and forget, the tick loops a generated WAV while busy.
  * The first playback error prints one warning and silences the rest of the run.
  */
@@ -31,6 +38,11 @@ export class AfplaySound implements Sound {
   private tick: AbortController | null = null;
   private tickWritten: Promise<void> | null = null;
   private cues = new Set<Promise<void>>();
+  private stopAll = (): void => {
+    this.tick?.abort();
+    this.tick = null;
+    this.closing.abort();
+  };
 
   constructor(
     cfg: Config["sound"],
@@ -40,6 +52,13 @@ export class AfplaySound implements Sound {
     this.warn = o.warn;
     this.tickFile = o.tickFile;
     this.run = o.run ?? run;
+    live.add(this.stopAll);
+    if (!exitHookInstalled) {
+      exitHookInstalled = true;
+      process.once("exit", () => {
+        for (const stop of live) stop();
+      });
+    }
   }
 
   cue(c: Cue): void {
@@ -80,7 +99,8 @@ export class AfplaySound implements Sound {
       ]);
       clearTimeout(timer);
     }
-    this.closing.abort();
+    this.stopAll();
+    live.delete(this.stopAll);
   }
 
   /** Plays the tick file again and again until the signal aborts; the file is written once per process. */

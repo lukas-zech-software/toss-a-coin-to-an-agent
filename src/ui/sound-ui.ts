@@ -12,6 +12,7 @@ export class SoundUi implements Ui {
   private sound: Sound;
   private busyDelayMs: number;
   private timer: NodeJS.Timeout | null = null;
+  private silenced = false;
 
   constructor(inner: Ui, sound: Sound, o: { busyDelayMs: number }) {
     this.inner = inner;
@@ -47,11 +48,16 @@ export class SoundUi implements Ui {
   }
   countdown(seconds: number): Promise<void> {
     this.clearTimer();
-    if (!this.signal.aborted) this.sound.busy(true);
+    if (!this.signal.aborted && !this.silenced) this.sound.busy(true);
     return this.inner.countdown(seconds);
   }
-  close(): void {
+  /** Tick off for good (program end) while the terminal stays usable, e.g. raw mode and Ctrl+C while the camera closes. */
+  silence(): void {
+    this.silenced = true;
     this.stopBusy();
+  }
+  close(): void {
+    this.silence();
     this.inner.close();
   }
 
@@ -59,7 +65,7 @@ export class SoundUi implements Ui {
     this.stopBusy();
     if (cue) this.sound.cue(cue);
     const result = await input(); // a rejection (Ctrl+C) leaves the tick off
-    if (!this.signal.aborted)
+    if (!this.signal.aborted && !this.silenced)
       this.timer = setTimeout(() => {
         this.timer = null;
         this.sound.busy(true);
