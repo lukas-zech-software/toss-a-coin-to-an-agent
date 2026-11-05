@@ -2,7 +2,9 @@
 import { GPhoto2Camera } from "../camera/gphoto2.ts";
 import { loadConfig } from "../config.ts";
 import { createPipeline } from "../image/pipeline.ts";
+import { createSound } from "../sound/sound.ts";
 import { detectImageProtocol } from "../ui/graphics.ts";
+import { SoundUi } from "../ui/sound-ui.ts";
 import { TerminalUi } from "../ui/terminal.ts";
 import { SystemViewer } from "../ui/viewer.ts";
 import { captureMain } from "./capture-main.ts";
@@ -16,12 +18,20 @@ if (mode !== "single" && mode !== "batch") {
 }
 
 const cfg = loadConfig();
-const ui = new TerminalUi({
+const tty = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+const terminal = new TerminalUi({
   images: detectImageProtocol({
     setting: cfg.display.images,
     env: process.env,
-    tty: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    tty,
   }),
+});
+const sound = createSound(cfg.sound, {
+  tty,
+  warn: (m) => terminal.print(m),
+});
+const ui = new SoundUi(terminal, sound, {
+  busyDelayMs: cfg.sound.busyDelayMs,
 });
 const camera = new GPhoto2Camera({ afWaitMs: cfg.session.afWaitMs });
 try {
@@ -36,6 +46,8 @@ try {
     mode,
   );
 } finally {
+  if (process.exitCode === 1) sound.cue("problem"); // audio spec §3.2
+  ui.close(); // stops the tick
   await camera.close();
-  ui.close();
+  await sound.close(); // lets the problem chime finish (at most 2 s)
 }
