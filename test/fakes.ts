@@ -28,6 +28,7 @@ import type {
   RotationChoice,
   RotationViewOptions,
 } from "../src/ui/rotation.ts";
+import type { Cue, Sound } from "../src/sound/sound.ts";
 import type { Ui } from "../src/ui/ui.ts";
 import type { CompareHandle, Viewer } from "../src/ui/viewer.ts";
 import { FIXTURES, TEST_THRESHOLDS, testConfig, tmpDir } from "./helpers.ts";
@@ -106,6 +107,8 @@ export class ScriptedUi implements Ui {
   output: string[] = [];
   statuses: string[] = [];
   prompts: string[] = [];
+  cues: Array<Cue | null> = []; // one per key() call, same index as prompts
+  closed = false;
   countdowns = 0;
   rotationViews: RotationViewOptions[] = [];
   readonly images: ImageProtocol | null;
@@ -132,9 +135,14 @@ export class ScriptedUi implements Ui {
   print(text: string): void {
     this.output.push(text);
   }
-  async key(prompt: string, allowed: readonly string[]): Promise<string> {
+  async key(
+    prompt: string,
+    allowed: readonly string[],
+    cue?: Cue,
+  ): Promise<string> {
     if (this.signal.aborted) throw new AbortError();
     this.prompts.push(prompt);
+    this.cues.push(cue ?? null);
     const k = this.script.shift();
     if (k === undefined)
       throw new Error(`ScriptedUi: script exhausted at '${prompt}'`);
@@ -183,7 +191,27 @@ export class ScriptedUi implements Ui {
     }
     return { kind: "angle", deg: step };
   }
-  close(): void {}
+  close(): void {
+    this.closed = true;
+  }
+}
+
+/** Sound stand-in: "cue <name>", and "tick on" / "tick off" only when the tick state changes. */
+export class FakeSound implements Sound {
+  log: string[] = [];
+  closed = false;
+  private ticking = false;
+  cue(c: Cue): void {
+    this.log.push(`cue ${c}`);
+  }
+  busy(on: boolean): void {
+    if (on === this.ticking) return;
+    this.ticking = on;
+    this.log.push(on ? "tick on" : "tick off");
+  }
+  async close(): Promise<void> {
+    this.closed = true;
+  }
 }
 
 export class FakeViewer implements Viewer {
