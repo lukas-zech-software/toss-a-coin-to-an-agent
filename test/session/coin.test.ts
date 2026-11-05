@@ -291,3 +291,12 @@ test("ctrl-c in the back's rotation view still completes the coin", async () => 
   assert.equal(f.sides.rv.rotation_deg, null);
   assert.ok(existsSync(join(dir, "COIN-0001_rv.jpg")));
 });
+test("back equals front plays problem once, not again after l + n", async () => {
+  const { s, coin } = await pending({
+    results: [OK, OK, OK],
+    similarities: [0.97, 0.2],
+    script: ["l", "n", "enter"],
+  });
+  assert.equal((await captureBack(s.ctx, coin, 3)).status, "complete");
+  assert.deepEqual(s.ui.cues, ["problem", null, null]);
+});

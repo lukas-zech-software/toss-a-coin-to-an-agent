@@ -86,3 +86,17 @@ test("preflight lists unfinished folders without touching them", async () => {
   assert.ok(ui.output.some((l) => l.includes("COIN-0003")));
   assert.ok(existsSync(join(root, "COIN-0003/originals")));
 });
+test("camera retry and mode dial prompts play problem", async () => {
+  const a = await deps({ info: [info("TV"), info("AV")], script: ["enter"] });
+  assert.ok(await preflight(a.d));
+  assert.deepEqual(a.ui.cues, ["problem"]);
+  const b = await deps({
+    info: [
+      new ToolError("gphoto2", 1, "*** Error: No camera found."),
+      info("AV"),
+    ],
+    script: ["enter"],
+  });
+  assert.ok(await preflight(b.d));
+  assert.deepEqual(b.ui.cues, ["problem"]);
+});

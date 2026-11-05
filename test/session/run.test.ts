@@ -13,7 +13,13 @@ import {
   runCapture,
   runSingle,
 } from "../../src/session/run.ts";
-import { FakeCamera, FakePipeline, NO_COIN, OK, makeSession } from "../fakes.ts";
+import {
+  FakeCamera,
+  FakePipeline,
+  NO_COIN,
+  OK,
+  makeSession,
+} from "../fakes.ts";
 import {
   LENIENT_THRESHOLDS,
   fixture,
@@ -438,4 +444,60 @@ test("single mode: two coins, front then back each, live view before the prompts
   const results = await runSingle(s.ctx);
   assert.deepEqual(statuses(results), ["complete", "complete"]);
   assert.ok((s.camera as FakeCamera).liveViewCalls > 0);
+});
+test("single mode cues: next, flip, next", async () => {
+  const s = await makeSession({
+    results: [OK, OK, OK, OK],
+    script: ["enter", "enter", "enter", "enter", "f"],
+  });
+  await runSingle(s.ctx);
+  assert.deepEqual(s.ui.cues, ["next", "flip", "next", "flip", "next"]);
+});
+test("single mode: the next-coin prompt shown again after a k comment plays no cue", async () => {
+  const s = await makeSession({
+    results: [OK, OK],
+    script: ["enter", "enter", "k", "Kratzer", "f"],
+  });
+  await runSingle(s.ctx);
+  assert.deepEqual(s.ui.cues, ["next", "flip", "next", null]);
+});
+test("batch cues: next for fronts, flip for every back, none for the closing prompt", async () => {
+  const { s } = await run({
+    results: [OK, OK, OK, OK, OK, OK],
+    script: [
+      "enter",
+      "enter",
+      "enter",
+      "r",
+      "enter",
+      "enter",
+      "enter",
+      "enter",
+    ],
+  });
+  assert.deepEqual(s.ui.cues, [
+    "next",
+    "next",
+    "next",
+    "next",
+    "flip",
+    "flip",
+    "flip",
+    null,
+  ]);
+});
+test("batch: a back prompt shown again after a k comment plays no cue", async () => {
+  const { s } = await run({
+    results: [OK, OK, OK, OK],
+    script: ["enter", "enter", "r", "enter", "k", "Kratzer", "enter", "enter"],
+  });
+  assert.deepEqual(s.ui.cues, [
+    "next",
+    "next",
+    "next",
+    "flip",
+    "flip",
+    null,
+    null,
+  ]);
 });

@@ -198,12 +198,15 @@ export async function captureBack(
       const message = `Rückseite gleicht der Vorderseite – Münze umgedreht? (Ähnlichkeit ${sim.toFixed(2)} > ${maxSimilarity})`;
       ui.print(message);
       let action: string;
+      let first = true; // problem with the first showing only (audio spec §3.1)
       do {
         await ensureLiveView(ctx);
         action = await ui.key(
           "Enter für neue Aufnahme · i = ignorieren · l = löschen · q = beenden",
           ["enter", "i", "l", "q"],
+          first ? "problem" : undefined,
         );
+        first = false;
       } while (action === "l" && !(await confirmDelete()));
       if (action === "i") return await end.incomplete("ignored", message);
       if (action === "l") return await end.deleted();
