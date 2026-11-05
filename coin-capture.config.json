@@ -25,5 +25,16 @@
     "steps": { "exposurecompensation": 1, "iso": 1 }
   },
   "session": { "countdownSeconds": 1, "afWaitMs": 2000 },
-  "display": { "images": "auto" }
+  "display": { "images": "auto" },
+  "sound": {
+    "enabled": true,
+    "volume": 1,
+    "next": "/System/Library/Sounds/Glass.aiff",
+    "flip": "/System/Library/Sounds/Ping.aiff",
+    "problem": "/System/Library/Sounds/Basso.aiff",
+    "look": "/System/Library/Sounds/Pop.aiff",
+    "busy": true,
+    "busyVolume": 0.15,
+    "busyDelayMs": 500
+  }
 }

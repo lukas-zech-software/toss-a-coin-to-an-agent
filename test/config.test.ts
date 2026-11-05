@@ -16,6 +16,21 @@ test("loads the committed config", () => {
     isAbsolute(c.paths.coinsRoot) && c.paths.coinsRoot.endsWith("/coins"),
   );
 });
+test("loadConfig() has the sound defaults", () => {
+  const expected = {
+    enabled: true,
+    volume: 1,
+    next: "/System/Library/Sounds/Glass.aiff",
+    flip: "/System/Library/Sounds/Ping.aiff",
+    problem: "/System/Library/Sounds/Basso.aiff",
+    look: "/System/Library/Sounds/Pop.aiff",
+    busy: true,
+    busyVolume: 0.15,
+    busyDelayMs: 500,
+  };
+  assert.deepEqual(loadConfig().sound, expected);
+  assert.deepEqual(DEFAULT_CONFIG.sound, expected);
+});
 test("missing keys fall back to defaults; coinsRoot resolves next to the file", async () => {
   const dir = await tmpDir();
   const f = join(dir, "c.json");
