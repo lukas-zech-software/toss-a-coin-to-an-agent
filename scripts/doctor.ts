@@ -81,6 +81,34 @@ checks.push(
       },
 );
 
+// Sound is optional as well (audio spec §5): without afplay or a sound file the run stays silent.
+const sound = loadConfig().sound;
+const missingSounds = (["next", "flip", "problem", "look"] as const).filter(
+  (c) => !existsSync(sound[c]),
+);
+let afplay: string | null = null;
+try {
+  afplay = execFileSync("which", ["afplay"], { encoding: "utf8" }).trim();
+} catch {
+  afplay = null;
+}
+checks.push(
+  afplay && !missingSounds.length
+    ? {
+        name: "afplay",
+        ok: true,
+        detail: `${afplay}${sound.enabled ? "" : " (Töne in der Konfiguration aus)"}`,
+      }
+    : {
+        name: "afplay",
+        ok: true,
+        warn: true,
+        detail: afplay
+          ? `Klangdatei fehlt: ${missingSounds.map((c) => sound[c]).join(", ")} (optional – Töne bleiben still)`
+          : "nicht gefunden (optional – Töne bleiben still)",
+      },
+);
+
 // The Numista API key is optional too: without it the agent searches Numista data via WebSearch.
 const usage = await numistaUsage(NUMISTA_USAGE_LOG);
 checks.push(
