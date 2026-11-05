@@ -46,6 +46,31 @@ test("takeReference retries after a failed detection and saves reference.jpg", a
   assert.ok(!existsSync(join(calibrationDir(s.root), "tmp")));
   assert.equal(s.ui.countdowns, 2);
 });
+test("takeReference: p changes parameters before the retake; defaults follow the reference", async () => {
+  const s = await makeSession({
+    results: [NO_COIN, OK],
+    script: ["enter", "p", "3", "+", "enter", "enter"],
+  });
+  await ensureDefaults(s.root);
+  const ref = await takeReference(s.ctx);
+  assert.equal(ref!.settings.exposurecompensation, "0.6");
+  assert.deepEqual(
+    s.camera.calls.map((c) => c.settings.exposurecompensation),
+    ["0.3", "0.6"],
+  );
+  assert.deepEqual((await ensureDefaults(s.root)).settings, ref!.settings);
+  assert.equal(await isCalibrated(s.root), true);
+});
+test("takeReference: q in the parameter menu cancels without saving", async () => {
+  const s = await makeSession({
+    results: [NO_COIN],
+    script: ["enter", "p", "q"],
+  });
+  await ensureDefaults(s.root);
+  assert.equal(await takeReference(s.ctx), null);
+  assert.ok(!existsSync(referencePath(s.root)));
+  assert.deepEqual((await ensureDefaults(s.root)).settings, BASELINE);
+});
 test("takeReference: q returns null and changes nothing", async () => {
   const s = await makeSession({ script: ["q"] });
   assert.equal(await takeReference(s.ctx), null);

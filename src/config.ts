@@ -39,7 +39,7 @@ export type Config = {
     attemptsPerRetry: number;
     steps: { exposurecompensation: number; iso: number };
   };
-  session: { countdownSeconds: number };
+  session: { countdownSeconds: number; afWaitMs: number };
   display: { images: ImageSetting };
 };
 
@@ -69,7 +69,7 @@ export const DEFAULT_CONFIG: Config = {
     attemptsPerRetry: 2,
     steps: { exposurecompensation: 1, iso: 1 },
   },
-  session: { countdownSeconds: 1 },
+  session: { countdownSeconds: 1, afWaitMs: 2000 },
   display: { images: "auto" },
 };
 

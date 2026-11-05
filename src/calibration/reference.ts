@@ -1,11 +1,19 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { AbortError } from "../abort.ts";
+import { CAMERA_KEYS } from "../camera/settings.ts";
 import type { CameraSettings } from "../camera/settings.ts";
 import { evaluateShot } from "../check/rules.ts";
 import type { SessionContext } from "../session/context.ts";
+import { ensureLiveView } from "../session/live.ts";
 import type { ExifInfo, QualityMetrics } from "../types.ts";
-import { calibrationDir, referencePath, saveReference } from "./store.ts";
+import { editParameters } from "./parameters.ts";
+import {
+  calibrationDir,
+  referencePath,
+  saveDefaults,
+  saveReference,
+} from "./store.ts";
 
 export type CalibShot = {
   image: string;
@@ -65,13 +73,47 @@ export async function captureCalibShot(
   }
 }
 
-/** Spec 9.1: any coin, shot with the defaults, becomes reference.jpg. null = cancelled. */
+/**
+ * Calibration shots until one finds a coin. After each failure the user retakes (Enter), changes the parameters
+ * first (p) or cancels (q → null), so a bad setting never locks the user in. The shot carries the settings used.
+ */
+export async function captureUntilCoin(
+  ctx: SessionContext,
+  settings: CameraSettings,
+  k: number,
+): Promise<CalibShot | null> {
+  const { ui, cfg } = ctx;
+  let cur = settings;
+  for (;;) {
+    await ensureLiveView(ctx);
+    await ui.countdown(cfg.session.countdownSeconds);
+    const shot = await captureCalibShot(ctx, cur, k);
+    if (shot) return shot;
+    await ensureLiveView(ctx);
+    const next = await ui.key(
+      "Enter = erneut aufnehmen · p = Parameter ändern · q = abbrechen",
+      ["enter", "p", "q"],
+    );
+    if (next === "q") return null;
+    if (next === "p") {
+      const edited = await editParameters(ui, cur, ctx.choices);
+      if (!edited) return null;
+      cur = edited;
+    }
+  }
+}
+
+/**
+ * Spec 9.1: any coin, shot with the defaults, becomes reference.jpg. null = cancelled. If the user had to change
+ * the parameters to get a coin detected, defaults.json takes them too, so the reference matches the defaults.
+ */
 export async function takeReference(
   ctx: SessionContext,
 ): Promise<CalibShot | null> {
   const { ui, cfg } = ctx;
   const root = cfg.paths.coinsRoot;
   try {
+    await ensureLiveView(ctx);
     if (
       (await ui.key("Bitte eine beliebige Münze einlegen und Enter drücken", [
         "enter",
@@ -79,21 +121,12 @@ export async function takeReference(
       ])) === "q"
     )
       return null;
-    for (;;) {
-      await ui.countdown(cfg.session.countdownSeconds);
-      const shot = await captureCalibShot(ctx, ctx.defaults, 0);
-      if (shot) {
-        await saveReference(root, shot.image);
-        return { ...shot, image: referencePath(root) };
-      }
-      if (
-        (await ui.key("Enter = erneut aufnehmen · q = abbrechen", [
-          "enter",
-          "q",
-        ])) === "q"
-      )
-        return null;
-    }
+    const shot = await captureUntilCoin(ctx, ctx.defaults, 0);
+    if (!shot) return null;
+    if (CAMERA_KEYS.some((k) => shot.settings[k] !== ctx.defaults[k]))
+      await saveDefaults(root, shot.settings);
+    await saveReference(root, shot.image);
+    return { ...shot, image: referencePath(root) };
   } catch (e) {
     if (e instanceof AbortError) return null;
     throw e;

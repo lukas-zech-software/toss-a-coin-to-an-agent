@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { killCameraBlockers, run } from "../proc.ts";
+import { killCameraBlockers, startSession, ToolError } from "../proc.ts";
+import type { Session } from "../proc.ts";
 import type { RawCapture } from "../types.ts";
 import type { Camera, CameraInfo, CaptureOptions } from "./camera.ts";
 import type { CameraKey, CameraSettings, ChoiceLists } from "./settings.ts";
@@ -13,21 +14,15 @@ export const CONFIG_PATHS = {
   exposurecompensation: "/main/capturesettings/exposurecompensation",
   whitebalance: "/main/imgsettings/whitebalance",
   picturestyle: "/main/capturesettings/picturestyle",
-  meteringmode: "/main/capturesettings/meteringmode",
   imageformat: "/main/imgsettings/imageformat",
   capturetarget: "/main/settings/capturetarget",
   cameramodel: "/main/status/cameramodel",
   lensname: "/main/status/lensname",
   autoexposuremode: "/main/capturesettings/autoexposuremode",
-  autofocusdrive: "/main/actions/autofocusdrive",
-  viewfinder: "/main/actions/viewfinder",
+  output: "/main/settings/output",
+  evfmode: "/main/settings/evfmode",
+  release: "/main/actions/eosremoterelease",
 } as const;
-
-/** AF variant (a) from the hardware check: autofocusdrive works without live view. */
-export const AF_ARGS: readonly string[] = [
-  "--set-config",
-  `${CONFIG_PATHS.autofocusdrive}=1`,
-];
 
 export type ConfigEntry = {
   label: string;
@@ -71,26 +66,6 @@ export function parseGetConfig(out: string): ConfigEntry[] {
   return entries;
 }
 
-export function buildCaptureArgs(
-  s: CameraSettings,
-  o: { autofocus: boolean; outDir: string },
-): string[] {
-  const args: string[] = [];
-  for (const k of ["imageformat", "capturetarget"] as const)
-    args.push("--set-config-value", `${CONFIG_PATHS[k]}=${FIXED_SETTINGS[k]}`);
-  for (const k of CAMERA_KEYS)
-    args.push("--set-config-value", `${CONFIG_PATHS[k]}=${s[k]}`);
-  if (o.autofocus) args.push(...AF_ARGS);
-  args.push(
-    "--capture-image-and-download",
-    "--filename",
-    `${o.outDir}/capture.%C`,
-    "--force-overwrite",
-  );
-
-  return args;
-}
-
 export function pickCaptureFiles(dir: string, names: string[]): RawCapture {
   const jpg = names.find((n) => /\.jpg$/i.test(n));
   const raw = names.find((n) => /\.cr2$/i.test(n));
@@ -101,27 +76,89 @@ export function pickCaptureFiles(dir: string, names: string[]): RawCapture {
   return { jpgPath: join(dir, jpg), rawPath: join(dir, raw) };
 }
 
-const getConfigArgs = (
-  keys: ReadonlyArray<keyof typeof CONFIG_PATHS>,
-): string[] => keys.flatMap((k) => ["--get-config", CONFIG_PATHS[k]]);
+const PROMPT = /gphoto2: \{[^}]*\} [^\n]*> $/;
 
+/** One persistent `gphoto2 --shell` session per camera object (docs/hardware/1300d.md, section 12). */
 export class GPhoto2Camera implements Camera {
-  private timeoutMs: number;
+  private afWaitMs: number;
+  private session_: Promise<Session> | undefined;
 
-  constructor(opts: { timeoutMs?: number } = {}) {
-    this.timeoutMs = opts.timeoutMs ?? 60_000; // max(60 s, 5 x ~4 s capture), see docs/hardware/1300d.md
+  constructor(opts: { afWaitMs?: number } = {}) {
+    this.afWaitMs = opts.afWaitMs ?? 2000;
+  }
+
+  private session(): Promise<Session> {
+    this.session_ ??= this.start().catch((e: unknown) => {
+      this.session_ = undefined;
+      throw e;
+    });
+    return this.session_;
+  }
+
+  private async start(): Promise<Session> {
+    await killCameraBlockers();
+    const s = await startSession(
+      "gphoto2",
+      ["--filename", "capture.%C", "--force-overwrite", "--shell"],
+      { prompt: PROMPT, timeoutMs: 15_000 },
+    );
+    this.session_ = Promise.resolve(s);
+    try {
+      // Clean up what an earlier crashed run may have left behind.
+      for (const r of ["Release Full", "Release Half"])
+        await this.cmd(`set-config ${CONFIG_PATHS.release}=${r}`).catch(() => {
+          if (!s.alive) throw new ToolError("gphoto2", null, "Sitzung beendet");
+        });
+      const evf = await this.cmd(`get-config ${CONFIG_PATHS.evfmode}`);
+      if (current(evf) !== "1")
+        await this.cmd(`set-config ${CONFIG_PATHS.evfmode}=1`);
+    } catch (e) {
+      s.kill();
+      this.session_ = undefined;
+      throw e;
+    }
+    return s;
+  }
+
+  /** Sends one shell command; output containing `*** Error` is a ToolError. A dead session is dropped. */
+  private async cmd(
+    line: string,
+    timeoutMs = 10_000,
+    signal?: AbortSignal,
+  ): Promise<string> {
+    const s = await this.session();
+    let out: string;
+    try {
+      out = await s.send(line, { timeoutMs, ...(signal ? { signal } : {}) });
+    } catch (e) {
+      s.kill();
+      this.session_ = undefined;
+      throw e;
+    }
+    if (out.includes("*** Error"))
+      throw new ToolError("gphoto2", null, `${line}\n${out.trim()}`);
+    return out;
+  }
+
+  private async getConfig(
+    keys: ReadonlyArray<keyof typeof CONFIG_PATHS>,
+  ): Promise<ConfigEntry[]> {
+    const entries: ConfigEntry[] = [];
+    for (const k of keys)
+      entries.push(
+        ...parseGetConfig(await this.cmd(`get-config ${CONFIG_PATHS[k]}`)),
+      );
+    return entries;
   }
 
   async info(): Promise<CameraInfo> {
-    await killCameraBlockers();
-    const { stdout } = await run(
-      "gphoto2",
-      getConfigArgs(["cameramodel", "lensname", "autoexposuremode"]),
-      { timeoutMs: this.timeoutMs },
-    );
-    const [model, lens, mode] = parseGetConfig(stdout);
+    const [model, lens, mode] = await this.getConfig([
+      "cameramodel",
+      "lensname",
+      "autoexposuremode",
+    ]);
     if (!model || !lens || !mode)
-      throw new Error(`Unerwartete gphoto2-Ausgabe:\n${stdout}`);
+      throw new Error("Unerwartete gphoto2-Ausgabe bei info()");
     return {
       model: model.current,
       lens: lens.current,
@@ -130,24 +167,72 @@ export class GPhoto2Camera implements Camera {
   }
 
   async choices(): Promise<ChoiceLists> {
-    await killCameraBlockers();
-    const { stdout } = await run("gphoto2", getConfigArgs(CAMERA_KEYS), {
-      timeoutMs: this.timeoutMs,
-    });
-    const entries = parseGetConfig(stdout);
+    const entries = await this.getConfig(CAMERA_KEYS);
     if (entries.length !== CAMERA_KEYS.length)
-      throw new Error(`Unerwartete gphoto2-Ausgabe:\n${stdout}`);
+      throw new Error("Unerwartete gphoto2-Ausgabe bei choices()");
     return Object.fromEntries(
       CAMERA_KEYS.map((k: CameraKey, i) => [k, entries[i]!.choices]),
     ) as ChoiceLists;
   }
 
+  async liveView(): Promise<void> {
+    const out = await this.cmd(`get-config ${CONFIG_PATHS.output}`);
+    if (current(out) === "Off")
+      await this.cmd(`set-config ${CONFIG_PATHS.output}=TFT`);
+  }
+
+  /** Sequence verified on the camera (spec 6.4): a plain wait-event after the release loses the JPG. */
   async capture(s: CameraSettings, o: CaptureOptions): Promise<RawCapture> {
-    await killCameraBlockers();
-    await run("gphoto2", buildCaptureArgs(s, o), {
-      timeoutMs: this.timeoutMs,
-      ...(o.signal ? { signal: o.signal } : {}),
-    });
+    const c = (line: string, ms = 10_000) => this.cmd(line, ms, o.signal);
+    const release = (v: string) => `set-config ${CONFIG_PATHS.release}=${v}`;
+    await c(`lcd ${o.outDir}`);
+    for (const k of ["imageformat", "capturetarget"] as const)
+      await c(`set-config-value ${CONFIG_PATHS[k]}=${FIXED_SETTINGS[k]}`);
+    for (const k of CAMERA_KEYS)
+      await c(`set-config-value ${CONFIG_PATHS[k]}=${s[k]}`);
+    await this.liveView();
+    let released = false;
+    try {
+      if (o.autofocus) {
+        await c(release("Press Half AF"));
+        await c(`wait-event ${this.afWaitMs}ms`, this.afWaitMs + 10_000);
+      }
+      await c(release(o.autofocus ? "Press Full AF" : "Press Full MF"));
+      await c(release("Release Full"));
+      await c(release("Release Half"));
+      released = true;
+      await c("wait-event-and-download CAPTURECOMPLETE", 20_000);
+    } finally {
+      if (!released) await this.releaseQuietly();
+    }
     return pickCaptureFiles(o.outDir, await readdir(o.outDir));
   }
+
+  private async releaseQuietly(): Promise<void> {
+    const s = this.session_ ? await this.session_.catch(() => undefined) : undefined;
+    if (!s?.alive) return;
+    for (const r of ["Release Full", "Release Half"])
+      await this.cmd(`set-config ${CONFIG_PATHS.release}=${r}`, 5_000).catch(
+        () => undefined,
+      );
+  }
+
+  async close(): Promise<void> {
+    const p = this.session_;
+    this.session_ = undefined;
+    const s = p ? await p.catch(() => undefined) : undefined;
+    if (!s?.alive) return;
+    for (const line of [
+      `set-config ${CONFIG_PATHS.output}=Off`,
+      `set-config ${CONFIG_PATHS.release}=Release Full`,
+      `set-config ${CONFIG_PATHS.release}=Release Half`,
+    ])
+      await s.send(line, { timeoutMs: 5_000 }).catch(() => undefined);
+    await s.close("q", 5_000);
+  }
+}
+
+/** The `Current:` value of a single get-config output. */
+function current(out: string): string {
+  return parseGetConfig(out)[0]?.current ?? "";
 }

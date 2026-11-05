@@ -71,6 +71,19 @@ test("conflict and detection failures go straight to the menu", async () => {
   assert.deepEqual(d.s.camera.calls[1]!.settings, d.s.ctx.defaults);
   assert.ok(d.s.ui.prompts.some((p) => p.includes("zurechtlegen")));
 });
+test("Enter in the menu works like w", async () => {
+  const d = await shoot({ results: [NO_COIN, OK], script: ["enter", "enter"] });
+  assert.equal(d.out.kind, "ok");
+  assert.equal(d.s.ui.countdowns, 1);
+  assert.ok(
+    d.s.ui.prompts.some((p) => p.includes("w/Enter = weiter versuchen")),
+  );
+  const l = await shoot({
+    results: [UNDER, UNDER, UNDER, UNDER, UNDER],
+    script: ["enter", "i"],
+  });
+  assert.equal(l.s.camera.calls.length, 5);
+});
 test("scale end goes to the menu", async () => {
   const { s, out } = await shoot({
     results: [UNDER, UNDER],

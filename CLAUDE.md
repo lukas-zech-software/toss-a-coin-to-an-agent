@@ -16,7 +16,7 @@ Coin capture pipeline (gphoto2 + sharp + OpenCV.js) and three agents that run in
 ## Code rules
 
 - Node runs `.ts` directly, no build: erasable syntax only (no `enum`, `namespace`, parameter properties); imports end in `.ts`.
-- Call external binaries only via `run()` in `src/proc.ts` (no shell, timeout + AbortSignal). A new binary also gets a check in `scripts/doctor.ts` and a fake in `test/fakes.ts`.
+- Call external binaries only via `run()` in `src/proc.ts` (or `startSession()` for a long-running interactive process; no shell, timeout + AbortSignal). A new binary also gets a check in `scripts/doctor.ts` and a fake in `test/fakes.ts`.
 - User-facing text German; code and comments English.
 
 ## Data

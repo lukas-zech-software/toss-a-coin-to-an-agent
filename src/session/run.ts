@@ -5,6 +5,7 @@ import { formatStatus } from "../ui/ui.ts";
 import { abortPending, captureBack, captureFront } from "./coin.ts";
 import type { CoinResult, PendingCoin } from "./coin.ts";
 import type { SessionContext } from "./context.ts";
+import { ensureLiveView } from "./live.ts";
 
 const FIRST_PROMPT =
   "Münze 1: Vorderseite einlegen und Enter drücken · q = beenden";
@@ -70,6 +71,7 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
         }),
       );
       // Only number 1 has its own prompt; every later front starts from the choice after the previous front.
+      await ensureLiveView(ctx);
       const k =
         position === 1
           ? await ui.key(FIRST_PROMPT, ["enter", "q"])
@@ -137,6 +139,7 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
       );
       const intro = first ? "Bitte Objektträger umdrehen. " : "";
       first = false;
+      await ensureLiveView(ctx);
       const k = await keyWithComment(
         (offer) =>
           `${intro}Rückseite von Münze ${coin.position} (${coin.id}) einlegen und Enter drücken · ${offer ? `${offer} · ` : ""}q = beenden`,
@@ -172,11 +175,93 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
       s.kind === "ended" ? s.result : await abortPending(ctx, s.coin),
     );
 
+  printSummary(ctx, results);
+  return results;
+}
+
+function printSummary(ctx: SessionContext, results: readonly CoinResult[]): void {
+  const { ui } = ctx;
   if (results.length) {
     ui.print("Zusammenfassung:");
     for (const line of formatSummary(results)) ui.print(line);
   } else ui.print("Keine Münze erfasst.");
   const unrotated = results.reduce((sum, r) => sum + r.unrotated, 0);
   if (unrotated > 0) ui.print(formatUnrotated(unrotated));
+}
+
+/**
+ * Single mode (live-view spec 5): coin by coin, front, flip by hand, back. Ends with `f`/`q` between two coins, or `q`
+ * at the back prompt (the coin is saved as aborted). Prints the summary, returns one result per coin. Never throws
+ * AbortError.
+ */
+export async function runSingle(ctx: SessionContext): Promise<CoinResult[]> {
+  const { ui } = ctx;
+  const root = ctx.cfg.paths.coinsRoot;
+  const results: CoinResult[] = [];
+  let pending: PendingCoin | null = null; // front done, back not yet
+
+  if (ui.images === null) for (const line of NO_IMAGES_HINTS) ui.print(line);
+  try {
+    let lastId: string | null = null;
+    let last: CoinResult | null = null; // the last coin if it ended complete, open for a comment
+    for (let position = 1; ; position++) {
+      const id = await nextCoinId(root, lastId);
+      ui.status(
+        formatStatus({ id, label: `Münze ${position}`, step: "Warte auf Enter" }),
+      );
+      await ensureLiveView(ctx);
+      let k: string;
+      if (position === 1)
+        k = await ui.key(FIRST_PROMPT, ["enter", "q"]);
+      else
+        for (;;) {
+          k = await ui.key(
+            `Enter = Vorderseite der nächsten Münze · ${last ? `k = Kommentar zu Münze ${last.position} · ` : ""}f = fertig`,
+            last ? ["enter", "k", "f", "q"] : ["enter", "f", "q"],
+          );
+          if (k !== "k" || !last) break;
+          const comment = await ui.line(
+            `Kommentar zu Münze ${last.position} (${last.id}): `,
+          );
+          await setCoinComment(last.dir, last.id, comment);
+        }
+      if (k === "q" || k === "f") break;
+      lastId = id;
+      last = null;
+
+      const front = await captureFront(ctx, { position, id });
+      if (front.kind === "ended") {
+        if (front.result === null) break; // Ctrl+C before the folder existed
+        results.push(front.result);
+        if (front.result.status === "aborted") break;
+        continue;
+      }
+      const coin = front.coin;
+      pending = coin;
+      ui.status(
+        formatStatus({
+          id,
+          label: `Münze ${position}`,
+          step: "Warte auf Enter",
+        }),
+      );
+      await ensureLiveView(ctx);
+      const flip = await ui.key(
+        `Münze ${position} umdrehen, Rückseite einlegen und Enter drücken · q = beenden`,
+        ["enter", "q"],
+      );
+      if (flip === "q") break; // saved as aborted below
+      const result = await captureBack(ctx, coin, position);
+      pending = null;
+      results.push(result);
+      if (result.status === "aborted" || ui.signal.aborted) break;
+      last = result.status === "complete" ? result : null;
+    }
+  } catch (e) {
+    if (!(e instanceof AbortError)) throw e;
+  }
+  if (pending) results.push(await abortPending(ctx, pending));
+
+  printSummary(ctx, results);
   return results;
 }

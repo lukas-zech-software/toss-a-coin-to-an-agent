@@ -9,6 +9,7 @@ import { writeCoinMarkdown } from "../store/markdown.ts";
 import type { SideData } from "../store/markdown.ts";
 import type { AttemptRecord, Side } from "../types.ts";
 import type { SessionContext } from "./context.ts";
+import { ensureLiveView } from "./live.ts";
 import { rotateSide } from "./rotation-step.ts";
 import { captureSide } from "./side.ts";
 import type { SideOutcome } from "./side.ts";
@@ -198,6 +199,7 @@ export async function captureBack(
       ui.print(message);
       let action: string;
       do {
+        await ensureLiveView(ctx);
         action = await ui.key(
           "Enter für neue Aufnahme · i = ignorieren · l = löschen · q = beenden",
           ["enter", "i", "l", "q"],

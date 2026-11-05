@@ -1,6 +1,6 @@
 import { AbortError } from "../abort.ts";
 import { isCalibrated } from "../calibration/store.ts";
-import { runCapture } from "../session/run.ts";
+import { runCapture, runSingle } from "../session/run.ts";
 import { preflight } from "./preflight.ts";
 import type { PreflightDeps } from "./preflight.ts";
 
@@ -11,7 +11,10 @@ const NOT_CALIBRATED =
  * Calibration check before any camera access (multi-coin spec 6), then preflight and one run (5).
  * Returns the process exit code: 1 without calibration or on an unexpected error, otherwise 0 (also when quit).
  */
-export async function captureMain(deps: PreflightDeps): Promise<number> {
+export async function captureMain(
+  deps: PreflightDeps,
+  mode: "single" | "batch",
+): Promise<number> {
   const { cfg, ui } = deps;
   try {
     if (!(await isCalibrated(cfg.paths.coinsRoot))) {
@@ -19,7 +22,7 @@ export async function captureMain(deps: PreflightDeps): Promise<number> {
       return 1;
     }
     const ctx = await preflight(deps);
-    if (ctx) await runCapture(ctx);
+    if (ctx) await (mode === "single" ? runSingle(ctx) : runCapture(ctx));
     return 0;
   } catch (e) {
     if (e instanceof AbortError) {

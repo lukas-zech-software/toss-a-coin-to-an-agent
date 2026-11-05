@@ -4,7 +4,6 @@ export const CAMERA_KEYS = [
   "exposurecompensation",
   "whitebalance",
   "picturestyle",
-  "meteringmode",
 ] as const;
 export type CameraKey = (typeof CAMERA_KEYS)[number];
 export type CameraSettings = Record<CameraKey, string>;
@@ -17,7 +16,6 @@ export const BASELINE: CameraSettings = {
   exposurecompensation: "0.3",
   whitebalance: "Manual",
   picturestyle: "Faithful",
-  meteringmode: "Partial",
 };
 
 /** Always set before a capture; not calibratable. */
@@ -32,7 +30,6 @@ export const KEY_LABELS: Record<CameraKey, string> = {
   exposurecompensation: "Belichtungskorrektur",
   whitebalance: "Weißabgleich",
   picturestyle: "Bildstil",
-  meteringmode: "Messmethode",
 };
 
 const isNumeric = (s: string): boolean =>

@@ -9,13 +9,17 @@ import {
   referencePath,
 } from "../../src/calibration/store.ts";
 import {
+  MANUAL_WB_HINT,
   editParameters,
+} from "../../src/calibration/parameters.ts";
+import {
   formatComparison,
   runCalibration,
 } from "../../src/calibration/workflow.ts";
 import { BASELINE } from "../../src/camera/settings.ts";
 import {
   FakeViewer,
+  NO_COIN,
   OK,
   ScriptedUi,
   makeSession,
@@ -57,6 +61,18 @@ test("editParameters: step, direct entry, invalid value, back", async () => {
   const r = await editParameters(ui, BASELINE, realChoices());
   assert.deepEqual(r, { ...BASELINE, exposurecompensation: "1", iso: "400" });
   assert.ok(ui.output.some((l) => l.includes("Ungültiger Wert: Custom")));
+  // white balance stayed Manual, so no camera hint
+  assert.ok(!ui.output.includes(MANUAL_WB_HINT));
+});
+test("editParameters: switching white balance to Manual shows the camera hint", async () => {
+  const ui = new ScriptedUi(["4", "=", "Manual", "enter", "enter"]);
+  const r = await editParameters(
+    ui,
+    { ...BASELINE, whitebalance: "Daylight" },
+    realChoices(),
+  );
+  assert.equal(r!.whitebalance, "Manual");
+  assert.equal(ui.output.filter((l) => l === MANUAL_WB_HINT).length, 1);
 });
 test("editParameters: scale end is reported, q cancels", async () => {
   const ui = new ScriptedUi(["2", "-", "enter", "q"]);
@@ -106,6 +122,46 @@ test("better → confirm: defaults and reference replaced, tmp removed", async (
     ["preview", "compare", "close"],
   );
   assert.ok(!existsSync(join(calibrationDir(s.root), "tmp")));
+});
+test("no coin detected → p changes parameters before the retake", async () => {
+  const { s, start } = await setup({
+    results: [NO_COIN, OK],
+    script: [
+      "3",
+      "+",
+      "+",
+      "enter",
+      "enter",
+      "p",
+      "3",
+      "-",
+      "enter",
+      "enter",
+      "b",
+      "r",
+    ],
+  });
+  assert.equal(await runCalibration(s.ctx, start), "confirmed");
+  assert.deepEqual(
+    s.camera.calls.map((c) => c.settings.exposurecompensation),
+    ["1", "0.6"],
+  );
+  assert.equal(
+    (await ensureDefaults(s.root)).settings.exposurecompensation,
+    "0.6",
+  );
+  assert.ok(s.ui.prompts.some((p) => p.includes("p = Parameter ändern")));
+});
+test("no coin detected → Enter retakes with the same parameters", async () => {
+  const { s, start } = await setup({
+    results: [NO_COIN, OK],
+    script: ["3", "+", "enter", "enter", "enter", "b", "r"],
+  });
+  assert.equal(await runCalibration(s.ctx, start), "confirmed");
+  assert.deepEqual(
+    s.camera.calls.map((c) => c.settings.exposurecompensation),
+    ["0.6", "0.6"],
+  );
 });
 test("worse ends without changes", async () => {
   const { s, start } = await setup({ results: [OK], script: ["enter", "s"] });

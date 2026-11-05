@@ -64,7 +64,7 @@ const calibrate = async (root: string) => {
 
 test("missing calibration: message, exit 1, no camera access, nothing created", async () => {
   const a = await deps();
-  assert.equal(await captureMain(a.d), 1);
+  assert.equal(await captureMain(a.d, "batch"), 1);
   assert.ok(a.ui.output.includes(NOT_CALIBRATED));
   assert.deepEqual(a.used, []);
   assert.ok(!existsSync(join(a.root, "_calibration/defaults.json")));
@@ -72,14 +72,14 @@ test("missing calibration: message, exit 1, no camera access, nothing created", 
 
   const b = await deps();
   await saveDefaults(b.root, BASELINE); // defaults.json without reference.jpg
-  assert.equal(await captureMain(b.d), 1);
+  assert.equal(await captureMain(b.d, "batch"), 1);
   assert.ok(b.ui.output.includes(NOT_CALIBRATED));
   assert.deepEqual(b.used, []);
 });
 test("calibrated: preflight, then the run; q at the first prompt exits 0", async () => {
   const { root, ui, used, d } = await deps({ script: ["q"] });
   await calibrate(root);
-  assert.equal(await captureMain(d), 0);
+  assert.equal(await captureMain(d, "batch"), 0);
   assert.ok(ui.output.includes("Keine Münze erfasst."));
   assert.ok(used.includes("info"));
 });
@@ -93,7 +93,7 @@ test("an unexpected error mid-run exits 1 and leaves the open folder without Mar
   pipeline.similarity = async () => {
     throw new Error("boom");
   };
-  assert.equal(await captureMain(d), 1);
+  assert.equal(await captureMain(d, "batch"), 1);
   assert.ok(ui.output.some((l) => l.includes("boom")));
   assert.ok(existsSync(join(root, "COIN-0001")));
   assert.ok(!existsSync(join(root, "COIN-0001/COIN-0001.md")));

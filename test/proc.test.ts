@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AbortError } from "../src/abort.ts";
-import { killCameraBlockers, run, ToolError } from "../src/proc.ts";
+import { killCameraBlockers, run, startSession, ToolError } from "../src/proc.ts";
 
 test("run returns stdout", async () =>
   assert.equal((await run("echo", ["hi"])).stdout.trim(), "hi"));
@@ -38,4 +38,15 @@ test("abort escalates to SIGKILL when the child ignores SIGTERM (nothing hangs)"
     Date.now() - started < 8000,
     "settled well before the child's own 30 s",
   );
+});
+
+test("startSession sends a line and closes", async () => {
+  const s = await startSession(
+    "sh",
+    ["-c", "printf 'p> '; while read l; do echo \"got $l\"; printf 'p> '; done"],
+    { prompt: /p> $/ },
+  );
+  assert.ok((await s.send("x")).includes("got x"));
+  await s.close("exit", 1000);
+  assert.equal(s.alive, false);
 });

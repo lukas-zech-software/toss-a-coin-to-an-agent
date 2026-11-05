@@ -125,7 +125,7 @@ Nach erfolgreicher Prüfung der Rückseite werden beide Zuschnitte grob verglich
 Ausgabe aller Versuche der aktuellen Seite, je Versuch: Nummer, verwendete Parameter, Link (Dateipfad) zum Bild, Fehlermeldung mit Messwert und Schwelle (z. B. `underexposed: Helligkeit 48 < 60`). Dann:
 
 - `v` – **Vorschau** der Bilder der fehlgeschlagenen Versuche öffnen (macOS Vorschau); Menü bleibt offen.
-- `w` – **Weiter versuchen**: zwei weitere Korrekturen (Versuch 3, 4, …) in derselben Richtung, wieder mit Fehlermeldung je Versuch; danach erneut dieses Menü. Bei `no_coin`/`coin_cut_off`: Hinweis, Münze zurechtlegen, Enter → neue Aufnahme.
+- `w` oder Enter – **Weiter versuchen**: zwei weitere Korrekturen (Versuch 3, 4, …) in derselben Richtung, wieder mit Fehlermeldung je Versuch; danach erneut dieses Menü. Bei `no_coin`/`coin_cut_off`: Hinweis, Münze zurechtlegen, Enter → neue Aufnahme.
 - `i` – **Ignorieren**: Münze mit fehlerhaften Aufnahmen behalten (Status `incomplete`), Kommentarabfrage (§6.5), neue Münze starten.
 - `l` – **Löschen**: Rückfrage „Wirklich löschen? (j/N)“ [Annahme], dann Ordner vollständig entfernen und neue Münze starten.
 
@@ -251,6 +251,10 @@ Kommentar des Users (oder leer).
      - `w` **Weiter kalibrieren** – zurück zu Schritt 1/2, mit B als neuem A und B's Parametern als Ausgangswerten.
      - `r` **Als neue Referenz/Standard bestätigen** – Parameter von B ersetzen `defaults.json`, Bild B ersetzt `reference.jpg`; Kalibrierung endet.
 5. Abbruch (`q`/`Ctrl+C`) ändert nichts an `defaults.json`/`reference.jpg`.
+
+Wird bei einer Kalibrieraufnahme (B oder erste Referenz nach §9.1) keine Münze erkannt oder meldet die Kamera einen Fehler: `Enter` erneut aufnehmen, `p` erst Parameter ändern (Menü wie Schritt 2, ausgehend von den zuletzt verwendeten Werten), `q` abbrechen. Gelingt die erste Referenz erst mit geänderten Parametern, übernimmt `defaults.json` diese, damit Referenz und Standardwerte zusammenpassen. [entschieden]
+
+Weißabgleich `Manual` ist der eigene Weißabgleich der Kamera (Custom WB); sein Referenzbild (leeres Papier) lässt sich per USB nicht setzen, nur im Kameramenü. Beim Start von `calibrate` mit `Manual` und beim Wechsel auf `Manual` im Parametermenü erscheint ein Hinweis dazu. [entschieden]
 
 Automatische Korrekturen der Erfassungs-Session ändern die Standardparameter nie. [Annahme]
 

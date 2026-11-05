@@ -7,6 +7,7 @@ import { attemptPaths } from "../store/coins.ts";
 import type { AttemptRecord, ProcessedShot, Side } from "../types.ts";
 import { formatStatus } from "../ui/ui.ts";
 import type { SessionContext } from "./context.ts";
+import { ensureLiveView } from "./live.ts";
 
 export type SideOutcome =
   | { kind: "ok"; attempts: AttemptRecord[]; final: AttemptRecord }
@@ -99,6 +100,7 @@ export async function captureSide(
         if (e instanceof AbortError) throw e;
         technicalError = e instanceof Error ? e.message : String(e);
         ui.print(technicalError);
+        await ensureLiveView(ctx);
         if (
           (await ui.key("Enter = erneut versuchen · q = beenden", [
             "enter",
@@ -122,13 +124,14 @@ export async function captureSide(
     ui.print(plan.hint);
   }
 
-  /** v (preview) keeps the menu open; every other key is returned. */
+  /** v (preview) keeps the menu open; every other key is returned, Enter as "w". */
   async function menuKey(): Promise<string> {
     for (;;) {
       const k = await ui.key(
-        "v = Vorschau · w = weiter versuchen · i = ignorieren · l = löschen · q = beenden",
-        ["v", "w", "i", "l", "q"],
+        "v = Vorschau · w/Enter = weiter versuchen · i = ignorieren · l = löschen · q = beenden",
+        ["v", "w", "enter", "i", "l", "q"],
       );
+      if (k === "enter") return "w";
       if (k !== "v") return k;
       await ctx.viewer.preview(
         attempts
@@ -192,6 +195,7 @@ export async function captureSide(
           );
           continue;
         }
+        await ensureLiveView(ctx);
         if (
           (await ui.key(`${plan.hint} – Enter = neue Aufnahme · q = beenden`, [
             "enter",

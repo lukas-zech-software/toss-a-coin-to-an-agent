@@ -11,8 +11,9 @@ import {
   formatSummary,
   formatUnrotated,
   runCapture,
+  runSingle,
 } from "../../src/session/run.ts";
-import { FakePipeline, NO_COIN, OK, makeSession } from "../fakes.ts";
+import { FakeCamera, FakePipeline, NO_COIN, OK, makeSession } from "../fakes.ts";
 import {
   LENIENT_THRESHOLDS,
   fixture,
@@ -429,3 +430,12 @@ test(
     await e2e(fixture("good_av"), fixture("good_rv"));
   },
 );
+test("single mode: two coins, front then back each, live view before the prompts", async () => {
+  const s = await makeSession({
+    results: [OK, OK, OK, OK],
+    script: ["enter", "enter", "enter", "enter", "f"],
+  });
+  const results = await runSingle(s.ctx);
+  assert.deepEqual(statuses(results), ["complete", "complete"]);
+  assert.ok((s.camera as FakeCamera).liveViewCalls > 0);
+});

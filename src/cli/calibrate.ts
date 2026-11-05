@@ -1,5 +1,6 @@
 // npm run calibrate: explicit calibration workflow (spec 9.2).
 import { AbortError } from "../abort.ts";
+import { MANUAL_WB_HINT } from "../calibration/parameters.ts";
 import { loadReferenceShot, takeReference } from "../calibration/reference.ts";
 import { isCalibrated } from "../calibration/store.ts";
 import { runCalibration } from "../calibration/workflow.ts";
@@ -12,15 +13,17 @@ import { preflight } from "./preflight.ts";
 
 const cfg = loadConfig();
 const ui = new TerminalUi();
+const camera = new GPhoto2Camera({ afWaitMs: cfg.session.afWaitMs });
 try {
   const ctx = await preflight({
     cfg,
-    camera: new GPhoto2Camera(),
+    camera,
     pipeline: createPipeline(cfg),
     ui,
     viewer: new SystemViewer({ djvPath: cfg.paths.djv }),
   });
   if (ctx) {
+    if (ctx.defaults.whitebalance === "Manual") ui.print(MANUAL_WB_HINT);
     const start = (await isCalibrated(cfg.paths.coinsRoot))
       ? await loadReferenceShot(ctx)
       : await takeReference(ctx);
@@ -38,5 +41,6 @@ try {
     process.exitCode = 1;
   }
 } finally {
+  await camera.close();
   ui.close();
 }

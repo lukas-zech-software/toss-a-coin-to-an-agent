@@ -37,8 +37,10 @@ export function realChoices(): ChoiceLists {
   const entries = parseGetConfig(
     readFileSync(join(FIXTURES, "gphoto2-get-config.txt"), "utf8"),
   );
+  // The fixture still has a Metering block at index 5 (no longer a camera key); skip it.
+  const used = entries.filter((_, i) => i !== 5);
   return Object.fromEntries(
-    CAMERA_KEYS.map((k, i) => [k, entries[i]!.choices]),
+    CAMERA_KEYS.map((k, i) => [k, used[i]!.choices]),
   ) as ChoiceLists;
 }
 
@@ -47,6 +49,7 @@ export type FakeShot =
 
 export class FakeCamera implements Camera {
   calls: Array<{ settings: CameraSettings; autofocus: boolean }> = [];
+  liveViewCalls = 0;
   private shots: FakeShot[];
   private infoValue: CameraInfo;
   private choiceValue: ChoiceLists;
@@ -69,6 +72,10 @@ export class FakeCamera implements Camera {
   async choices(): Promise<ChoiceLists> {
     return this.choiceValue;
   }
+  async liveView(): Promise<void> {
+    this.liveViewCalls++;
+  }
+  async close(): Promise<void> {}
   async capture(s: CameraSettings, o: CaptureOptions): Promise<RawCapture> {
     this.calls.push({ settings: { ...s }, autofocus: o.autofocus });
     const shot = this.shots.shift();

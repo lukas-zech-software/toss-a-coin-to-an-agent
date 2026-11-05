@@ -11,5 +11,8 @@ export type CaptureOptions = {
 export interface Camera {
   info(): Promise<CameraInfo>;
   choices(): Promise<ChoiceLists>;
+  /** Makes sure live view runs on the camera display (idempotent). */
+  liveView(): Promise<void>;
   capture(s: CameraSettings, o: CaptureOptions): Promise<RawCapture>;
+  close(): Promise<void>;
 }

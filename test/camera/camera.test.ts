@@ -3,8 +3,6 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  AF_ARGS,
-  buildCaptureArgs,
   parseGetConfig,
   pickCaptureFiles,
 } from "../../src/camera/gphoto2.ts";
@@ -29,30 +27,6 @@ test("parseGetConfig parses all blocks in order", () => {
   assert.equal(e[7]!.readonly, true);
   assert.deepEqual(e[7]!.choices, []);
   assert.match(e[7]!.current, /EF-S18-135mm/);
-});
-test("buildCaptureArgs: fixed + given settings by value, AF before capture, filename last", () => {
-  const a = buildCaptureArgs(BASELINE, { autofocus: true, outDir: "/x" });
-  for (const v of [
-    "/main/imgsettings/imageformat=RAW + L",
-    "/main/settings/capturetarget=Internal RAM",
-    "/main/capturesettings/exposurecompensation=0.3",
-    "/main/imgsettings/whitebalance=Manual",
-  ])
-    assert.equal(a[a.indexOf(v) - 1], "--set-config-value", v);
-  const cap = a.indexOf("--capture-image-and-download");
-  if (AF_ARGS.length)
-    assert.ok(a.indexOf(AF_ARGS[0]!) < cap && a.indexOf(AF_ARGS[0]!) > -1);
-  assert.deepEqual(a.slice(cap), [
-    "--capture-image-and-download",
-    "--filename",
-    "/x/capture.%C",
-    "--force-overwrite",
-  ]);
-  assert.ok(
-    !buildCaptureArgs(BASELINE, { autofocus: false, outDir: "/x" }).some((s) =>
-      s.includes("autofocusdrive"),
-    ),
-  );
 });
 test("pickCaptureFiles is case-insensitive and demands both files", () => {
   assert.deepEqual(pickCaptureFiles("/d", ["capture.JPG", "capture.CR2"]), {

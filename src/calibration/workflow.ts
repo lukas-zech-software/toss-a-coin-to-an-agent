@@ -1,57 +1,12 @@
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { AbortError } from "../abort.ts";
-import { CAMERA_KEYS, KEY_LABELS, stepChoice } from "../camera/settings.ts";
-import type { CameraSettings, ChoiceLists } from "../camera/settings.ts";
+import { CAMERA_KEYS, KEY_LABELS } from "../camera/settings.ts";
 import type { SessionContext } from "../session/context.ts";
-import type { Ui } from "../ui/ui.ts";
-import { captureCalibShot } from "./reference.ts";
+import { editParameters } from "./parameters.ts";
+import { captureUntilCoin } from "./reference.ts";
 import type { CalibShot } from "./reference.ts";
 import { calibrationDir, saveDefaults, saveReference } from "./store.ts";
-
-/** Parameter menu (spec 9.2 step 2). null = cancelled. Direct entry is validated against the camera's choice list. */
-export async function editParameters(
-  ui: Ui,
-  start: CameraSettings,
-  choices: ChoiceLists,
-): Promise<CameraSettings | null> {
-  const cur = { ...start };
-  const numbers = CAMERA_KEYS.map((_, i) => String(i + 1));
-  for (;;) {
-    CAMERA_KEYS.forEach((k, i) =>
-      ui.print(`${i + 1} ${KEY_LABELS[k]} ${cur[k]}`),
-    );
-    const pick = await ui.key(
-      "1–6 = Parameter ändern · Enter = Aufnahme B · q = abbrechen",
-      [...numbers, "enter", "q"],
-    );
-    if (pick === "q") return null;
-    if (pick === "enter") return cur;
-    const key = CAMERA_KEYS[Number(pick) - 1]!;
-    for (;;) {
-      const a = await ui.key(
-        "+ = Stufe höher · - = Stufe tiefer · = = Wert eingeben · Enter = zurück",
-        ["+", "-", "=", "enter", "q"],
-      );
-      if (a === "enter") break;
-      if (a === "q") return null;
-      if (a === "=") {
-        const v = (
-          await ui.line(
-            `Neuer Wert für ${KEY_LABELS[key]} (${choices[key].join(", ")}): `,
-          )
-        ).trim();
-        if (choices[key].includes(v)) cur[key] = v;
-        else ui.print(`Ungültiger Wert: ${v}`);
-      } else {
-        const next = stepChoice(choices[key], cur[key], a === "+" ? 1 : -1);
-        if (next === null) ui.print("Ende der Skala");
-        else cur[key] = next;
-      }
-      ui.print(`${KEY_LABELS[key]} ${cur[key]}`);
-    }
-  }
-}
 
 const dash = "–";
 const fmtNum = (
@@ -129,19 +84,8 @@ export async function runCalibration(
       const settings = await editParameters(ui, a.settings, ctx.choices);
       if (!settings) return "aborted";
 
-      let b: CalibShot | null;
-      for (;;) {
-        await ui.countdown(cfg.session.countdownSeconds);
-        b = await captureCalibShot(ctx, settings, k++);
-        if (b) break;
-        if (
-          (await ui.key("Enter = erneut aufnehmen · q = abbrechen", [
-            "enter",
-            "q",
-          ])) === "q"
-        )
-          return "aborted";
-      }
+      const b = await captureUntilCoin(ctx, settings, k++);
+      if (!b) return "aborted";
 
       ui.print(formatComparison(a, b));
       const handle = await viewer.compare(a.image, b.image);

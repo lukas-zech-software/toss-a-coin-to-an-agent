@@ -2,7 +2,7 @@
   "name": "toss-a-coin-to-an-agent",
   "version": "0.1.0",
   "private": true,
-  "description": "Coin capture & cataloguing pipeline (gphoto2 + OpenCV) – TypeScript, run natively by Node without a build step.",
+  "description": "Coin capture & cataloguing pipeline (gphoto2 + OpenCV) –n natively by Node without a build step.",
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -10,6 +10,8 @@
   "scripts": {
     "doctor": "node scripts/doctor.ts",
     "capture": "node src/cli/capture.ts",
+    "capture-single": "node src/cli/capture.ts single",
+    "capture-batch": "node src/cli/capture.ts batch",
     "calibrate": "node src/cli/calibrate.ts",
     "identify": "node src/cli/identify.ts",
     "listing": "node src/cli/listing.ts",
