@@ -200,3 +200,45 @@ test("q aborts without changes; missing DJV warns", async () => {
   assert.deepEqual((await ensureDefaults(s.root)).settings, BASELINE);
   assert.ok(s.ui.output.some((l) => l.includes("DJV nicht gefunden")));
 });
+test("calibration cues: next for the first menu and each comparison, nothing else", async () => {
+  const { s, start } = await setup({
+    results: [OK, OK],
+    script: [
+      "3",
+      "+",
+      "enter",
+      "enter",
+      "b",
+      "w",
+      "3",
+      "+",
+      "enter",
+      "enter",
+      "s",
+      "j",
+    ],
+  });
+  assert.equal(await runCalibration(s.ctx, start), "confirmed");
+  assert.deepEqual(s.ui.cues, [
+    "next", // first menu
+    null,
+    null,
+    null,
+    "next", // comparison
+    null, // w/r/q
+    null, // round 2 menu after w
+    null,
+    null,
+    null,
+    "next", // comparison
+    null, // best image as reference?
+  ]);
+});
+test("no coin plays problem, the menu opened with p stays silent", async () => {
+  const { s, start } = await setup({
+    results: [NO_COIN, OK],
+    script: ["enter", "p", "enter", "b", "r"],
+  });
+  assert.equal(await runCalibration(s.ctx, start), "confirmed");
+  assert.deepEqual(s.ui.cues, ["next", "problem", null, "next", null]);
+});

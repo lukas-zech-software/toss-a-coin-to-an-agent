@@ -93,6 +93,7 @@ export async function captureUntilCoin(
     const next = await ui.key(
       "Enter = erneut aufnehmen · p = Parameter ändern · q = abbrechen",
       ["enter", "p", "q"],
+      "problem",
     );
     if (next === "q") return null;
     if (next === "p") {
@@ -115,10 +116,11 @@ export async function takeReference(
   try {
     await ensureLiveView(ctx);
     if (
-      (await ui.key("Bitte eine beliebige Münze einlegen und Enter drücken", [
-        "enter",
-        "q",
-      ])) === "q"
+      (await ui.key(
+        "Bitte eine beliebige Münze einlegen und Enter drücken",
+        ["enter", "q"],
+        "next",
+      )) === "q"
     )
       return null;
     const shot = await captureUntilCoin(ctx, ctx.defaults, 0);

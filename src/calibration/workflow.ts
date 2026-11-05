@@ -79,9 +79,15 @@ export async function runCalibration(
   };
 
   try {
-    for (;;) {
+    // next: the first menu (after start-up or the new reference shot) and every comparison (audio spec §3.1)
+    for (let round = 1; ; round++) {
       await viewer.preview([a.image]);
-      const settings = await editParameters(ui, a.settings, ctx.choices);
+      const settings = await editParameters(
+        ui,
+        a.settings,
+        ctx.choices,
+        round === 1 ? "next" : undefined,
+      );
       if (!settings) return "aborted";
 
       const b = await captureUntilCoin(ctx, settings, k++);
@@ -93,11 +99,11 @@ export async function runCalibration(
         ui.print("DJV nicht gefunden – Vergleich in der Vorschau");
       let verdict: string;
       try {
-        verdict = await ui.key("b = besser · s = schlechter · q = abbrechen", [
-          "b",
-          "s",
-          "q",
-        ]);
+        verdict = await ui.key(
+          "b = besser · s = schlechter · q = abbrechen",
+          ["b", "s", "q"],
+          "next",
+        );
       } finally {
         handle.close();
       }

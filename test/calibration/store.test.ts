@@ -71,6 +71,15 @@ test("takeReference: q in the parameter menu cancels without saving", async () =
   assert.ok(!existsSync(referencePath(s.root)));
   assert.deepEqual((await ensureDefaults(s.root)).settings, BASELINE);
 });
+test("takeReference plays next at the insert prompt, problem when no coin is found", async () => {
+  const s = await makeSession({
+    results: [NO_COIN, OK],
+    script: ["enter", "enter"],
+  });
+  await ensureDefaults(s.root);
+  assert.ok(await takeReference(s.ctx));
+  assert.deepEqual(s.ui.cues, ["next", "problem"]);
+});
 test("takeReference: q returns null and changes nothing", async () => {
   const s = await makeSession({ script: ["q"] });
   assert.equal(await takeReference(s.ctx), null);
