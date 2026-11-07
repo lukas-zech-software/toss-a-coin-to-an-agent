@@ -80,13 +80,9 @@ export function run(
 
 /** macOS restarts ptpcamerad (and EOS Utility may run) and both grab the camera: kill them once per gphoto2 session start. */
 export async function killCameraBlockers(): Promise<void> {
-  await run("killall", [
-    "-9",
-    "ptpcamerad",
-    "mscamerad-xpc",
-    "cameracaptured",
-    "EOS Utility",
-  ]).catch(() => undefined);
+  await run("killall", ["-9", "ptpcamerad", "mscamerad-xpc", "cameracaptured", "EOS Utility"]).catch(
+    () => undefined,
+  );
 }
 
 export type Session = {
@@ -109,8 +105,7 @@ export function startSession(
   let buf = "";
   let alive = true;
   let exitCode: number | null = null;
-  let waiter:
-    { ok: (out: string) => void; fail: (e: Error) => void } | undefined;
+  let waiter: { ok: (out: string) => void; fail: (e: Error) => void } | undefined;
 
   const kill = (): void => {
     if (alive) child.kill("SIGKILL");
@@ -160,10 +155,7 @@ export function startSession(
         kill();
         return reject(new AbortError());
       }
-      if (!alive)
-        return reject(
-          new ToolError(cmd, exitCode, buf.trim() || "Prozess beendet"),
-        );
+      if (!alive) return reject(new ToolError(cmd, exitCode, buf.trim() || "Prozess beendet"));
       let timer: NodeJS.Timeout | undefined;
       const cleanup = (): void => {
         if (timer) clearTimeout(timer);

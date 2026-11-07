@@ -209,9 +209,7 @@ export class GPhoto2Camera implements Camera {
   }
 
   private async releaseQuietly(): Promise<void> {
-    const s = this.session_
-      ? await this.session_.catch(() => undefined)
-      : undefined;
+    const s = this.session_ ? await this.session_.catch(() => undefined) : undefined;
     if (!s?.alive) return;
     for (const r of ["Release Full", "Release Half"])
       await this.cmd(`set-config ${CONFIG_PATHS.release}=${r}`, 5_000).catch(
