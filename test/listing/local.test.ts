@@ -14,6 +14,7 @@ const IMG = {
 test("A5 info card: title, photos, summary, facts, condition and an optional price", () => {
   const listing = listingSample();
   listing.condition.damage = ["Kratzer <Wange>"];
+  listing.coin.diameter_mm = null;
   const html = localCard(listing, IMG, { priceEur: 39 });
   assert.match(html, /@page \{ size: A5 portrait/);
   assert.match(
@@ -23,7 +24,7 @@ test("A5 info card: title, photos, summary, facts, condition and an optional pri
   assert.match(html, /src="data:image\/jpeg;base64,AA"/);
   assert.match(html, /Silberdollar zum Gedenken/);
   assert.match(html, /<th>Gewicht<\/th><td>26,73 g<\/td>/);
-  assert.match(html, /<th>Katalog<\/th><td>KM# 150<\/td>/);
+  assert.match(html, /<th>Katalog<\/th><td>KM# 150 · Numista N# 1489<\/td>/);
   assert.ok(
     !html.includes("<th>Durchmesser</th>"),
     "unknown facts are left out",

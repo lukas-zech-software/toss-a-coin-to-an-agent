@@ -2,13 +2,16 @@
 // (identification spec §3.1).
 import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import {
   END_MARKER as IDENT_END,
   START_MARKER as IDENT_START,
   writeIdentification,
 } from "../identify/markdown.ts";
 import { validateResult } from "../identify/result.ts";
+import { readIdentification } from "../identify/record.ts";
+import type { StoredIdentification } from "../identify/record.ts";
+import type { Side } from "../types.ts";
 import {
   estimateDiameterMm,
   loadCoin,
@@ -140,14 +143,20 @@ const COIN_FACTS = [
   "mint",
   "catalog",
   "material",
+  "precious_metals",
   "weight_g",
   "diameter_mm",
   "mintage",
-  "sources",
-  "confidence",
-];
-const pick = (o: Record<string, unknown>, keys: string[]) =>
-  Object.fromEntries(keys.map((k) => [k, o[k] ?? null]));
+] as const;
+
+/** The identified coin's facts for the appraiser's and the lister's intake. */
+export const coinFacts = (
+  r: StoredIdentification,
+): Record<string, unknown> => ({
+  ...Object.fromEntries(COIN_FACTS.map((k) => [k, r.coin?.[k] ?? null])),
+  sources: r.sources,
+  confidence: r.confidence,
+});
 
 async function readJson(file: string): Promise<unknown> {
   try {
@@ -168,6 +177,7 @@ async function appraise(id: string, deps: IdentifyDeps): Promise<number> {
     );
     return 1;
   }
+  const stored = await readIdentification(coin.dir, id);
   const dir = join(deps.workDir, id);
   const views = await prepareViews(coin, dir);
   deps.out(
@@ -175,8 +185,8 @@ async function appraise(id: string, deps: IdentifyDeps): Promise<number> {
       {
         id,
         markdown: coin.mdPath,
-        coin: pick(ident, COIN_FACTS),
-        obverse_image: ident.obverse_image ?? null,
+        coin: coinFacts(stored),
+        obverse_image: basename(coin.images[stored.observations.obverse_image]),
         views,
         appraisal_path: join(dir, "appraisal.json"),
         zoom: `npm run identify -- zoom ${id} <av|rv> <x> <y> <size> [--rotate <grad>] [--enhance]`,
@@ -230,6 +240,7 @@ async function describe(id: string, deps: IdentifyDeps): Promise<number> {
     );
     return 1;
   }
+  const stored = await readIdentification(coin.dir, id);
   const md = await readFile(coin.mdPath, "utf8");
   const s = md.indexOf(IDENT_START),
     e = md.indexOf(IDENT_END);
@@ -239,7 +250,7 @@ async function describe(id: string, deps: IdentifyDeps): Promise<number> {
     JSON.stringify(
       {
         id,
-        coin: pick(ident, COIN_FACTS),
+        coin: coinFacts(stored),
         condition: { grade: a.grade ?? null, damage: a.damage ?? [] },
         identification_section:
           s >= 0 && e > s ? md.slice(s + IDENT_START.length, e).trim() : "",
@@ -281,9 +292,17 @@ async function writeListingCmd(
     return 1;
   }
   const coin = await loadCoin(deps.coinsRoot, id);
+  const images = Object.fromEntries(
+    Object.entries(coin.images).map(([s, p]) => [s, basename(p)]),
+  ) as Record<Side, string>;
   const dir = await writeListing(
     coin.dir,
-    coin.frontmatter,
+    {
+      images,
+      identification: await readIdentification(coin.dir, id),
+      appraisal: coin.frontmatter.appraisal as
+        Record<string, unknown> | undefined,
+    },
     t,
     descriptions,
     deps.now?.() ?? new Date(),

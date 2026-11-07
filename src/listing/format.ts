@@ -1,12 +1,14 @@
 // The listing folder coins/<ID>/listing/: everything a platform adapter needs to offer one coin
 // (eBay, Delcampe, Catawiki …), independent of any platform. Written by `npm run identify -- write-listing`
-// from the coin-lister's texts plus the identification and appraisal in the coin's frontmatter.
+// from the coin-lister's texts plus the coin's identification.json and appraisal.
 // Documented for other agents in docs/coin-listing-format.md.
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { isoLocal } from "../store/markdown.ts";
 import type { PricePoint, PriceStats } from "../identify/appraisal.ts";
+import type { StoredIdentification } from "../identify/record.ts";
+import type { Side } from "../types.ts";
 
 export const LISTING_DIR = "listing";
 export const LISTING_FILE = "listing.json";
@@ -125,15 +127,26 @@ const COIN_KEYS = [
   "weight_g",
   "diameter_mm",
   "mintage",
-  "confidence",
-];
+] as const;
 const stamp = (v: unknown): string | null => (typeof v === "string" ? v : null);
 
-/** Combines the lister's texts with the identification and appraisal from the coin's frontmatter. */
-export function buildListing(t: ListingTexts, fm: Obj, now: Date): Listing {
-  const ident = (fm.identification ?? {}) as Obj;
-  const a = fm.appraisal as Obj | undefined;
-  if (ident.state !== "identified")
+/** What a listing is built from: the coin's image names (frontmatter `images`) and both agents' results. */
+export type ListingSource = {
+  images: Record<Side, string>;
+  identification: StoredIdentification;
+  /** Frontmatter `appraisal`. */
+  appraisal: Obj | undefined;
+};
+
+/** Combines the lister's texts with the coin's identification and appraisal. */
+export function buildListing(
+  t: ListingTexts,
+  src: ListingSource,
+  now: Date,
+): Listing {
+  const ident = src.identification;
+  const a = src.appraisal;
+  if (ident.state !== "identified" || !ident.coin)
     throw new Error(
       `${t.id}: nicht bestimmt – erst den coin-identifier laufen lassen`,
     );
@@ -141,10 +154,10 @@ export function buildListing(t: ListingTexts, fm: Obj, now: Date): Listing {
     throw new Error(
       `${t.id}: keine Schätzung – erst den coin-appraiser laufen lassen`,
     );
-  const images = (fm.images ?? {}) as Record<string, string>;
-  const obverse =
-    typeof ident.obverse_image === "string" ? ident.obverse_image : images.av!;
-  const reverse = obverse === images.av ? images.rv! : images.av!;
+  const side = ident.observations.obverse_image;
+  const obverse = src.images[side];
+  const reverse = src.images[side === "av" ? "rv" : "av"];
+  const coin = ident.coin;
   return {
     format: LISTING_FORMAT,
     id: t.id,
@@ -160,7 +173,10 @@ export function buildListing(t: ListingTexts, fm: Obj, now: Date): Listing {
       damage: (a.damage ?? []) as string[],
       certified: false,
     },
-    coin: Object.fromEntries(COIN_KEYS.map((k) => [k, ident[k] ?? null])),
+    coin: {
+      ...Object.fromEntries(COIN_KEYS.map((k) => [k, coin[k] ?? null])),
+      confidence: ident.confidence,
+    },
     images: { obverse: `../${obverse}`, reverse: `../${reverse}` },
     price: {
       currency: "EUR",
@@ -172,19 +188,19 @@ export function buildListing(t: ListingTexts, fm: Obj, now: Date): Listing {
       reasoning: String(a.reasoning ?? ""),
       sources: (a.prices ?? []) as PricePoint[],
     },
-    sources: Array.isArray(ident.sources) ? ident.sources : [],
+    sources: ident.sources.map(({ title, url }) => ({ title, url })),
   };
 }
 
 /** Writes the listing folder next to the coin's Markdown and returns its path. */
 export async function writeListing(
   coinDir: string,
-  fm: Obj,
+  src: ListingSource,
   t: ListingTexts,
   descriptions: Texts,
   now: Date = new Date(),
 ): Promise<string> {
-  const listing = buildListing(t, fm, now); // throws before anything is written
+  const listing = buildListing(t, src, now); // throws before anything is written
   const dir = join(coinDir, LISTING_DIR);
   await mkdir(dir, { recursive: true });
   for (const lang of LANGS)

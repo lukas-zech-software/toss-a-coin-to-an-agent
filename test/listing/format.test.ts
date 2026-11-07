@@ -13,7 +13,9 @@ import { tmpDir } from "../helpers.ts";
 import {
   appraisedMd,
   description,
+  identified,
   listingSample,
+  listingSource,
   texts,
 } from "../identify/samples.ts";
 
@@ -33,7 +35,7 @@ test("texts: titles up to 80 characters, every item specific in both languages",
 test("the listing combines texts, identification and appraisal; a newer appraisal makes it stale", async () => {
   const dir = await tmpDir();
   const fm = fmOf(appraisedMd());
-  const out = await writeListing(dir, fm, texts(), {
+  const out = await writeListing(dir, listingSource(), texts(), {
     de: description("de"),
     en: description("en"),
   });
@@ -44,7 +46,12 @@ test("the listing combines texts, identification and appraisal; a newer appraisa
   );
   const { listing } = await readListing(dir, fm);
   assert.equal(listing.format, "coin-listing/1");
-  assert.equal(listing.coin.title, "Testmünze");
+  assert.equal(listing.coin.title, identified().coin.title);
+  assert.equal(listing.coin.confidence, 97);
+  assert.deepEqual(listing.sources[0], {
+    title: "Numista – 1 Dollar Peace",
+    url: "https://en.numista.com/1489",
+  });
   assert.deepEqual(listing.images, {
     obverse: "../COIN-0001_rv.jpg",
     reverse: "../COIN-0001_av.jpg",
@@ -59,10 +66,12 @@ test("the listing combines texts, identification and appraisal; a newer appraisa
 });
 
 test("no listing without an appraisal", async () => {
-  const fm = fmOf(appraisedMd());
-  delete fm.appraisal;
+  const src = {
+    ...listingSource(),
+    appraisal: undefined,
+  } as unknown as ReturnType<typeof listingSource>;
   await assert.rejects(
-    writeListing(await tmpDir(), fm, texts(), { de: "", en: "" }),
+    writeListing(await tmpDir(), src, texts(), { de: "", en: "" }),
     /coin-appraiser/,
   );
 });

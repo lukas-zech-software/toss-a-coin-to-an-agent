@@ -2,8 +2,14 @@ import type { IdentifyResult } from "../../src/identify/result.ts";
 import YAML from "yaml";
 import { applyAppraisal } from "../../src/identify/appraisal.ts";
 import type { Appraisal } from "../../src/identify/appraisal.ts";
+import { storeIdentification } from "../../src/identify/markdown.ts";
+import type { StoredIdentification } from "../../src/identify/record.ts";
 import { buildListing } from "../../src/listing/format.ts";
-import type { Listing, ListingTexts } from "../../src/listing/format.ts";
+import type {
+  Listing,
+  ListingSource,
+  ListingTexts,
+} from "../../src/listing/format.ts";
 
 /** A complete, valid "identified" result as the agent would write it. */
 export const identified = (): IdentifyResult & {
@@ -151,12 +157,10 @@ images:
   rv: COIN-0001_rv.jpg
 identification:
   state: identified
+  confidence: 97
   checked_at: 2026-10-31T10:00:00+01:00
-  obverse_image: COIN-0001_rv.jpg
-  title: Testmünze
   weight_g: 26.73
-  catalog:
-    - KM# 150
+  diameter_mm: 38.1
 ---
 
 # COIN-0001
@@ -166,10 +170,18 @@ identification:
 export const appraisedMd = (now = new Date(2026, 9, 31, 12, 0, 0)): string =>
   applyAppraisal(IDENTIFIED_MD, appraisal(), now);
 
+/** identification.json of the coin in appraisedMd(). */
+export const identificationSample = (): StoredIdentification =>
+  storeIdentification(identified(), "2026-10-31T10:00:00+01:00");
+
+/** What write-listing reads for the coin in appraisedMd(). */
+export const listingSource = (): ListingSource => ({
+  images: { av: "COIN-0001_av.jpg", rv: "COIN-0001_rv.jpg" },
+  identification: identificationSample(),
+  appraisal: YAML.parse(/^---\n([\s\S]*?\n)---\n/.exec(appraisedMd())![1]!)
+    .appraisal,
+});
+
 /** The listing the coin-lister's write command builds for appraisedMd(). */
 export const listingSample = (): Listing =>
-  buildListing(
-    texts(),
-    YAML.parse(/^---\n([\s\S]*?\n)---\n/.exec(appraisedMd())![1]!),
-    new Date(2026, 10, 1, 9, 0, 0),
-  );
+  buildListing(texts(), listingSource(), new Date(2026, 10, 1, 9, 0, 0));

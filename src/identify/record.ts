@@ -4,11 +4,12 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
+import type { IdentifyResult } from "./result.ts";
 
 export const IDENTIFICATION_FILE = "identification.json";
 export const APPRAISAL_FILE = "appraisal.json";
-export const IDENTIFICATION_FORMAT = "coin-identification/1";
-export const APPRAISAL_FORMAT = "coin-appraisal/1";
+export const IDENTIFICATION_FORMAT = "coin-identification/1" as const;
+export const APPRAISAL_FORMAT = "coin-appraisal/1" as const;
 
 const FRONTMATTER = /^---\n([\s\S]*?\n)---\n/;
 
@@ -75,3 +76,21 @@ export async function readRecordFile(
     );
   return v;
 }
+
+/** `identification.json`: the identifier's validated result plus format and time of the check. */
+export type StoredIdentification = IdentifyResult & {
+  format: typeof IDENTIFICATION_FORMAT;
+  checked_at: string;
+};
+
+export const readIdentification = async (
+  coinDir: string,
+  id: string,
+): Promise<StoredIdentification> =>
+  (await readRecordFile(
+    coinDir,
+    id,
+    IDENTIFICATION_FILE,
+    IDENTIFICATION_FORMAT,
+    "coin-identifier",
+  )) as unknown as StoredIdentification;

@@ -1,50 +1,64 @@
-// Writes a validated identification result into a coin's Markdown (identification spec §5).
-// Capture fields stay untouched; `described` flips to true; `identification` is added or replaced;
-// the readable part lives between two markers after "## Notizen", so a re-run replaces exactly that part.
-// Prices are not written here: the coin-appraiser has its own section (appraisal.ts).
+// Writes a validated identification result into a coin's record (record spec §3–§5): the full result goes to
+// `identification.json`; the frontmatter gets only `described: true` and a slim `identification`; the readable
+// section lives between two markers after "## Notizen", so a re-run replaces exactly that part.
+// Nothing else is touched: the coin-appraiser owns `appraisal`, `appraisal.json` and its own section (appraisal.ts).
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { isoLocal } from "../store/markdown.ts";
 import type { Side } from "../types.ts";
 import { MIN_CONFIDENCE_EXCLUSIVE } from "./result.ts";
 import type { IdentifyResult, Source } from "./result.ts";
-import { joinFrontmatter, replaceSection, splitFrontmatter } from "./record.ts";
+import {
+  dateTimeDe,
+  IDENTIFICATION_FILE,
+  IDENTIFICATION_FORMAT,
+  joinFrontmatter,
+  replaceSection,
+  splitFrontmatter,
+  writeRecordFile,
+} from "./record.ts";
+import type { StoredIdentification } from "./record.ts";
 
 export const START_MARKER = "<!-- coin-identifier:start -->";
 export const END_MARKER = "<!-- coin-identifier:end -->";
 
 type Images = Record<Side, string>;
 
+/** The result as kept in `identification.json`. */
+export const storeIdentification = (
+  r: IdentifyResult,
+  checkedAt: string,
+): StoredIdentification => ({
+  format: IDENTIFICATION_FORMAT,
+  checked_at: checkedAt,
+  ...r,
+});
+
 export function applyIdentification(
   md: string,
-  r: IdentifyResult,
-  now: Date,
+  r: StoredIdentification,
 ): string {
   const { fm, body } = splitFrontmatter(md);
-  const images = imageNames(fm, r.id);
-
   fm.described = true;
-  fm.identification = identificationFrontmatter(r, now, images);
-  delete fm.valuation; // written by older identifier versions; prices now live in `appraisal`
-
-  const section = `${START_MARKER}\n\n${renderSection(r, now, images)}\n${END_MARKER}`;
+  fm.identification = identificationFrontmatter(r);
+  const section = `${START_MARKER}\n\n${renderSection(r, imageNames(fm, r.id))}\n${END_MARKER}`;
   return joinFrontmatter(
     fm,
     replaceSection(body, START_MARKER, END_MARKER, section),
   );
 }
 
-/** Applies the result to `<coinDir>/<id>.md` in place and returns its path. */
+/** Writes `identification.json`, then `<coinDir>/<id>.md` in place; returns the Markdown path. */
 export async function writeIdentification(
   coinDir: string,
   r: IdentifyResult,
   now: Date = new Date(),
 ): Promise<string> {
   const path = join(coinDir, `${r.id}.md`);
-  await writeFile(
-    path,
-    applyIdentification(await readFile(path, "utf8"), r, now),
-  );
+  const stored = storeIdentification(r, isoLocal(now));
+  const md = applyIdentification(await readFile(path, "utf8"), stored); // throws before anything is written
+  await writeRecordFile(coinDir, IDENTIFICATION_FILE, stored);
+  await writeFile(path, md);
   return path;
 }
 
@@ -56,47 +70,23 @@ function imageNames(fm: Record<string, unknown>, id: string): Images {
 }
 
 const other = (s: Side): Side => (s === "av" ? "rv" : "av");
+/** Frontmatter and text show the same precision (record spec §5). */
+const round3 = (v: number): number => Number(v.toFixed(3));
 
 function identificationFrontmatter(
-  r: IdentifyResult,
-  now: Date,
-  images: Images,
+  r: StoredIdentification,
 ): Record<string, unknown> {
-  const head = {
+  const fm: Record<string, unknown> = {
     state: r.state,
     confidence: r.confidence,
-    checked_at: isoLocal(now),
-    obverse_image: images[r.observations.obverse_image],
+    checked_at: r.checked_at,
   };
-  const sources = r.sources.map((s) => ({ title: s.title, url: s.url }));
   if (r.state === "identified" && r.coin) {
-    const c = r.coin;
-    return {
-      ...head,
-      title: c.title,
-      issuer: c.issuer,
-      denomination: c.denomination,
-      year: c.year,
-      mint: c.mint,
-      production: c.production,
-      mintage: c.mintage,
-      catalog: c.catalog,
-      material: c.material,
-      weight_g: c.weight_g,
-      diameter_mm: c.diameter_mm,
-      sources,
-    };
+    if (r.coin.weight_g !== null) fm.weight_g = round3(r.coin.weight_g);
+    if (r.coin.diameter_mm !== null)
+      fm.diameter_mm = round3(r.coin.diameter_mm);
   }
-  return {
-    ...head,
-    summary: r.summary,
-    candidates: sortedCandidates(r).map((c) => ({
-      title: c.title,
-      confidence: c.confidence,
-      reason: c.reason,
-    })),
-    sources,
-  };
+  return fm;
 }
 
 // ---------- readable section (German, like "## Notizen") ----------
@@ -119,51 +109,57 @@ export const cell = (s: string): string =>
 const linkText = (s: string): string =>
   text(s)
     .replace(/\s*\n\s*/g, " ")
-    .replace(/[[\]]/g, "\\$&");
+    .replace(/[[\]|]/g, "\\$&");
 export const href = (url: string): string =>
-  url.replace(/[()\s<>"]/g, (ch) => encodeURIComponent(ch));
+  url.replace(/[()\s<>"|]/g, (ch) => encodeURIComponent(ch));
 const link = (s: Source): string => `[${linkText(s.title)}](${href(s.url)})`;
 
 const sortedCandidates = (r: IdentifyResult) =>
   [...r.candidates].sort((a, b) => b.confidence - a.confidence);
 
-function renderSection(r: IdentifyResult, now: Date, images: Images): string {
-  const parts =
-    r.state === "identified"
-      ? identifiedParts(r, images)
-      : unidentifiableParts(r, images);
+function renderSection(r: StoredIdentification, images: Images): string {
+  const identified = r.state === "identified";
+  const parts = identified
+    ? identifiedParts(r, images)
+    : unidentifiableParts(r, images);
   parts.push(
-    `_Geprüft am ${isoLocal(now).slice(0, 10)} vom Agenten coin-identifier._\n`,
+    `_${identified ? "Bestimmt" : "Geprüft"} am ${dateTimeDe(r.checked_at)} vom Agenten coin-identifier._\n`,
   );
   return parts.join("\n");
 }
 
-function observations(r: IdentifyResult, images: Images): string {
+function sides(r: IdentifyResult, images: Images): string[] {
   const o = r.observations,
     ob = o.obverse_image;
   return [
-    "### Beobachtungen\n",
-    `- **Vorderseite** (${images[ob]}): ${text(o.obverse)}`,
-    `- **Rückseite** (${images[other(ob)]}): ${text(o.reverse)}`,
-    ...(o.diameter_mm !== null
-      ? [`- **Durchmesser laut Foto:** ca. ${num(o.diameter_mm, 1)} mm (±3 %)`]
-      : []),
-    "",
-  ].join("\n");
+    "### Vorderseite\n",
+    `Foto: ${images[ob]}\n`,
+    `${text(o.obverse)}\n`,
+    "### Rückseite\n",
+    `Foto: ${images[other(ob)]}\n`,
+    `${text(o.reverse)}\n`,
+  ];
 }
 
-function sourceList(sources: Source[]): string {
-  return sources.map((s, i) => `${i + 1}. ${link(s)}`).join("\n") + "\n";
+function sourceTable(sources: Source[]): string[] {
+  return [
+    "| # | Quelle | Belegt |",
+    "| ---: | --- | --- |",
+    ...sources.map((s, i) => `| ${i + 1} | ${link(s)} | ${cell(s.confirms)} |`),
+    "",
+  ];
 }
 
 function identifiedParts(r: IdentifyResult, images: Images): string[] {
   const c = r.coin!;
   const diameter = (() => {
     const measured = r.observations.diameter_mm;
-    if (c.diameter_mm !== null && measured !== null)
-      return `${num(c.diameter_mm)} mm (Foto: ca. ${num(measured, 1)} mm)`;
-    if (c.diameter_mm !== null) return `${num(c.diameter_mm)} mm`;
-    if (measured !== null) return `ca. ${num(measured, 1)} mm (Foto)`;
+    const catalog = c.diameter_mm !== null ? round3(c.diameter_mm) : null;
+    if (catalog !== null && measured !== null)
+      return `${num(catalog, 3)} mm (laut Foto ca. ${num(measured, 1)} mm ± 3 %)`;
+    if (catalog !== null) return `${num(catalog, 3)} mm`;
+    if (measured !== null)
+      return `ca. ${num(measured, 1)} mm (laut Foto, ± 3 %)`;
     return "–";
   })();
   const rows: [string, string][] = [
@@ -175,46 +171,54 @@ function identifiedParts(r: IdentifyResult, images: Images): string[] {
     ["Auflage", c.mintage],
     ["Katalog", c.catalog.join(" · ")],
     ["Material", c.material],
-    ["Gewicht", c.weight_g !== null ? `${num(c.weight_g)} g` : "–"],
+    ["Gewicht", c.weight_g !== null ? `${num(round3(c.weight_g), 3)} g` : "–"],
     ["Durchmesser", diameter],
   ];
   return [
     "## Bestimmung\n",
-    `**Status:** bestimmt – Konfidenz ${pct(r.confidence)}  `,
-    `**Münze:** ${text(c.title)}\n`,
+    `Die Münze ist mit einer Konfidenz von ${pct(r.confidence)} bestimmt als **${text(c.title)}**.\n`,
     "| Merkmal | Angabe |",
     "| --- | --- |",
     ...rows.map(([k, v]) => `| ${k} | ${cell(v)} |`),
     "",
-    observations(r, images),
+    ...sides(r, images),
+    ...(r.reasoning.trim()
+      ? ["### Begründung\n", `${text(r.reasoning)}\n`]
+      : []),
     "### Geschichte\n",
     `${text(c.history)}\n`,
     "### Quellen\n",
-    sourceList(r.sources),
+    ...sourceTable(r.sources),
   ];
 }
 
 function unidentifiableParts(r: IdentifyResult, images: Images): string[] {
   const candidates = sortedCandidates(r);
+  const measured = r.observations.diameter_mm;
   const parts = [
     "## Bestimmung\n",
-    `**Status:** nicht bestimmbar – keine Zuordnung mit mehr als ${MIN_CONFIDENCE_EXCLUSIVE} % Sicherheit (beste Konfidenz ${pct(r.confidence)}). Alle folgenden Angaben sind Vermutungen und nicht sicher genug für eine Bestimmung.\n`,
+    `Die Münze ist nicht bestimmbar: keine Zuordnung erreicht mehr als ${MIN_CONFIDENCE_EXCLUSIVE} % Sicherheit, der beste Kandidat liegt bei ${pct(r.confidence)}. Alle folgenden Angaben sind Vermutungen.\n`,
     `${text(r.summary)}\n`,
-    observations(r, images),
+    ...(measured !== null
+      ? [
+          `Der Durchmesser beträgt laut Foto ca. ${num(measured, 1)} mm (± 3 %).\n`,
+        ]
+      : []),
+    ...sides(r, images),
     "### Kandidaten (nicht sicher genug)\n",
   ];
   if (candidates.length)
     parts.push(
-      "| Kandidat | Konfidenz | Begründung |",
-      "| --- | ---: | --- |",
+      "| # | Kandidat | Konfidenz | Begründung |",
+      "| ---: | --- | ---: | --- |",
       ...candidates.map(
-        (c) =>
-          `| ${cell(c.title)} | ${pct(c.confidence)} | ${cell(c.reason)} |`,
+        (c, i) =>
+          `| ${i + 1} | ${cell(c.title)} | ${pct(c.confidence)} | ${cell(c.reason)} |`,
       ),
       "",
     );
   else parts.push("Keine Kandidaten gefunden.\n");
   if (r.sources.length)
-    parts.push("### Gesichtete Quellen\n", sourceList(r.sources));
+    parts.push("### Gesichtete Quellen\n", ...sourceTable(r.sources));
   return parts;
 }

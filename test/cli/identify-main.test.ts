@@ -176,7 +176,13 @@ test("identifier → appraiser → lister: each step writes its part; the lister
   const result = join(root, "result.json");
   await writeFile(result, JSON.stringify(identified()));
   await step(["write", "COIN-0001", result]);
+  assert.equal(existsSync(join(dir, "identification.json")), true);
   assert.match(await step(["describe", "COIN-0001"], 1), /nicht geschätzt/);
+  const appraiseIntake = JSON.parse(await step(["appraise", "COIN-0001"]));
+  assert.equal(appraiseIntake.coin.title, identified().coin.title);
+  assert.deepEqual(appraiseIntake.coin.precious_metals, ["silver"]);
+  assert.equal(appraiseIntake.coin.sources.length, 2);
+  assert.equal(appraiseIntake.obverse_image, "COIN-0001_rv.jpg");
 
   const appraisalFile = join(root, "appraisal.json");
   await writeFile(appraisalFile, JSON.stringify(appraisal()));
