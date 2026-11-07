@@ -95,8 +95,8 @@ export function validateResult(
       err(`${path} muss eine positive Zahl oder null sein`);
   };
   const confidence = (v: unknown, path: string): number | null => {
-    if (!isNum(v) || v < 0 || v > 100) {
-      err(`${path} muss eine Zahl von 0 bis 100 sein`);
+    if (!isNum(v) || !Number.isInteger(v) || v < 0 || v > 100) {
+      err(`${path} muss eine ganze Zahl von 0 bis 100 sein`);
       return null;
     }
     return v;

@@ -271,3 +271,18 @@ test("free text from the web cannot inject HTML or the section markers", () => {
   assert.ok(!ub.includes("<script>"));
   assert.equal(ub.split(END_MARKER).length, 2);
 });
+
+test("format and checked_at come from the CLI, not from the agent's JSON", () => {
+  const copied = {
+    ...identified(),
+    format: "x",
+    checked_at: "2020-01-01T00:00:00+01:00",
+  } as IdentifyResult;
+  const stored = storeIdentification(copied, CHECKED);
+  assert.equal(stored.format, "coin-identification/1");
+  assert.equal(stored.checked_at, CHECKED);
+  assert.equal(
+    split(applyIdentification(ORIGINAL, stored)).fm.identification.checked_at,
+    CHECKED,
+  );
+});

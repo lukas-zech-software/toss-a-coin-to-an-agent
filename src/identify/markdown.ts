@@ -25,14 +25,20 @@ export const END_MARKER = "<!-- coin-identifier:end -->";
 type Images = Record<Side, string>;
 
 /** The result as kept in `identification.json`. */
-export const storeIdentification = (
+export function storeIdentification(
   r: IdentifyResult,
   checkedAt: string,
-): StoredIdentification => ({
-  format: IDENTIFICATION_FORMAT,
-  checked_at: checkedAt,
-  ...r,
-});
+): StoredIdentification {
+  const stored = {
+    format: IDENTIFICATION_FORMAT,
+    checked_at: checkedAt,
+    ...r,
+  } as StoredIdentification;
+  // set again after the spread: a result copied from an old identification.json must not bring its own
+  stored.format = IDENTIFICATION_FORMAT;
+  stored.checked_at = checkedAt;
+  return stored;
+}
 
 export function applyIdentification(
   md: string,

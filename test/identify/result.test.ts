@@ -109,3 +109,11 @@ test("precious_metals: only the four metals, no duplicates", () => {
   r.coin.precious_metals = [];
   assert.deepEqual(errorsOf(r), []);
 });
+
+test("confidences are whole numbers, so frontmatter and text show the same value", () => {
+  expectError({ ...identified(), confidence: 97.25 }, /ganze Zahl/);
+  expectError({ ...identified(), confidence: 90.04 }, /ganze Zahl/);
+  const u = unidentifiable();
+  u.candidates[0]!.confidence = 70.5;
+  expectError(u, /candidates\[1\]\.confidence muss eine ganze Zahl/);
+});

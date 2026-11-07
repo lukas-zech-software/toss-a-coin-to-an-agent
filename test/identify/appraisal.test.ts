@@ -357,3 +357,20 @@ test("priceStats: min, median, max; even counts average the middle pair", () => 
   });
   assert.equal(priceStats([]), null);
 });
+
+test("format, checked_at and the price statistics come from the CLI, not from the agent's JSON", () => {
+  const copied = {
+    ...sample(),
+    format: "x",
+    checked_at: "2020-01-01T00:00:00+01:00",
+    range: null,
+    sold: 99,
+    asking: 0,
+  } as Appraisal;
+  const stored = storeAppraisal(copied, CHECKED);
+  assert.equal(stored.format, "coin-appraisal/1");
+  assert.equal(stored.checked_at, CHECKED);
+  assert.deepEqual(stored.range, { n: 2, min: 30, median: 35, max: 40 });
+  assert.equal(stored.sold, 1);
+  assert.equal(stored.asking, 1);
+});

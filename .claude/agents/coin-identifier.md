@@ -114,7 +114,7 @@ Doubts about authenticity lower the confidence. Mention them.
 
 **7. Corroborate.** You need at least two independent sources that agree, e.g. Numista plus a mint, museum, grading-service or reference page. Open the second one with WebFetch and note what each one confirms.
 
-**8. Confidence (0–100)** for the complete attribution: issuer + denomination + type/catalogue number + year + mint + any distinguishing variety such as original vs. restrike.
+**8. Confidence (whole number, 0–100)** for the complete attribution: issuer + denomination + type/catalogue number + year + mint + any distinguishing variety such as original vs. restrike.
 
 | Confidence | When                                                                                                                                                            |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -194,17 +194,21 @@ export function storeAppraisal(
   checkedAt: string,
 ): StoredAppraisal {
   const sold = a.prices.filter((p) => p.price_type !== "asking").length;
-  return {
+  const stored = {
     format: APPRAISAL_FORMAT,
     checked_at: checkedAt,
     ...a,
-    range:
-      a.prices.length >= PRICES.min
-        ? priceStats(a.prices.map((p) => p.price_eur))
-        : null,
-    sold,
-    asking: a.prices.length - sold,
-  };
+  } as StoredAppraisal;
+  // set after the spread: a result copied from an old appraisal.json must not bring its own
+  stored.format = APPRAISAL_FORMAT;
+  stored.checked_at = checkedAt;
+  stored.range =
+    a.prices.length >= PRICES.min
+      ? priceStats(a.prices.map((p) => p.price_eur))
+      : null;
+  stored.sold = sold;
+  stored.asking = a.prices.length - sold;
+  return stored;
 }
 
 /** Frontmatter and text show the same precision (record spec §5). */
