@@ -5,6 +5,7 @@ import { evaluateShot, newCorrectionState, planNext } from "../check/rules.ts";
 import type { Finding, Plan } from "../check/rules.ts";
 import { attemptPaths } from "../store/coins.ts";
 import type { AttemptRecord, ProcessedShot, Side } from "../types.ts";
+import type { Cue } from "../sound/sound.ts";
 import { formatStatus } from "../ui/ui.ts";
 import type { SessionContext } from "./context.ts";
 import { ensureLiveView } from "./live.ts";
@@ -102,10 +103,11 @@ export async function captureSide(
         ui.print(technicalError);
         await ensureLiveView(ctx);
         if (
-          (await ui.key("Enter = erneut versuchen · q = beenden", [
-            "enter",
-            "q",
-          ])) === "q"
+          (await ui.key(
+            "Enter = erneut versuchen · q = beenden",
+            ["enter", "q"],
+            "problem",
+          )) === "q"
         )
           return null;
       } finally {
@@ -124,12 +126,13 @@ export async function captureSide(
     ui.print(plan.hint);
   }
 
-  /** v (preview) keeps the menu open; every other key is returned, Enter as "w". */
-  async function menuKey(): Promise<string> {
-    for (;;) {
+  /** v (preview) keeps the menu open; every other key is returned, Enter as "w". `cue` plays with the first showing. */
+  async function menuKey(cue?: Cue): Promise<string> {
+    for (let first = true; ; first = false) {
       const k = await ui.key(
         "v = Vorschau · w/Enter = weiter versuchen · i = ignorieren · l = löschen · q = beenden",
         ["v", "w", "enter", "i", "l", "q"],
+        first ? cue : undefined,
       );
       if (k === "enter") return "w";
       if (k !== "v") return k;
@@ -169,9 +172,12 @@ export async function captureSide(
       if (plan.action === "accept")
         return { kind: "ok", attempts, final: record };
 
+      // problem for this attempt's failure; the menu shown again (after l + n, limit w) stays silent
+      let cue: Cue | undefined = "problem";
       while (plan.action === "menu") {
         printAttempts(plan);
-        const k = await menuKey();
+        const k = await menuKey(cue);
+        cue = undefined;
         if (k === "i") return outcome("ignored");
         if (k === "q") return outcome("aborted");
         if (k === "l") {

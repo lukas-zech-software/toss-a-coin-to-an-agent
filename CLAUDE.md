@@ -12,6 +12,7 @@ Coin capture pipeline (gphoto2 + sharp + OpenCV.js) and three agents that run in
 - Agent results: `coins/<ID>/identification.json` and `appraisal.json` hold the full data; the frontmatter only key figures; the readable sections are rendered by the identify CLI. Format: `docs/coin-record-format.md`, code: `src/identify/record.ts`.
 - Listing folder `coins/<ID>/listing/` (`listing.json` + `description.de.md` + `description.en.md`): written by the coin-lister, with the identification and all prices copied in. It is the only input for platform adapters. Format: `docs/coin-listing-format.md`, code: `src/listing/format.ts`.
 - Platform adapters (dry run, send nothing): `npm run listing -- <ID> --platform ebay|delcampe|catawiki [--sandbox]` (`src/listing/`). `--platform local [--price <EUR>]` writes a printable A5 info card to `tmp/listing/<ID>/karte.html`.
+- Sounds in `capture`/`calibrate`: a chime per waiting prompt (cue as 3rd argument of `ui.key`) and a quiet tick while working (`SoundUi` in `src/ui/sound-ui.ts`, `afplay`, `sound` in `coin-capture.config.json`, tick file `tmp/sound/tick.wav`). Spec: `docs/superpowers/specs/2026-11-05-audio-cues-design.md`.
 - Claude usage limits (5 h / 7 d): `tmp/claude-usage.json`, written by the status line wrapper `.claude/statusline-usage.sh` (set in `.claude/settings.local.json`).
 
 ## Code rules

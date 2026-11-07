@@ -41,6 +41,18 @@ export type Config = {
   };
   session: { countdownSeconds: number; afWaitMs: number };
   display: { images: ImageSetting };
+  /** Audio spec §6: chimes per cue (file paths), the quiet "working" tick, afplay volumes. */
+  sound: {
+    enabled: boolean;
+    volume: number;
+    next: string;
+    flip: string;
+    problem: string;
+    look: string;
+    busy: boolean;
+    busyVolume: number;
+    busyDelayMs: number;
+  };
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -71,6 +83,17 @@ export const DEFAULT_CONFIG: Config = {
   },
   session: { countdownSeconds: 1, afWaitMs: 2000 },
   display: { images: "auto" },
+  sound: {
+    enabled: true,
+    volume: 1,
+    next: "/System/Library/Sounds/Glass.aiff",
+    flip: "/System/Library/Sounds/Ping.aiff",
+    problem: "/System/Library/Sounds/Basso.aiff",
+    look: "/System/Library/Sounds/Pop.aiff",
+    busy: true,
+    busyVolume: 0.15,
+    busyDelayMs: 500,
+  },
 };
 
 const DEFAULT_FILE = fileURLToPath(

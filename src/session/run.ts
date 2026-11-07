@@ -1,6 +1,7 @@
 import { AbortError } from "../abort.ts";
 import { nextCoinId } from "../store/coins.ts";
 import { setCoinComment } from "../store/markdown.ts";
+import type { Cue } from "../sound/sound.ts";
 import { formatStatus } from "../ui/ui.ts";
 import { abortPending, captureBack, captureFront } from "./coin.ts";
 import type { CoinResult, PendingCoin } from "./coin.ts";
@@ -74,8 +75,8 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
       await ensureLiveView(ctx);
       const k =
         position === 1
-          ? await ui.key(FIRST_PROMPT, ["enter", "q"])
-          : await ui.key(NEXT_PROMPT, ["enter", "r", "q"]);
+          ? await ui.key(FIRST_PROMPT, ["enter", "q"], "next")
+          : await ui.key(NEXT_PROMPT, ["enter", "r", "q"], "next");
       if (k === "q") return false;
       if (k === "r") return true;
       lastId = id;
@@ -93,16 +94,22 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
   /**
    * A key prompt that also offers `k` = comment for the last complete coin (none = plain prompt). `k` asks for the
    * comment, writes it into that coin's Markdown and shows the prompt again; any other allowed key is returned.
+   * `cue` plays with the first showing only (audio spec §3.1).
    */
   async function keyWithComment(
     text: (offer: string) => string, // offer = "k = Kommentar zu Münze N", or "" without a coin to comment on
     allowed: readonly string[],
     last: CoinResult | null,
+    cue?: Cue,
   ): Promise<string> {
-    if (!last) return ui.key(text(""), allowed);
+    if (!last) return ui.key(text(""), allowed, cue);
     const offer = `k = Kommentar zu Münze ${last.position}`;
-    for (;;) {
-      const k = await ui.key(text(offer), [...allowed, "k"]);
+    for (let first = true; ; first = false) {
+      const k = await ui.key(
+        text(offer),
+        [...allowed, "k"],
+        first ? cue : undefined,
+      );
       if (k !== "k") return k;
       const comment = await ui.line(
         `Kommentar zu Münze ${last.position} (${last.id}): `,
@@ -145,6 +152,7 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
           `${intro}Rückseite von Münze ${coin.position} (${coin.id}) einlegen und Enter drücken · ${offer ? `${offer} · ` : ""}q = beenden`,
         ["enter", "q"],
         last,
+        "flip",
       );
       if (k === "q") return;
       const result = await captureBack(ctx, coin, total);
@@ -179,7 +187,10 @@ export async function runCapture(ctx: SessionContext): Promise<CoinResult[]> {
   return results;
 }
 
-function printSummary(ctx: SessionContext, results: readonly CoinResult[]): void {
+function printSummary(
+  ctx: SessionContext,
+  results: readonly CoinResult[],
+): void {
   const { ui } = ctx;
   if (results.length) {
     ui.print("Zusammenfassung:");
@@ -207,17 +218,22 @@ export async function runSingle(ctx: SessionContext): Promise<CoinResult[]> {
     for (let position = 1; ; position++) {
       const id = await nextCoinId(root, lastId);
       ui.status(
-        formatStatus({ id, label: `Münze ${position}`, step: "Warte auf Enter" }),
+        formatStatus({
+          id,
+          label: `Münze ${position}`,
+          step: "Warte auf Enter",
+        }),
       );
       await ensureLiveView(ctx);
       let k: string;
       if (position === 1)
-        k = await ui.key(FIRST_PROMPT, ["enter", "q"]);
+        k = await ui.key(FIRST_PROMPT, ["enter", "q"], "next");
       else
-        for (;;) {
+        for (let first = true; ; first = false) {
           k = await ui.key(
             `Enter = Vorderseite der nächsten Münze · ${last ? `k = Kommentar zu Münze ${last.position} · ` : ""}f = fertig`,
             last ? ["enter", "k", "f", "q"] : ["enter", "f", "q"],
+            first ? "next" : undefined,
           );
           if (k !== "k" || !last) break;
           const comment = await ui.line(
@@ -249,6 +265,7 @@ export async function runSingle(ctx: SessionContext): Promise<CoinResult[]> {
       const flip = await ui.key(
         `Münze ${position} umdrehen, Rückseite einlegen und Enter drücken · q = beenden`,
         ["enter", "q"],
+        "flip",
       );
       if (flip === "q") break; // saved as aborted below
       const result = await captureBack(ctx, coin, position);

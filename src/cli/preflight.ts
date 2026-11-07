@@ -40,10 +40,11 @@ export async function preflight(
         if (e instanceof AbortError) throw e;
         ui.print(e instanceof Error ? e.message : String(e));
         if (
-          (await ui.key("Enter = erneut versuchen · q = beenden", [
-            "enter",
-            "q",
-          ])) === "q"
+          (await ui.key(
+            "Enter = erneut versuchen · q = beenden",
+            ["enter", "q"],
+            "problem",
+          )) === "q"
         )
           return null;
       }
@@ -60,10 +61,11 @@ export async function preflight(
         `Moduswahlrad steht auf ${info.exposureMode} – erwartet Av. Bitte auf Av stellen.`,
       );
       if (
-        (await ui.key("Enter = erneut prüfen · q = beenden", [
-          "enter",
-          "q",
-        ])) === "q"
+        (await ui.key(
+          "Enter = erneut prüfen · q = beenden",
+          ["enter", "q"],
+          "problem",
+        )) === "q"
       )
         return null;
     }

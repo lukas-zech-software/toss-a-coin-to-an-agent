@@ -1,3 +1,4 @@
+import type { Cue } from "../sound/sound.ts";
 import type { Side } from "../types.ts";
 import type { ImageProtocol } from "./graphics.ts";
 import type { RotationChoice, RotationViewOptions } from "./rotation.ts";
@@ -5,7 +6,8 @@ import type { RotationChoice, RotationViewOptions } from "./rotation.ts";
 export interface Ui {
   status(text: string): void; // persistent status line
   print(text: string): void;
-  key(prompt: string, allowed: readonly string[]): Promise<string>; // "enter" for Enter; throws AbortError on Ctrl+C
+  // "enter" for Enter; throws AbortError on Ctrl+C. `cue` = the sound for this prompt (audio spec §3), none for follow-ups.
+  key(prompt: string, allowed: readonly string[], cue?: Cue): Promise<string>;
   line(prompt: string): Promise<string>;
   countdown(seconds: number): Promise<void>; // "3 … 2 … 1 …", abortable
   readonly images: ImageProtocol | null; // null: no images, no rotation view

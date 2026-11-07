@@ -127,3 +127,28 @@ test("q in the menu and ctrl-c during capture abort", async () => {
     "aborted",
   );
 });
+test("the error menu plays problem once, not again after v", async () => {
+  const { s } = await shoot({ results: [NO_COIN], script: ["v", "i"] });
+  assert.deepEqual(s.ui.cues, ["problem", null]);
+});
+test("a technical error plays problem", async () => {
+  const { s } = await shoot({
+    shots: [{ error: "*** Error: No camera found." }, {}],
+    results: [OK],
+    script: ["enter"],
+  });
+  assert.deepEqual(s.ui.cues, ["problem"]);
+});
+test("Enter = neue Aufnahme and Wirklich löschen stay silent, so does the menu shown again", async () => {
+  const a = await shoot({ results: [NO_COIN, OK], script: ["w", "enter"] });
+  assert.deepEqual(a.s.ui.cues, ["problem", null]);
+  const b = await shoot({ results: [NO_COIN], script: ["l", "n", "i"] });
+  assert.deepEqual(b.s.ui.cues, ["problem", null, null]);
+});
+test("a new failed attempt after w plays problem again", async () => {
+  const { s } = await shoot({
+    results: [UNDER, UNDER, UNDER, UNDER, UNDER],
+    script: ["w", "i"],
+  });
+  assert.deepEqual(s.ui.cues, ["problem", "problem"]);
+});
