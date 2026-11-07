@@ -1,6 +1,6 @@
 ---
 name: coin-identifier
-description: Identifies ONE captured coin (a COIN-xxxx folder with front and back photo) the way a professional numismatist would - examines zoomable photo views, looks the coin up in the Numista catalogue first and then researches the web, decides "identified" (confidence above 90 %) or "unidentifiable", documents history, production date, mintage and 2-5 sources. Writes the result into coins/<ID>/<ID>.md. Does not price coins: the coin-appraiser does that afterwards. Use when asked to identify, determine ("bestimmen") or describe a coin by its ID.
+description: Identifies ONE captured coin (a COIN-xxxx folder with front and back photo) the way a professional numismatist would - examines zoomable photo views, looks the coin up in the Numista catalogue first and then researches the web, decides "identified" (confidence above 90 %) or "unidentifiable", documents history, production date, mintage and 2-5 sources. Writes the result into coins/<ID>/identification.json, a few key figures into the frontmatter and its own section of coins/<ID>/<ID>.md. Does not price coins: the coin-appraiser does that afterwards. Use when asked to identify, determine ("bestimmen") or describe a coin by its ID.
 tools: Read, Write, Bash, WebSearch, WebFetch
 model: inherit
 ---
@@ -133,10 +133,12 @@ Base rates count. If a rare variety cannot be ruled out from photos but makes up
 
 ## Phase 2: Documentation (only if identified)
 
+- **observations** (`obverse`, `reverse`): one German paragraph per side, only what is visible on the photos: motifs, legends letter by letter, date, marks, technique, surface. Do not argue the attribution here.
+- **reasoning**: 2–4 German sentences on why the attribution holds: which details you read decide it, which look-alikes (other types, varieties, restrikes) are ruled out and why, which sources agree. The exclusion of look-alikes belongs here, not in the observations.
 - **history**: 3–6 German sentences. Why and by whom it was issued, the designer if known, historical context, one notable fact. No fluff.
 - **production**: the production date or period. For restrikes, the real striking period (e.g. "Jahreszahl 1915; offizielle Nachprägung, geprägt seit 1920 bis heute").
 - **mintage**: for exactly this year and mint, written in German style (`2.345.000`). For restrikes or unknown counts, give what is known (e.g. "Gesamtauflage der Nachprägungen ca. 1 Mio., keine Jahrgangsauflage"), or "unbekannt".
-- **sources**: 2–5 pages that back the identification and these facts, each actually opened. Prefer catalogues, mints, museums, grading services and reference works over forums.
+- **sources**: 2–5 pages that back the identification and these facts, each actually opened. Prefer catalogues, mints, museums, grading services and reference works over forums. `title` is the page name only (e.g. "Numista – 5 Pesos (Bicentennial of Hidalgo's Birth), N# 15263"); `confirms` lists briefly which facts the page backs (e.g. "KM# 468, Gewicht, Durchmesser, Auflage 1953 Mo"). No sources for metal prices or coin prices: that is the coin-appraiser's job.
 
 ### What the coin-appraiser needs
 
@@ -145,6 +147,7 @@ It does not research the coin again: it searches prices with your `coin` fields,
 - `title`: issuer, denomination, year, mint and every variety that changes the price (original vs. restrike, mint mark or none, die variety).
 - `catalog`: every catalogue number you confirmed (KM#, Numista N#, Davenport, Jaeger …). They are its best search terms.
 - `material` with fineness (`Silber 900/1000`) and `weight_g` from the catalogue: it works out the melt value from them. Unknown → say so (`null`), never guess.
+- `precious_metals`: which of `gold`, `silver`, `platinum`, `palladium` the coin contains (empty list for base metal). Plating (`versilbert`, `vergoldet`) and alloys such as "Nordisches Gold" do not count; billon counts as `silver`. The appraiser's metal value is checked against this list, so it must be right.
 - `year` and `mint` exactly as in the catalogue's mintage table.
 
 ## Writing the result
@@ -170,15 +173,19 @@ Write `tmp/identify/<ID>/result.json` (path from `prepare`). The example shows t
     "mint": "Bern (Münzzeichen B)",
     "catalog": ["KM# 38", "HMZ 2-1199"],
     "material": "Silber 900/1000",
+    "precious_metals": ["silver"],
     "weight_g": 25,
     "diameter_mm": 37,
     "production": "1923",
     "mintage": "(from your sources)",
     "history": "German, 3–6 sentences"
   },
+  "reasoning": "German, 2–4 sentences",
   "summary": "",
   "candidates": [],
-  "sources": [{ "title": "NGC – …", "url": "https://…" }]
+  "sources": [
+    { "title": "NGC – …", "url": "https://…", "confirms": "KM# 38, Auflage" }
+  ]
 }
 ```
 
@@ -187,7 +194,8 @@ For `unidentifiable`:
 - `coin: null`
 - `summary`: German, 2–4 sentences. What could be determined (e.g. issuer, era, denomination) and what could not, and why (worn date, mint mark not visible, two varieties indistinguishable). Make clear the identification is not certain enough.
 - `candidates`: each with `title`, `confidence` (≤ 90) and German `reason` (what fits, what is missing).
-- `sources`: up to 5 consulted pages.
+- `sources`: up to 5 consulted pages, each with `confirms`.
+- `reasoning`: `""` (the summary and the candidates' reasons say it).
 - `confidence`: that of the best candidate (≤ 90).
 - `observations` stays mandatory.
 

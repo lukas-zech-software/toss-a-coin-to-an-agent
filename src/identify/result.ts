@@ -6,7 +6,17 @@ import type { Side } from "../types.ts";
 export const MIN_CONFIDENCE_EXCLUSIVE = 90;
 export const SOURCES = { min: 2, max: 5 } as const;
 
-export type Source = { title: string; url: string };
+/** The only metals with a melt value worth stating (record spec §6). */
+export const PRECIOUS_METALS = [
+  "gold",
+  "silver",
+  "platinum",
+  "palladium",
+] as const;
+export type PreciousMetal = (typeof PRECIOUS_METALS)[number];
+
+/** `confirms`: which facts the page backs (German, short). */
+export type Source = { title: string; url: string; confirms: string };
 export type Candidate = { title: string; confidence: number; reason: string };
 export type Observations = {
   /** Which capture file shows the numismatic obverse (av/rv are only the capture order). */
@@ -23,6 +33,8 @@ export type CoinDetails = {
   mint: string;
   catalog: string[];
   material: string;
+  /** Precious metals the coin contains; empty for base metal. Plating does not count, billon counts as silver. */
+  precious_metals: PreciousMetal[];
   weight_g: number | null;
   diameter_mm: number | null;
   production: string;
@@ -35,6 +47,8 @@ export type IdentifyResult = {
   confidence: number;
   observations: Observations;
   coin: CoinDetails | null;
+  /** Why the attribution holds (identified only, German); empty for migrated results. */
+  reasoning: string;
   summary: string;
   candidates: Candidate[];
   sources: Source[];
@@ -60,8 +74,14 @@ const isUrl = (v: unknown): boolean => {
   }
 };
 
-/** Collects every problem instead of stopping at the first, so the agent can fix them in one go. */
-export function validateResult(raw: unknown): Validation {
+/**
+ * Collects every problem instead of stopping at the first, so the agent can fix them in one go.
+ * `legacy`: results written before `reasoning` and `sources[].confirms` existed (migration) may lack them.
+ */
+export function validateResult(
+  raw: unknown,
+  opts: { legacy?: boolean } = {},
+): Validation {
   const errors: string[] = [];
   const err = (m: string) => errors.push(m);
   if (!isObj(raw))
@@ -124,6 +144,7 @@ export function validateResult(raw: unknown): Validation {
   const sources = objList(raw.sources, "sources");
   sources.forEach((s, i) => {
     text(s, "title", `sources[${i + 1}].title`);
+    if (!opts.legacy) text(s, "confirms", `sources[${i + 1}].confirms`);
     if (!isUrl(s.url)) err(`sources[${i + 1}].url muss ein http(s)-Link sein`);
   });
   uniqueUrls(sources, "sources");
@@ -145,6 +166,8 @@ export function validateResult(raw: unknown): Validation {
       err(
         `bestimmte Münzen brauchen ${SOURCES.min} bis ${SOURCES.max} Quellen (sources), gefunden: ${sources.length}`,
       );
+    if (!opts.legacy && !isText(raw.reasoning))
+      err("reasoning fehlt oder ist leer (Pflicht bei state identified)");
     validateCoin(raw.coin, err, text, optionalNum);
   } else if (state === "unidentifiable") {
     if (conf !== null && conf > MIN_CONFIDENCE_EXCLUSIVE)
@@ -195,6 +218,18 @@ function validateCoin(
     err(
       "coin.catalog muss eine Liste von Katalognummern sein (darf leer sein)",
     );
+  const metals = coin.precious_metals;
+  if (
+    !Array.isArray(metals) ||
+    !metals.every((m) => PRECIOUS_METALS.includes(m as PreciousMetal))
+  )
+    err(
+      `coin.precious_metals muss eine Liste aus ${PRECIOUS_METALS.join(", ")} sein (leer bei unedlem Metall)`,
+    );
+  else
+    metals.forEach((m, i) => {
+      if (metals.indexOf(m) !== i) err(`coin.precious_metals: ${m} doppelt`);
+    });
   optionalNum(coin, "weight_g", "coin.weight_g");
   optionalNum(coin, "diameter_mm", "coin.diameter_mm");
 }
@@ -204,6 +239,8 @@ function normalise(r: IdentifyResult): IdentifyResult {
   return {
     ...r,
     coin: r.coin ?? null,
+    reasoning: r.reasoning ?? "",
     summary: r.summary ?? "",
+    sources: r.sources.map((s) => ({ ...s, confirms: s.confirms ?? "" })),
   };
 }

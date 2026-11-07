@@ -28,6 +28,7 @@ export const identified = (): IdentifyResult & {
     mint: "Philadelphia (ohne Münzzeichen)",
     catalog: ["KM# 150", "Numista N# 1489"],
     material: "Silber 900/1000",
+    precious_metals: ["silver"],
     weight_g: 26.73,
     diameter_mm: 38.1,
     production: "1922",
@@ -35,13 +36,20 @@ export const identified = (): IdentifyResult & {
     history:
       "Der Peace Dollar wurde zum Gedenken an das Ende des Ersten Weltkriegs ausgegeben. Entwurf: Anthony de Francisci.",
   },
+  reasoning:
+    "Legende und Jahr direkt gelesen; ohne Münzzeichen also Philadelphia. Numista und PCGS stimmen überein.",
   summary: "",
   candidates: [],
   sources: [
-    { title: "Numista – 1 Dollar Peace", url: "https://en.numista.com/1489" },
+    {
+      title: "Numista – 1 Dollar Peace",
+      url: "https://en.numista.com/1489",
+      confirms: "KM# 150, Gewicht, Auflage",
+    },
     {
       title: "PCGS CoinFacts – 1922 $1",
       url: "https://www.pcgs.com/coinfacts/coin/1922-1/7356",
+      confirms: "Auflage 1922",
     },
   ],
 });
@@ -75,7 +83,14 @@ export const unidentifiable = (): IdentifyResult & {
       reason: "Wappenform ähnlich, Münzzeichen nicht lesbar",
     },
   ],
-  sources: [{ title: "Numista", url: "https://en.numista.com/123" }],
+  reasoning: "",
+  sources: [
+    {
+      title: "Numista",
+      url: "https://en.numista.com/123",
+      confirms: "Typbeschreibung",
+    },
+  ],
 });
 
 export const price = (n: number, type = "hammer") => ({

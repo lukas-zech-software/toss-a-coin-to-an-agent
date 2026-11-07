@@ -63,6 +63,7 @@ test("identified needs 2 to 5 sources with unique http(s) links", () => {
   const six = [1, 2, 3, 4, 5, 6].map((i) => ({
     title: `Quelle ${i}`,
     url: `https://example.com/${i}`,
+    confirms: "Gewicht",
   }));
   expectError({ ...r, sources: six }, /2.*5 Quellen/);
   assert.deepEqual(errorsOf({ ...r, sources: six.slice(0, 5) }), []);
@@ -76,4 +77,35 @@ test("obverse_image must be av or rv", () => {
   const r = identified();
   r.observations.obverse_image = "front" as "av";
   expectError(r, /obverse_image/);
+});
+
+test("identified needs reasoning, unless legacy", () => {
+  const r: Record<string, unknown> = { ...identified() };
+  delete r.reasoning;
+  expectError(r, /reasoning fehlt/);
+  const legacy = validateResult(r, { legacy: true });
+  assert.ok(legacy.ok, JSON.stringify(legacy));
+  assert.equal(legacy.value.reasoning, "");
+});
+test("every source says what it confirms, unless legacy", () => {
+  const r = identified();
+  r.sources[0]!.confirms = "";
+  expectError(r, /sources\[1\]\.confirms/);
+  const u = unidentifiable();
+  delete (u.sources[0] as Partial<(typeof u.sources)[0]>).confirms;
+  expectError(u, /sources\[1\]\.confirms/);
+  const legacy = validateResult(u, { legacy: true });
+  assert.ok(legacy.ok, JSON.stringify(legacy));
+  assert.equal(legacy.value.sources[0]!.confirms, "");
+});
+test("precious_metals: only the four metals, no duplicates", () => {
+  const r = identified();
+  r.coin.precious_metals = ["silver", "silver"];
+  expectError(r, /silver doppelt/);
+  r.coin.precious_metals = ["copper" as "silver"];
+  expectError(r, /gold, silver, platinum, palladium/);
+  delete (r.coin as Partial<typeof r.coin>).precious_metals;
+  expectError(r, /gold, silver, platinum, palladium/);
+  r.coin.precious_metals = [];
+  assert.deepEqual(errorsOf(r), []);
 });
