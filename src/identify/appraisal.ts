@@ -6,6 +6,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { isoLocal } from "../store/markdown.ts";
 import { cell, href, text } from "./markdown.ts";
 import { joinFrontmatter, replaceSection, splitFrontmatter } from "./record.ts";
+import type { PreciousMetal } from "./result.ts";
 
 export const START_MARKER = "<!-- coin-appraiser:start -->";
 export const END_MARKER = "<!-- coin-appraiser:end -->";
@@ -33,12 +34,24 @@ export type PricePoint = {
   price_eur: number;
   price_type: AppraisalPriceType;
 };
+/**
+ * The metal value (record spec §6): computed from fine weight and spot price; "below_threshold" when the coin has
+ * no gold, silver, platinum or palladium; "unknown" when it has, but weight or fineness is not known.
+ */
+export const MELT_STATES = ["defined", "below_threshold", "unknown"] as const;
+export type Melt =
+  | { state: "defined"; eur: number }
+  | { state: "below_threshold" }
+  | { state: "unknown"; reason: string };
+
 export type Appraisal = {
   id: string;
   grade: string;
+  /** What the grade rests on (German); empty for migrated results. */
+  grade_note: string;
   damage: string[];
   prices: PricePoint[];
-  melt_eur: number | null;
+  melt: Melt;
   estimate_eur: { low: number; high: number } | null;
   reasoning: string;
 };
@@ -60,7 +73,11 @@ const isUrl = (v: unknown): boolean => {
   }
 };
 
-export function validateAppraisal(raw: unknown): AppraisalValidation {
+/** `legacy`: results written before `grade_note` existed (migration) may lack it. */
+export function validateAppraisal(
+  raw: unknown,
+  opts: { legacy?: boolean } = {},
+): AppraisalValidation {
   const errors: string[] = [];
   const err = (m: string) => errors.push(m);
   if (!isObj(raw))
@@ -71,8 +88,27 @@ export function validateAppraisal(raw: unknown): AppraisalValidation {
   if (!isText(raw.reasoning)) err("reasoning fehlt oder ist leer");
   if (!Array.isArray(raw.damage) || !raw.damage.every(isText))
     err("damage muss eine Liste sein (leer, wenn keine Schäden)");
-  if (raw.melt_eur !== null && !isPos(raw.melt_eur))
-    err("melt_eur muss eine positive Zahl oder null sein");
+  if (!opts.legacy && !isText(raw.grade_note))
+    err("grade_note fehlt oder ist leer");
+  if ("melt_eur" in raw)
+    err("melt_eur gibt es nicht mehr – melt: { state, … } verwenden");
+  const melt = raw.melt;
+  if (!isObj(melt) || !MELT_STATES.includes(melt.state as Melt["state"]))
+    err(`melt muss { state: ${MELT_STATES.join(" | ")} } sein`);
+  else {
+    if (melt.state === "defined" && !isPos(melt.eur))
+      err('melt.eur muss bei state "defined" eine positive Zahl sein');
+    if (melt.state !== "defined" && "eur" in melt)
+      err('melt.eur gibt es nur bei state "defined"');
+    if (melt.state === "unknown" && !isText(melt.reason))
+      err('melt.reason fehlt: bei state "unknown" kurz begründen');
+    if (melt.state !== "unknown" && "reason" in melt)
+      err('melt.reason gibt es nur bei state "unknown"');
+  }
+  const meltEur =
+    isObj(melt) && melt.state === "defined" && isPos(melt.eur)
+      ? melt.eur
+      : null;
 
   const prices = Array.isArray(raw.prices) ? raw.prices : null;
   if (!prices) err("prices muss eine Liste sein");
@@ -110,14 +146,36 @@ export function validateAppraisal(raw: unknown): AppraisalValidation {
     err(
       `estimate_eur muss null sein: unter ${PRICES.min} Preisquellen gibt es keine Schätzung (gefunden: ${n})`,
     );
-  if (estimateOk && isPos(raw.melt_eur) && (e.low as number) < raw.melt_eur)
+  if (estimateOk && meltEur !== null && (e.low as number) < meltEur)
     err(
-      `estimate_eur.low (${String(e.low)}) liegt unter dem Metallwert (${raw.melt_eur}) – der Metallwert ist die Untergrenze`,
+      `estimate_eur.low (${String(e.low)}) liegt unter dem Metallwert (${meltEur}) – der Metallwert ist die Untergrenze`,
     );
 
   return errors.length
     ? { ok: false, errors }
-    : { ok: true, value: raw as Appraisal };
+    : {
+        ok: true,
+        value: {
+          ...(raw as Appraisal),
+          grade_note: (raw.grade_note as string) ?? "",
+        },
+      };
+}
+
+/** The metal value's state must fit the precious metals the identifier found (record spec §6). */
+export function meltErrors(
+  melt: Melt,
+  preciousMetals: readonly PreciousMetal[],
+): string[] {
+  if (!preciousMetals.length && melt.state !== "below_threshold")
+    return [
+      'melt.state muss "below_threshold" sein: laut Bestimmung enthält die Münze kein Gold, Silber, Platin oder Palladium',
+    ];
+  if (preciousMetals.length && melt.state === "below_threshold")
+    return [
+      `melt.state darf nicht "below_threshold" sein: laut Bestimmung enthält die Münze ${preciousMetals.join(", ")}`,
+    ];
+  return [];
 }
 
 const money = (v: number, currency = "EUR"): string =>
@@ -141,7 +199,7 @@ export function applyAppraisal(md: string, a: Appraisal, now: Date): string {
     range: a.prices.length >= PRICES.min ? all : null,
     sold: sold.length,
     asking: a.prices.length - sold.length,
-    melt_eur: a.melt_eur,
+    melt_eur: a.melt.state === "defined" ? a.melt.eur : null, // transitional, until appraisal.json
     estimate: a.estimate_eur,
     reasoning: a.reasoning,
     prices: a.prices,
@@ -188,8 +246,8 @@ function render(a: Appraisal, all: PriceStats | null, now: Date): string {
       ),
       "",
     );
-  if (a.melt_eur !== null)
-    parts.push(`**Metallwert (Untergrenze):** ${money(a.melt_eur)}  `);
+  if (a.melt.state === "defined")
+    parts.push(`**Metallwert (Untergrenze):** ${money(a.melt.eur)}  `);
   if (all && a.estimate_eur)
     parts.push(
       `**Preisspanne der Quellen (n = ${all.n}):** Min ${money(all.min)} · Median ${money(all.median)} · Max ${money(all.max)}  `,

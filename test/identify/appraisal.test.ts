@@ -4,6 +4,7 @@ import YAML from "yaml";
 import {
   applyAppraisal,
   END_MARKER,
+  meltErrors,
   priceStats,
   START_MARKER,
   validateAppraisal,
@@ -94,4 +95,71 @@ test("priceStats: min, median, max; even counts average the middle pair", () => 
     max: 20.01,
   });
   assert.equal(priceStats([]), null);
+});
+
+const errorsOf = (raw: unknown, legacy = false): string[] => {
+  const r = validateAppraisal(raw, { legacy });
+  return r.ok ? [] : r.errors;
+};
+
+test("melt is mandatory and well-formed", () => {
+  const without: Record<string, unknown> = { ...sample() };
+  delete without.melt;
+  for (const bad of [
+    without,
+    { ...sample(), melt: { state: "defined" } },
+    { ...sample(), melt: { state: "unknown" } },
+    { ...sample(), melt: { state: "below_threshold", eur: 3 } },
+    { ...sample(), melt: { state: "defined", eur: 20, reason: "x" } },
+    { ...sample(), melt: { state: "melted" } },
+    { ...sample(), melt_eur: 20 },
+  ]) {
+    const errs = errorsOf(bad);
+    assert.ok(
+      errs.some((e) => /melt/.test(e)),
+      `${JSON.stringify(bad)} → ${JSON.stringify(errs)}`,
+    );
+  }
+  for (const melt of [
+    { state: "defined", eur: 20 },
+    { state: "below_threshold" },
+    { state: "unknown", reason: "Feingehalt unbekannt" },
+  ])
+    assert.deepEqual(errorsOf({ ...sample(), melt }), [], JSON.stringify(melt));
+});
+
+test("the estimate floor applies only to a defined metal value", () => {
+  const low = { ...sample(), estimate_eur: { low: 10, high: 30 } };
+  assert.ok(errorsOf(low).some((e) => /Metallwert/.test(e)));
+  assert.deepEqual(
+    errorsOf({
+      ...low,
+      melt: { state: "unknown", reason: "Gewicht unbekannt" },
+    }),
+    [],
+  );
+});
+
+test("grade_note is required unless legacy", () => {
+  const r: Record<string, unknown> = { ...sample() };
+  delete r.grade_note;
+  assert.ok(errorsOf(r).some((e) => /grade_note fehlt/.test(e)));
+  const legacy = validateAppraisal(r, { legacy: true });
+  assert.ok(legacy.ok, JSON.stringify(legacy));
+  assert.equal(legacy.value.grade_note, "");
+});
+
+test("meltErrors: metal value must match the identification", () => {
+  const defined = { state: "defined", eur: 20 } as const;
+  const unknown = { state: "unknown", reason: "x" } as const;
+  const below = { state: "below_threshold" } as const;
+  assert.deepEqual(meltErrors(below, []), []);
+  assert.match(meltErrors(defined, []).join(), /muss "below_threshold"/);
+  assert.match(meltErrors(unknown, []).join(), /muss "below_threshold"/);
+  assert.match(
+    meltErrors(below, ["silver"]).join(),
+    /darf nicht "below_threshold" sein: laut Bestimmung enthält die Münze silver/,
+  );
+  assert.deepEqual(meltErrors(defined, ["silver"]), []);
+  assert.deepEqual(meltErrors(unknown, ["gold", "silver"]), []);
 });

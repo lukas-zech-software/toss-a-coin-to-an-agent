@@ -114,9 +114,11 @@ export const price = (n: number, type = "hammer") => ({
 export const appraisal = (): Appraisal => ({
   id: "COIN-0001",
   grade: "ss (VF-20)",
+  grade_note:
+    "Haar und Wange leicht abgeflacht; Glanz auf Fotos nicht beurteilbar.",
   damage: ["Kratzer auf der Wange"],
   prices: [price(30), price(40, "asking")],
-  melt_eur: 20,
+  melt: { state: "defined", eur: 20 },
   estimate_eur: { low: 25, high: 35 },
   reasoning: "Begründung.",
 });

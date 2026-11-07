@@ -21,6 +21,7 @@ import {
 import type { Scale } from "../identify/views.ts";
 import { numista, numistaUsage, RESERVE } from "../identify/numista.ts";
 import {
+  meltErrors,
   priceStats,
   validateAppraisal,
   writeAppraisal,
@@ -208,6 +209,17 @@ async function writeAppraisalCmd(
   const errors = v.ok ? [] : [...v.errors];
   if (v.ok && v.value.id !== id)
     errors.push(`id im Ergebnis (${v.value.id}) passt nicht zu ${id}`);
+  if (v.ok && !errors.length) {
+    const c = await loadCoin(deps.coinsRoot, id);
+    const ident = c.frontmatter.identification as
+      Record<string, unknown> | undefined;
+    if (ident?.state === "identified") {
+      const stored = await readIdentification(c.dir, id);
+      errors.push(
+        ...meltErrors(v.value.melt, stored.coin?.precious_metals ?? []),
+      );
+    }
+  }
   if (!v.ok || errors.length) {
     deps.out(
       `Schätzung ungültig – Markdown NICHT geändert:\n${errors.map((e) => `- ${e}`).join("\n")}`,

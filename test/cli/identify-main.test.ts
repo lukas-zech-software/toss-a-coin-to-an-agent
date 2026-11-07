@@ -161,6 +161,48 @@ test("numista: wrong usage, missing key, and a search printed as JSON", async ()
   );
 });
 
+test("write-appraisal rejects a metal value that contradicts the identification", async () => {
+  const { deps, lines, dir, root } = await setup();
+  const result = join(root, "result.json");
+  await writeFile(result, JSON.stringify(identified()));
+  assert.equal(await identifyMain(["write", "COIN-0001", result], deps), 0);
+  const file = join(root, "appraisal.json");
+  await writeFile(
+    file,
+    JSON.stringify({ ...appraisal(), melt: { state: "below_threshold" } }),
+  );
+  assert.equal(
+    await identifyMain(["write-appraisal", "COIN-0001", file], deps),
+    1,
+  );
+  assert.match(
+    lines.pop()!,
+    /Schätzung ungültig[\s\S]*darf nicht "below_threshold"/,
+  );
+  assert.equal(existsSync(join(dir, "appraisal.json")), false);
+});
+
+test("write-appraisal on a coin without identification.json says so", async () => {
+  const { deps, lines, dir, root } = await setup();
+  await writeFile(
+    join(dir, "COIN-0001.md"),
+    MD.replace(
+      "described: false\n",
+      'described: true\nidentification:\n  state: identified\n  checked_at: "2026-10-31T10:00:00+01:00"\n',
+    ),
+  );
+  const file = join(root, "appraisal.json");
+  await writeFile(file, JSON.stringify(appraisal()));
+  assert.equal(
+    await identifyMain(["write-appraisal", "COIN-0001", file], deps),
+    1,
+  );
+  assert.match(
+    lines.pop()!,
+    /identification\.json fehlt – erst den coin-identifier/,
+  );
+});
+
 test("appraise refuses a coin that is not identified", async () => {
   const { deps, lines } = await setup();
   assert.equal(await identifyMain(["appraise", "COIN-0001"], deps), 1);
