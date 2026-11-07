@@ -267,3 +267,34 @@ test("identifier → appraiser → lister: each step writes its part; the lister
   assert.equal(listing.price.melt, 20);
   assert.deepEqual(listing.price.estimate, appraisal().estimate_eur);
 });
+
+test("migrate converts an old-format coin, reports each coin, and needs an ID", async () => {
+  const { deps, lines, dir, workDir, root } = await setup();
+  await writeFile(
+    join(dir, "COIN-0001.md"),
+    MD.replace(
+      "described: false\n",
+      `described: true\nidentification:\n  state: identified\n  confidence: 97\n  checked_at: "2026-10-31T19:43:09+01:00"\n  title: ${JSON.stringify(identified().coin.title)}\n`,
+    ),
+  );
+  await mkdir(join(workDir, "COIN-0001"), { recursive: true });
+  await writeFile(
+    join(workDir, "COIN-0001", "result.json"),
+    JSON.stringify(identified()),
+  );
+  assert.equal(
+    await identifyMain(["migrate", "COIN-0001", "COIN-0002"], deps),
+    1,
+  );
+  assert.equal(lines[0], "COIN-0001: überführt");
+  assert.match(lines[1]!, /^Fehler: .*COIN-0002/);
+  assert.equal(existsSync(join(dir, "identification.json")), true);
+  assert.equal(
+    existsSync(join(root, "migrate", "COIN-0001", "COIN-0001.md")),
+    true,
+  );
+  lines.length = 0;
+  assert.equal(await identifyMain(["migrate", "COIN-0001"], deps), 0);
+  assert.equal(lines[0], "COIN-0001: schon im neuen Format – übersprungen");
+  assert.equal(await identifyMain(["migrate"], deps), 2);
+});

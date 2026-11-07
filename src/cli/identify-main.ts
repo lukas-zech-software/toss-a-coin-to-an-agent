@@ -10,6 +10,7 @@ import {
 } from "../identify/markdown.ts";
 import { validateResult } from "../identify/result.ts";
 import { readAppraisal, readIdentification } from "../identify/record.ts";
+import { migrateCoin } from "../identify/migrate.ts";
 import type { StoredIdentification } from "../identify/record.ts";
 import type { Side } from "../types.ts";
 import {
@@ -52,6 +53,7 @@ export const USAGE = `Verwendung:
   npm run identify -- write-appraisal <ID> <appraisal.json>
   npm run identify -- describe <ID>
   npm run identify -- write-listing <ID> <texts.json>
+  npm run identify -- migrate <ID> [<ID>…]   (einmalig: altes Frontmatter-Format → JSON-Dateien und neue Abschnitte)
   npm run identify -- numista search [<Wörter>] [--issuer <code>] [--year <wie geprägt>] [--date <Jahr|1900-1910>] [--km <KM-Nr.>] [--category coin|exonumia|banknote] [--page <n>]
   npm run identify -- numista type <N#>
   npm run identify -- numista issues <N#>
@@ -96,6 +98,7 @@ export async function identifyMain(
       return await describe(id, deps);
     if (cmd === "write-listing" && id && rest.length === 1)
       return await writeListingCmd(id, rest[0]!, deps);
+    if (cmd === "migrate" && id) return await migrateCmd([id, ...rest], deps);
   } catch (e) {
     deps.out(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
     return 1;
@@ -325,6 +328,31 @@ async function writeListingCmd(
     `${id}: Angebotsdaten geschrieben\nErgebnis: ${dir}/ (${[LISTING_FILE, ...LANGS.map(descriptionFile)].join(", ")})`,
   );
   return 0;
+}
+
+/** One-off conversion of coins in the old frontmatter format (record spec §9); one line per coin. */
+async function migrateCmd(ids: string[], deps: IdentifyDeps): Promise<number> {
+  let failed = false;
+  for (const id of ids) {
+    try {
+      const coin = await loadCoin(deps.coinsRoot, id);
+      const done = await migrateCoin({
+        coinDir: coin.dir,
+        id,
+        workDir: deps.workDir,
+        backupDir: join(deps.workDir, "..", "migrate"),
+      });
+      deps.out(
+        done === "migrated"
+          ? `${id}: überführt`
+          : `${id}: schon im neuen Format – übersprungen`,
+      );
+    } catch (e) {
+      failed = true;
+      deps.out(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return failed ? 1 : 0;
 }
 
 async function numistaCmd(
