@@ -2,14 +2,14 @@
 
 What the identify CLI writes for one coin after the agents ran, and where to read it. Design and reasoning: `docs/superpowers/specs/2026-11-07-coin-record-sections-design.md`.
 
-| Where                                       | What                                                                                                                                      | Written by                            |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `identification.json`                       | the coin-identifier's full, validated result (`coin-identification/1`)                                                                    | `npm run identify -- write`           |
-| `appraisal.json`                            | the coin-appraiser's full, validated result plus price statistics (`coin-appraisal/1`)                                                    | `npm run identify -- write-appraisal` |
-| `<ID>.md` frontmatter `identification`      | key figures only: `state`, `confidence`, `checked_at`, `weight_g`, `diameter_mm`                                                          | `write`                               |
-| `<ID>.md` frontmatter `appraisal`           | key figures only: `checked_at`, `estimate_eur`, `melt_state`, `melt_eur`, `prices` (`sold`, `asking`, `min_eur`, `median_eur`, `max_eur`) | `write-appraisal`                     |
-| `<ID>.md` section "## Bestimmung"           | readable identification, between `<!-- coin-identifier:start/end -->`                                                                     | `write`                               |
-| `<ID>.md` section "## Marktpreis-Schätzung" | readable appraisal, between `<!-- coin-appraiser:start/end -->`                                                                           | `write-appraisal`                     |
+| Where                                       | What                                                                                                                                                                               | Written by                            |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `identification.json`                       | the coin-identifier's full, validated result (`coin-identification/1`)                                                                                                             | `npm run identify -- write`           |
+| `appraisal.json`                            | the coin-appraiser's full, validated result plus price statistics (`coin-appraisal/1`)                                                                                             | `npm run identify -- write-appraisal` |
+| `<ID>.md` frontmatter `identification`      | key figures only: `state`, `confidence`, `checked_at`, `weight_g`, `diameter_mm`                                                                                                   | `write`                               |
+| `<ID>.md` frontmatter `appraisal`           | key figures only: `checked_at`, `estimate_eur`, `estimate_confidence`, `estimate_basis`, `melt_state`, `melt_eur`, `prices` (`sold`, `asking`, `min_eur`, `median_eur`, `max_eur`) | `write-appraisal`                     |
+| `<ID>.md` section "## Bestimmung"           | readable identification, between `<!-- coin-identifier:start/end -->`                                                                                                              | `write`                               |
+| `<ID>.md` section "## Marktpreis-Schätzung" | readable appraisal, between `<!-- coin-appraiser:start/end -->`                                                                                                                    | `write-appraisal`                     |
 
 Rules:
 
@@ -26,7 +26,9 @@ The agent's result (`IdentifyResult` in `src/identify/result.ts`) plus `format` 
 
 ## `appraisal.json`
 
-The agent's result (`Appraisal` in `src/identify/appraisal.ts`) plus `format`, `checked_at`, and the CLI's `range` (`{n, min, median, max}` in EUR, `null` under 2 prices), `sold`, `asking`: `grade`, `grade_note`, `damage`, `prices` (each `url`, `venue`, `date`, `grade`, `price`, `currency`, `price_eur`, `price_type`), `melt`, `estimate_eur` (`{low, high}` or `null` under 2 prices), `reasoning`.
+Confidence: a sold price counts 1 point, an asking price 0.5; 3+ points `high`, 2+ `medium`, else `low`; without any sold price never above `low` (basis `asking_only`).
+
+The agent's result (`Appraisal` in `src/identify/appraisal.ts`) plus `format`, `checked_at`, and the CLI's `range` (`{n, min, median, max}` in EUR, `null` without prices), `estimate_confidence` (`low` | `medium` | `high`) and `estimate_basis` (`sold` | `asking_only`) (both CLI-computed, `null` without estimate; absent in older files), `sold`, `asking`: `grade`, `grade_note`, `damage`, `prices` (each `url`, `venue`, `date`, `grade`, `price`, `currency`, `price_eur`, `price_type`), `melt`, `estimate_eur` (`{low, high}` or `null` without prices), `reasoning`.
 
 `melt` (metal value) is mandatory:
 
@@ -68,6 +70,8 @@ appraisal:
   estimate_eur:
     low: 29
     high: 33
+  estimate_confidence: high
+  estimate_basis: sold
   melt_state: defined
   melt_eur: 28.3
   prices:

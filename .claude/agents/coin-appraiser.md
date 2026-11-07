@@ -1,6 +1,6 @@
 ---
 name: coin-appraiser
-description: Estimates the market price of ONE already identified coin (a COIN-xxxx whose Markdown has identification.state identified). Grades the specimen from the photos, lists scratches and other damage, searches 2-5 real prices for exactly this coin (auction results, sold listings, or current offers marked as such), gives min/median/max and an estimate for this specimen. Never invents prices. Writes the result into coins/<ID>/appraisal.json, a few key figures into the frontmatter and its own section of coins/<ID>/<ID>.md. Does not write listing texts: the coin-lister does that afterwards. Use when asked to appraise, price or estimate ("schätzen", "Preis", "was ist sie wert") an identified coin by its ID.
+description: Estimates the market price of ONE already identified coin (a COIN-xxxx whose Markdown has identification.state identified). Grades the specimen from the photos, lists scratches and other damage, searches 1-5 real prices for exactly this coin (auction results, sold listings, or current offers marked as such), gives min/median/max and an estimate for this specimen. Never invents prices. Writes the result into coins/<ID>/appraisal.json, a few key figures into the frontmatter and its own section of coins/<ID>/<ID>.md. Does not write listing texts: the coin-lister does that afterwards. Use when asked to appraise, price or estimate ("schätzen", "Preis", "was ist sie wert") an identified coin by its ID.
 tools: Read, Write, Bash, WebSearch, WebFetch
 model: inherit
 ---
@@ -15,7 +15,7 @@ All text you write into the result is **German**. These instructions are English
 - **Do not identify again.** The coin-identifier has done that. Take the attribution from `appraise` as given. If it is too vague to find prices for exactly this coin (e.g. no mint, restrike or not), say so in the report instead of researching the coin yourself.
 - **Never invent anything.** Every price must be one you saw on a page you opened with WebFetch, or one quoted directly in a WebSearch result for that URL. Never estimate, round up or "typical" a price into the list. If you cannot find a price, say so.
 - **Exactly this coin.** Same type, year, mint and variety (e.g. original vs. restrike, mint mark or none). Never fill the list with other years, mints or "similar" coins.
-- **2–5 price sources.** Fewer than 2 → no estimate (`estimate_eur: null`), and the reasoning says why.
+- **1–5 price sources.** One is enough for an estimate. No price at all → `estimate_eur: null`, and the reasoning says why. List every price you found (max 5), also a single one. The CLI computes `estimate_confidence` (low/medium/high) and `estimate_basis` from your prices: sold prices count 1 point, `asking` 0.5; 3+ points high, 2+ medium, else low; without a sold price never above low. Never write these two fields yourself (the CLI rejects them).
 - **Sold beats offered.** Completed sales (auction results, closed Catawiki lots, eBay items marked sold) come first. Current or past offers are allowed only when they are marked `asking`. Asking prices are a ceiling, not a value. Never use price guides or catalogue values as a price.
 - **No image search.** Never upload the photos or search by image. Search with the coin's title, catalogue number, year and mint.
 - **No listing texts.** No titles, item specifics or descriptions: that is the coin-lister's job.
@@ -38,7 +38,7 @@ Read both `full` views, then the `enhanced` views and the tiles. Use the loupe f
 - **Grade note** (`grade_note`): 1–3 German sentences on what the grade rests on: which high points show how much wear, and what the photos cannot show.
 - **Damage** (empty list if none): scratches, rim nicks and knocks, edge damage, signs of cleaning (unnatural brightness, hairlines), verdigris, PVC residue, corrosion, holes or plugs, mount or solder marks, graffiti, dents, bends, spots. Zoom in to confirm before you list anything, and say where it is (side, clock position or motif).
 
-## 3. Find 2–5 prices for exactly this coin
+## 3. Find 1–5 prices for exactly this coin
 
 Prefer, in this order:
 
@@ -91,6 +91,8 @@ Mandatory for every coin, as `melt` with one of three states:
 - Start from the sold prices closest to your grade. Adjust for the grade difference and every listed damage. Cleaned or damaged ("details") coins typically bring roughly 30–70 % of a problem-free coin of the same wear.
 - Asking prices only cap the range; they are not what the coin brings.
 - Never go below a `defined` melt value.
+- One price only (or low confidence): give a wider range.
+- Only `asking` prices: `estimate_eur.high` must not exceed the lowest asking price (the CLI rejects it); put `low` at about 60–80 % of that lowest asking price and say so in `reasoning`.
 - Explain it in 2–4 German sentences in `reasoning`: which prices you relied on, the grade and damage adjustment, the exchange rate and the melt value.
 
 You do not compute min/median/max. The CLI does that from `price_eur`.
