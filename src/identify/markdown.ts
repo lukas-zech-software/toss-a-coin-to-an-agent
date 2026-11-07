@@ -4,15 +4,14 @@
 // Prices are not written here: the coin-appraiser has its own section (appraisal.ts).
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import YAML from "yaml";
 import { isoLocal } from "../store/markdown.ts";
 import type { Side } from "../types.ts";
 import { MIN_CONFIDENCE_EXCLUSIVE } from "./result.ts";
 import type { IdentifyResult, Source } from "./result.ts";
+import { joinFrontmatter, replaceSection, splitFrontmatter } from "./record.ts";
 
 export const START_MARKER = "<!-- coin-identifier:start -->";
 export const END_MARKER = "<!-- coin-identifier:end -->";
-const FRONTMATTER = /^---\n([\s\S]*?\n)---\n/;
 
 type Images = Record<Side, string>;
 
@@ -21,9 +20,7 @@ export function applyIdentification(
   r: IdentifyResult,
   now: Date,
 ): string {
-  const m = FRONTMATTER.exec(md);
-  if (!m) throw new Error("Kein Frontmatter in der Markdown-Datei");
-  const fm = YAML.parse(m[1]!) as Record<string, unknown>;
+  const { fm, body } = splitFrontmatter(md);
   const images = imageNames(fm, r.id);
 
   fm.described = true;
@@ -31,7 +28,10 @@ export function applyIdentification(
   delete fm.valuation; // written by older identifier versions; prices now live in `appraisal`
 
   const section = `${START_MARKER}\n\n${renderSection(r, now, images)}\n${END_MARKER}`;
-  return `---\n${YAML.stringify(fm)}---\n${replaceSection(md.slice(m[0].length), section)}`;
+  return joinFrontmatter(
+    fm,
+    replaceSection(body, START_MARKER, END_MARKER, section),
+  );
 }
 
 /** Applies the result to `<coinDir>/<id>.md` in place and returns its path. */
@@ -46,14 +46,6 @@ export async function writeIdentification(
     applyIdentification(await readFile(path, "utf8"), r, now),
   );
   return path;
-}
-
-function replaceSection(body: string, section: string): string {
-  const s = body.indexOf(START_MARKER),
-    e = body.indexOf(END_MARKER);
-  if (s >= 0 && e > s)
-    return body.slice(0, s) + section + body.slice(e + END_MARKER.length);
-  return `${body.endsWith("\n") ? body : `${body}\n`}\n${section}\n`;
 }
 
 function imageNames(fm: Record<string, unknown>, id: string): Images {

@@ -3,9 +3,9 @@
 // Markdown section, so re-running the identifier never removes it (and vice versa).
 // The coin-lister later copies it into the listing folder (src/listing/format.ts).
 import { readFile, writeFile } from "node:fs/promises";
-import YAML from "yaml";
 import { isoLocal } from "../store/markdown.ts";
 import { cell, href, text } from "./markdown.ts";
+import { joinFrontmatter, replaceSection, splitFrontmatter } from "./record.ts";
 
 export const START_MARKER = "<!-- coin-appraiser:start -->";
 export const END_MARKER = "<!-- coin-appraiser:end -->";
@@ -120,15 +120,12 @@ export function validateAppraisal(raw: unknown): AppraisalValidation {
     : { ok: true, value: raw as Appraisal };
 }
 
-const FRONTMATTER = /^---\n([\s\S]*?\n)---\n/;
 const money = (v: number, currency = "EUR"): string =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(v);
 
 /** Adds or replaces the appraisal; refuses coins that are not identified. */
 export function applyAppraisal(md: string, a: Appraisal, now: Date): string {
-  const m = FRONTMATTER.exec(md);
-  if (!m) throw new Error("Kein Frontmatter in der Markdown-Datei");
-  const fm = YAML.parse(m[1]!) as Record<string, unknown>;
+  const { fm, body } = splitFrontmatter(md);
   const ident = fm.identification as Record<string, unknown> | undefined;
   if (ident?.state !== "identified")
     throw new Error(
@@ -150,14 +147,10 @@ export function applyAppraisal(md: string, a: Appraisal, now: Date): string {
     prices: a.prices,
   };
   const section = `${START_MARKER}\n\n${render(a, all, now)}\n${END_MARKER}`;
-  const body = md.slice(m[0].length);
-  const s = body.indexOf(START_MARKER),
-    e = body.indexOf(END_MARKER);
-  const next =
-    s >= 0 && e > s
-      ? body.slice(0, s) + section + body.slice(e + END_MARKER.length)
-      : `${body.endsWith("\n") ? body : `${body}\n`}\n${section}\n`;
-  return `---\n${YAML.stringify(fm)}---\n${next}`;
+  return joinFrontmatter(
+    fm,
+    replaceSection(body, START_MARKER, END_MARKER, section),
+  );
 }
 
 export async function writeAppraisal(
