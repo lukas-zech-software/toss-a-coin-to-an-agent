@@ -23,6 +23,7 @@ import type { Scale } from "../identify/views.ts";
 import { numista, numistaUsage, RESERVE } from "../identify/numista.ts";
 import {
   meltErrors,
+  estimateQuality,
   priceStats,
   validateAppraisal,
   writeAppraisal,
@@ -236,8 +237,8 @@ async function writeAppraisalCmd(
   deps.out(
     `${id}: ${
       a.estimate_eur && s
-        ? `Preise Min ${s.min} € · Median ${s.median} € · Max ${s.max} € (n = ${s.n}); Schätzung ${a.estimate_eur.low}–${a.estimate_eur.high} €`
-        : "keine Schätzung (zu wenige belegte Preise)"
+        ? `Preise Min ${s.min} € · Median ${s.median} € · Max ${s.max} € (n = ${s.n}); Schätzung ${a.estimate_eur.low}–${a.estimate_eur.high} € (Vertrauen ${estimateQuality(a.prices)?.confidence ?? "–"})`
+        : "keine Schätzung (keine Preise gefunden)"
     }\nGeschrieben: ${coin.mdPath}\nAngebotstexte: als Nächstes den coin-lister laufen lassen`,
   );
   return 0;

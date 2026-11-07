@@ -7,6 +7,7 @@ import {
   applyAppraisal,
   END_MARKER,
   meltErrors,
+  estimateQuality,
   priceStats,
   START_MARKER,
   storeAppraisal,
@@ -88,7 +89,7 @@ const variants = (): Appraisal[] => [
   sample(),
   { ...sample(), melt: { state: "below_threshold" } },
   { ...sample(), melt: { state: "unknown", reason: "Feingehalt unbekannt" } },
-  { ...sample(), prices: [price(30)], estimate_eur: null },
+  { ...sample(), prices: [price(30)], estimate_eur: { low: 25, high: 35 } },
   { ...sample(), prices: [], estimate_eur: null },
 ];
 
@@ -107,10 +108,40 @@ test("a valid appraisal passes; rule breaks are all reported", () => {
   assert.match(errors, /unter dem Metallwert/);
 });
 
-test("fewer than two prices means no estimate", () => {
+test("one price is enough for an estimate", () => {
   const one = { ...sample(), prices: [price(30)] };
-  assert.equal(validateAppraisal(one).ok, false);
-  assert.equal(validateAppraisal({ ...one, estimate_eur: null }).ok, true);
+  assert.equal(validateAppraisal(one).ok, true);
+  assert.equal(validateAppraisal({ ...one, estimate_eur: null }).ok, false);
+  const none = { ...sample(), prices: [] };
+  assert.equal(validateAppraisal(none).ok, false);
+  assert.equal(validateAppraisal({ ...none, estimate_eur: null }).ok, true);
+});
+
+test("estimateQuality: points, cap and basis", () => {
+  const q = (...t: string[]) =>
+    estimateQuality(t.map((price_type) => ({ price_type }) as never));
+  const A = "asking";
+  assert.equal(q(), null);
+  assert.deepEqual(q("hammer"), { confidence: "low", basis: "sold" });
+  assert.equal(q("hammer", "sold")?.confidence, "medium");
+  assert.equal(q("hammer", A, A, A)?.confidence, "medium");
+  assert.equal(q("hammer", A, A, A, A)?.confidence, "high");
+  assert.deepEqual(q(A, A, A, A), { confidence: "low", basis: "asking_only" });
+});
+
+test("asking-only estimate stays under the lowest asking price; CLI-only fields are rejected", () => {
+  const asks = {
+    ...sample(),
+    prices: [price(40, "asking"), price(50, "asking")],
+  };
+  const r = validateAppraisal({ ...asks, estimate_eur: { low: 25, high: 45 } });
+  assert.match(r.ok ? "" : r.errors.join(), /niedrigsten Angebotspreis/);
+  assert.equal(
+    validateAppraisal({ ...asks, estimate_eur: { low: 25, high: 40 } }).ok,
+    true,
+  );
+  const c = validateAppraisal({ ...sample(), estimate_confidence: "high" });
+  assert.match(c.ok ? "" : c.errors.join(), /berechnet die CLI/);
 });
 
 test("only identified coins are appraised", () => {
@@ -124,6 +155,8 @@ test("slim frontmatter", () => {
   assert.deepEqual(fmOf(apply(MD("identified"))).appraisal, {
     checked_at: CHECKED,
     estimate_eur: { low: 25, high: 35 },
+    estimate_confidence: "low",
+    estimate_basis: "sold",
     melt_state: "defined",
     melt_eur: 20,
     prices: { sold: 1, asking: 1, min_eur: 30, median_eur: 35, max_eur: 40 },
@@ -147,7 +180,7 @@ test("section follows the template", () => {
     "Gefunden wurden 2 Preise für genau diese Münze, davon 1 aus abgeschlossenen Verkäufen und 1 aus Angeboten ohne bekannten Verkauf.",
     `Sie liegen zwischen ${money(30)} und ${money(40)}, im Median bei ${money(35)}.`,
     `Der Metallwert beträgt ${money(20)} und ist die Untergrenze jeder Schätzung.`,
-    `### Schätzung\n\nFür dieses Exemplar: **${money(25)} – ${money(35)}**.\n\nBegründung.\n`,
+    `### Schätzung\n\nFür dieses Exemplar: **${money(25)} – ${money(35)}**.\n\nVertrauen in die Schätzung: niedrig (2 Preise, davon 1 verkauft).\n\nBegründung.\n`,
     "_Geschätzt am 31.10.2026 um 13:56 Uhr vom Agenten coin-appraiser._",
   ]);
   assert.ok(md.indexOf(START_MARKER) > md.indexOf("coin-identifier:end"));
@@ -174,19 +207,6 @@ test("metal value sentences", () => {
 });
 
 test("no estimate, no prices", () => {
-  const one = apply(MD("identified"), {
-    ...sample(),
-    prices: [price(30)],
-    estimate_eur: null,
-  });
-  includesAll(section(one), [
-    "Gefunden wurde 1 Preis für genau diese Münze, davon 1 aus abgeschlossenen Verkäufen und 0 aus Angeboten ohne bekannten Verkauf.",
-    "Keine Schätzung: weniger als 2 belegte Preise für genau diese Münze gefunden.",
-  ]);
-  assert.ok(!section(one).includes("Sie liegen zwischen"));
-  assert.deepEqual(fmOf(one).appraisal.prices, { sold: 1, asking: 0 });
-  assert.equal("estimate_eur" in fmOf(one).appraisal, false);
-
   const none = apply(MD("identified"), {
     ...sample(),
     prices: [],
@@ -196,6 +216,7 @@ test("no estimate, no prices", () => {
     "Für genau diese Münze wurden keine Preise gefunden.",
   ]);
   assert.ok(!section(none).includes("| # | Datum"));
+  includesAll(section(none), ["Keine Schätzung: keine Preise"]);
 });
 
 test("every frontmatter value appears in the section", () => {

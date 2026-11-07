@@ -4,7 +4,12 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
-import type { Appraisal, PriceStats } from "./appraisal.ts";
+import type {
+  Appraisal,
+  EstimateBasis,
+  EstimateConfidence,
+  PriceStats,
+} from "./appraisal.ts";
 import type { IdentifyResult } from "./result.ts";
 
 export const IDENTIFICATION_FILE = "identification.json";
@@ -101,6 +106,9 @@ export type StoredAppraisal = Appraisal & {
   format: typeof APPRAISAL_FORMAT;
   checked_at: string;
   range: PriceStats | null;
+  /** Computed by the CLI; absent in files written before they existed. */
+  estimate_confidence?: EstimateConfidence | null;
+  estimate_basis?: EstimateBasis | null;
   sold: number;
   asking: number;
 };

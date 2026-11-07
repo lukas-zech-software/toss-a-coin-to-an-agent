@@ -20,7 +20,25 @@ import type { PreciousMetal } from "./result.ts";
 
 export const START_MARKER = "<!-- coin-appraiser:start -->";
 export const END_MARKER = "<!-- coin-appraiser:end -->";
-export const PRICES = { min: 2, max: 5 } as const;
+export const PRICES = { min: 1, max: 5 } as const;
+
+export type EstimateConfidence = "low" | "medium" | "high";
+export type EstimateBasis = "sold" | "asking_only";
+
+/**
+ * Confidence and basis of an estimate, from the prices alone: a sold price counts 1 point, an asking price 0.5.
+ * 3+ points = high, 2+ = medium, else low; without any sold price never above low.
+ */
+export function estimateQuality(
+  prices: readonly Pick<PricePoint, "price_type">[],
+): { confidence: EstimateConfidence; basis: EstimateBasis } | null {
+  if (!prices.length) return null;
+  const sold = prices.filter((p) => p.price_type !== "asking").length;
+  const points = sold + (prices.length - sold) * 0.5;
+  const confidence =
+    sold === 0 || points < 2 ? "low" : points < 3 ? "medium" : "high";
+  return { confidence, basis: sold === 0 ? "asking_only" : "sold" };
+}
 /**
  * hammer = without premium; incl_premium = with buyer's premium; fixed_price = sold at a fixed price;
  * sold = sold, format not visible; asking = listed for sale, no sale known.
@@ -100,6 +118,8 @@ export function validateAppraisal(
     err("damage muss eine Liste sein (leer, wenn keine Schäden)");
   if (!opts.legacy && !isText(raw.grade_note))
     err("grade_note fehlt oder ist leer");
+  for (const k of ["estimate_confidence", "estimate_basis"])
+    if (k in raw) err(`${k} berechnet die CLI – nicht ins Ergebnis schreiben`);
   if ("melt_eur" in raw)
     err("melt_eur gibt es nicht mehr – melt: { state, … } verwenden");
   const melt = raw.melt;
@@ -153,9 +173,18 @@ export function validateAppraisal(
   if (n >= PRICES.min && !estimateOk)
     err("estimate_eur muss {low, high} mit 0 < low <= high sein");
   if (n < PRICES.min && e !== null)
-    err(
-      `estimate_eur muss null sein: unter ${PRICES.min} Preisquellen gibt es keine Schätzung (gefunden: ${n})`,
-    );
+    err("estimate_eur muss null sein: ohne Preis gibt es keine Schätzung");
+  if (
+    estimateOk &&
+    prices?.length &&
+    prices.every((p) => isObj(p) && p.price_type === "asking")
+  ) {
+    const lowest = Math.min(...prices.map((p) => Number((p as Obj).price_eur)));
+    if (Number.isFinite(lowest) && (e.high as number) > lowest)
+      err(
+        `estimate_eur.high (${String(e.high)}) liegt über dem niedrigsten Angebotspreis (${lowest}) – ohne Verkaufspreis ist ein Angebotspreis die Obergrenze`,
+      );
+  }
   if (estimateOk && meltEur !== null && (e.low as number) < meltEur)
     err(
       `estimate_eur.low (${String(e.low)}) liegt unter dem Metallwert (${meltEur}) – der Metallwert ist die Untergrenze`,
@@ -202,10 +231,10 @@ export function storeAppraisal(
   // set after the spread: a result copied from an old appraisal.json must not bring its own
   stored.format = APPRAISAL_FORMAT;
   stored.checked_at = checkedAt;
-  stored.range =
-    a.prices.length >= PRICES.min
-      ? priceStats(a.prices.map((p) => p.price_eur))
-      : null;
+  stored.range = priceStats(a.prices.map((p) => p.price_eur));
+  const q = a.estimate_eur ? estimateQuality(a.prices) : null;
+  stored.estimate_confidence = q?.confidence ?? null;
+  stored.estimate_basis = q?.basis ?? null;
   stored.sold = sold;
   stored.asking = a.prices.length - sold;
   return stored;
@@ -251,6 +280,11 @@ function appraisalFrontmatter(a: StoredAppraisal): Record<string, unknown> {
       low: cents(a.estimate_eur.low),
       high: cents(a.estimate_eur.high),
     };
+  const q = a.estimate_eur ? estimateQuality(a.prices) : null;
+  if (q) {
+    fm.estimate_confidence = q.confidence;
+    fm.estimate_basis = q.basis;
+  }
   fm.melt_state = a.melt.state;
   if (a.melt.state === "defined") fm.melt_eur = cents(a.melt.eur);
   fm.prices = {
@@ -302,6 +336,24 @@ function pricesParagraph(a: StoredAppraisal): string {
   return `${found}, davon ${a.sold} aus abgeschlossenen Verkäufen und ${a.asking} aus Angeboten ohne bekannten Verkauf.${range} ${meltSentence(a.melt)}`;
 }
 
+const CONFIDENCE_LABEL: Record<EstimateConfidence, string> = {
+  low: "niedrig",
+  medium: "mittel",
+  high: "hoch",
+};
+
+function qualitySentence(a: StoredAppraisal): string {
+  const q = a.estimate_eur ? estimateQuality(a.prices) : null;
+  if (!q) return "";
+  const n = a.prices.length;
+  const sold = n - a.asking;
+  const tail =
+    q.basis === "asking_only"
+      ? " Nur Angebotspreise, daher eine vorsichtige Schätzung unter dem niedrigsten Angebot."
+      : "";
+  return `Vertrauen in die Schätzung: ${CONFIDENCE_LABEL[q.confidence]} (${n} ${n === 1 ? "Preis" : "Preise"}, davon ${sold} verkauft).${tail}\n`;
+}
+
 function render(a: StoredAppraisal): string {
   const note = a.grade_note.trim() ? ` ${text(a.grade_note)}` : "";
   const parts = [
@@ -326,7 +378,8 @@ function render(a: StoredAppraisal): string {
   parts.push(
     a.estimate_eur
       ? `Für dieses Exemplar: **${money(cents(a.estimate_eur.low))} – ${money(cents(a.estimate_eur.high))}**.\n`
-      : `Keine Schätzung: weniger als ${PRICES.min} belegte Preise für genau diese Münze gefunden.\n`,
+      : "Keine Schätzung: keine Preise für genau diese Münze gefunden.\n",
+    ...(qualitySentence(a) ? [qualitySentence(a)] : []),
     `${text(a.reasoning)}\n`,
     `_Geschätzt am ${dateTimeDe(a.checked_at)} vom Agenten coin-appraiser._\n`,
   );

@@ -6,7 +6,13 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { isoLocal } from "../store/markdown.ts";
-import type { PricePoint, PriceStats } from "../identify/appraisal.ts";
+import { estimateQuality } from "../identify/appraisal.ts";
+import type {
+  EstimateBasis,
+  EstimateConfidence,
+  PricePoint,
+  PriceStats,
+} from "../identify/appraisal.ts";
 import type {
   StoredAppraisal,
   StoredIdentification,
@@ -65,6 +71,8 @@ export type Listing = {
   price: {
     currency: "EUR";
     estimate: { low: number; high: number } | null;
+    estimate_confidence: EstimateConfidence | null;
+    estimate_basis: EstimateBasis | null;
     melt: number | null;
     range: PriceStats | null;
     sold: number;
@@ -183,6 +191,10 @@ export function buildListing(
     price: {
       currency: "EUR",
       estimate: a.estimate_eur,
+      estimate_confidence:
+        (a.estimate_eur && estimateQuality(a.prices)?.confidence) || null,
+      estimate_basis:
+        (a.estimate_eur && estimateQuality(a.prices)?.basis) || null,
       melt: a.melt.state === "defined" ? a.melt.eur : null,
       range: a.range,
       sold: a.sold,

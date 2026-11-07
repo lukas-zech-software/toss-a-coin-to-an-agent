@@ -2,10 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  parseGetConfig,
-  pickCaptureFiles,
-} from "../../src/camera/gphoto2.ts";
+import { parseGetConfig, pickCaptureFiles } from "../../src/camera/gphoto2.ts";
 import {
   BASELINE,
   invalidSettings,
