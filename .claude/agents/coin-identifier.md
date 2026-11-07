@@ -199,7 +199,7 @@ For `unidentifiable`:
 - `confidence`: that of the best candidate (≤ 90).
 - `observations` stays mandatory.
 
-Then run `npm run -s identify -- write <ID> tmp/identify/<ID>/result.json`. If it lists errors, the Markdown was not changed: fix the JSON and run it again. Never work around a rule by weakening the content. For example, do not raise a confidence to pass the check.
+Then run `npm run -s identify -- write <ID> tmp/identify/<ID>/result.json`. It writes `identification.json`, the frontmatter and your section as described in `docs/coin-record-format.md`. If it lists errors, the Markdown was not changed: fix the JSON and run it again. Never work around a rule by weakening the content. For example, do not raise a confidence to pass the check.
 
 ## Final report
 

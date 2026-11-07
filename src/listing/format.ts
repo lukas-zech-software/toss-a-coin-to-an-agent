@@ -7,7 +7,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { isoLocal } from "../store/markdown.ts";
 import type { PricePoint, PriceStats } from "../identify/appraisal.ts";
-import type { StoredIdentification } from "../identify/record.ts";
+import type {
+  StoredAppraisal,
+  StoredIdentification,
+} from "../identify/record.ts";
 import type { Side } from "../types.ts";
 
 export const LISTING_DIR = "listing";
@@ -134,8 +137,7 @@ const stamp = (v: unknown): string | null => (typeof v === "string" ? v : null);
 export type ListingSource = {
   images: Record<Side, string>;
   identification: StoredIdentification;
-  /** Frontmatter `appraisal`. */
-  appraisal: Obj | undefined;
+  appraisal: StoredAppraisal | undefined;
 };
 
 /** Combines the lister's texts with the coin's identification and appraisal. */
@@ -162,15 +164,15 @@ export function buildListing(
     format: LISTING_FORMAT,
     id: t.id,
     created_at: isoLocal(now),
-    identification_checked_at: stamp(ident.checked_at),
-    appraisal_checked_at: stamp(a.checked_at),
+    identification_checked_at: ident.checked_at,
+    appraisal_checked_at: a.checked_at,
     title: t.title,
     summary: t.summary,
     description: { de: descriptionFile("de"), en: descriptionFile("en") },
     specifics: t.specifics,
     condition: {
-      grade: String(a.grade),
-      damage: (a.damage ?? []) as string[],
+      grade: a.grade,
+      damage: a.damage,
       certified: false,
     },
     coin: {
@@ -180,13 +182,13 @@ export function buildListing(
     images: { obverse: `../${obverse}`, reverse: `../${reverse}` },
     price: {
       currency: "EUR",
-      estimate: (a.estimate ?? null) as Listing["price"]["estimate"],
-      melt: (a.melt_eur ?? null) as number | null,
-      range: (a.range ?? null) as PriceStats | null,
-      sold: Number(a.sold ?? 0),
-      asking: Number(a.asking ?? 0),
-      reasoning: String(a.reasoning ?? ""),
-      sources: (a.prices ?? []) as PricePoint[],
+      estimate: a.estimate_eur,
+      melt: a.melt.state === "defined" ? a.melt.eur : null,
+      range: a.range,
+      sold: a.sold,
+      asking: a.asking,
+      reasoning: a.reasoning,
+      sources: a.prices,
     },
     sources: ident.sources.map(({ title, url }) => ({ title, url })),
   };

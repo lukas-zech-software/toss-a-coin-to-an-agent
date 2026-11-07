@@ -123,7 +123,7 @@ Write the JSON to `appraisal_path`. The example shows the format only; its numbe
 }
 ```
 
-Then run the `write` command from the intake. If it lists errors, the Markdown was not changed: fix the JSON and run it again. Never weaken the content to pass a check (e.g. do not add a price you did not see).
+Then run the `write` command from the intake. It writes `appraisal.json`, the frontmatter and your section as described in `docs/coin-record-format.md`. If it lists errors, the Markdown was not changed: fix the JSON and run it again. Never weaken the content to pass a check (e.g. do not add a price you did not see).
 
 ## Final report
 

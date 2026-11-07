@@ -4,6 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
 import {
+  buildListing,
   readListing,
   startPrice,
   validateTexts,
@@ -63,6 +64,21 @@ test("the listing combines texts, identification and appraisal; a newer appraisa
 
   const reappraised = fmOf(appraisedMd(new Date(2026, 11, 1)));
   await assert.rejects(readListing(dir, reappraised), /veraltet/);
+});
+
+test("melt is null unless defined", () => {
+  for (const melt of [
+    { state: "below_threshold" },
+    { state: "unknown", reason: "Feingehalt unbekannt" },
+  ] as const) {
+    const src = listingSource();
+    src.appraisal = { ...src.appraisal!, melt };
+    assert.equal(
+      buildListing(texts(), src, new Date(2026, 10, 1)).price.melt,
+      null,
+    );
+  }
+  assert.equal(listingSample().price.melt, 20);
 });
 
 test("no listing without an appraisal", async () => {

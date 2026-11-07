@@ -9,7 +9,7 @@ import {
   writeIdentification,
 } from "../identify/markdown.ts";
 import { validateResult } from "../identify/result.ts";
-import { readIdentification } from "../identify/record.ts";
+import { readAppraisal, readIdentification } from "../identify/record.ts";
 import type { StoredIdentification } from "../identify/record.ts";
 import type { Side } from "../types.ts";
 import {
@@ -228,7 +228,7 @@ async function writeAppraisalCmd(
   }
   const coin = await loadCoin(deps.coinsRoot, id);
   const a = v.value;
-  await writeAppraisal(coin.mdPath, a, deps.now?.() ?? new Date());
+  await writeAppraisal(coin.dir, a, deps.now?.() ?? new Date());
   const s = priceStats(a.prices.map((p) => p.price_eur));
   deps.out(
     `${id}: ${
@@ -253,6 +253,7 @@ async function describe(id: string, deps: IdentifyDeps): Promise<number> {
     return 1;
   }
   const stored = await readIdentification(coin.dir, id);
+  const appraised = await readAppraisal(coin.dir, id);
   const md = await readFile(coin.mdPath, "utf8");
   const s = md.indexOf(IDENT_START),
     e = md.indexOf(IDENT_END);
@@ -263,7 +264,7 @@ async function describe(id: string, deps: IdentifyDeps): Promise<number> {
       {
         id,
         coin: coinFacts(stored),
-        condition: { grade: a.grade ?? null, damage: a.damage ?? [] },
+        condition: { grade: appraised.grade, damage: appraised.damage },
         identification_section:
           s >= 0 && e > s ? md.slice(s + IDENT_START.length, e).trim() : "",
         texts_path: join(dir, "texts.json"),
@@ -312,8 +313,9 @@ async function writeListingCmd(
     {
       images,
       identification: await readIdentification(coin.dir, id),
-      appraisal: coin.frontmatter.appraisal as
-        Record<string, unknown> | undefined,
+      appraisal: coin.frontmatter.appraisal
+        ? await readAppraisal(coin.dir, id)
+        : undefined,
     },
     t,
     descriptions,

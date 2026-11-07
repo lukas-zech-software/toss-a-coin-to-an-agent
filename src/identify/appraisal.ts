@@ -1,11 +1,21 @@
 // The coin-appraiser agent's result: a market price estimate for an already identified coin.
-// Validated by `npm run identify -- write-appraisal`, then written into frontmatter `appraisal` and its own
-// Markdown section, so re-running the identifier never removes it (and vice versa).
-// The coin-lister later copies it into the listing folder (src/listing/format.ts).
+// Validated by `npm run identify -- write-appraisal`, then written into `appraisal.json`, a slim frontmatter
+// `appraisal` and its own Markdown section (record spec §3–§6), so re-running the identifier never removes it
+// (and vice versa). The coin-lister later copies it into the listing folder (src/listing/format.ts).
 import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { isoLocal } from "../store/markdown.ts";
 import { cell, href, text } from "./markdown.ts";
-import { joinFrontmatter, replaceSection, splitFrontmatter } from "./record.ts";
+import {
+  APPRAISAL_FILE,
+  APPRAISAL_FORMAT,
+  dateTimeDe,
+  joinFrontmatter,
+  replaceSection,
+  splitFrontmatter,
+  writeRecordFile,
+} from "./record.ts";
+import type { StoredAppraisal } from "./record.ts";
 import type { PreciousMetal } from "./result.ts";
 
 export const START_MARKER = "<!-- coin-appraiser:start -->";
@@ -178,49 +188,85 @@ export function meltErrors(
   return [];
 }
 
-const money = (v: number, currency = "EUR"): string =>
-  new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(v);
+/** The result as kept in `appraisal.json`, with the price statistics the CLI computes. */
+export function storeAppraisal(
+  a: Appraisal,
+  checkedAt: string,
+): StoredAppraisal {
+  const sold = a.prices.filter((p) => p.price_type !== "asking").length;
+  return {
+    format: APPRAISAL_FORMAT,
+    checked_at: checkedAt,
+    ...a,
+    range:
+      a.prices.length >= PRICES.min
+        ? priceStats(a.prices.map((p) => p.price_eur))
+        : null,
+    sold,
+    asking: a.prices.length - sold,
+  };
+}
+
+/** Frontmatter and text show the same precision (record spec §5). */
+const cents = (v: number): number => Number(v.toFixed(2));
 
 /** Adds or replaces the appraisal; refuses coins that are not identified. */
-export function applyAppraisal(md: string, a: Appraisal, now: Date): string {
+export function applyAppraisal(md: string, a: StoredAppraisal): string {
   const { fm, body } = splitFrontmatter(md);
   const ident = fm.identification as Record<string, unknown> | undefined;
   if (ident?.state !== "identified")
     throw new Error(
       `${a.id}: nicht bestimmt – geschätzt werden nur Münzen mit identification.state identified (erst den coin-identifier laufen lassen)`,
     );
-  const all = priceStats(a.prices.map((p) => p.price_eur));
-  const sold = a.prices.filter((p) => p.price_type !== "asking");
-  fm.appraisal = {
-    checked_at: isoLocal(now),
-    currency: "EUR",
-    grade: a.grade,
-    damage: a.damage,
-    range: a.prices.length >= PRICES.min ? all : null,
-    sold: sold.length,
-    asking: a.prices.length - sold.length,
-    melt_eur: a.melt.state === "defined" ? a.melt.eur : null, // transitional, until appraisal.json
-    estimate: a.estimate_eur,
-    reasoning: a.reasoning,
-    prices: a.prices,
-  };
-  const section = `${START_MARKER}\n\n${render(a, all, now)}\n${END_MARKER}`;
+  fm.appraisal = appraisalFrontmatter(a);
+  const section = `${START_MARKER}\n\n${render(a)}\n${END_MARKER}`;
   return joinFrontmatter(
     fm,
     replaceSection(body, START_MARKER, END_MARKER, section),
   );
 }
 
+/** Writes `appraisal.json`, then `<coinDir>/<id>.md` in place; returns the Markdown path. */
 export async function writeAppraisal(
-  mdPath: string,
+  coinDir: string,
   a: Appraisal,
   now: Date = new Date(),
-): Promise<void> {
-  await writeFile(
-    mdPath,
-    applyAppraisal(await readFile(mdPath, "utf8"), a, now),
-  );
+): Promise<string> {
+  const path = join(coinDir, `${a.id}.md`);
+  const stored = storeAppraisal(a, isoLocal(now));
+  const md = applyAppraisal(await readFile(path, "utf8"), stored); // throws before anything is written
+  await writeRecordFile(coinDir, APPRAISAL_FILE, stored);
+  await writeFile(path, md);
+  return path;
 }
+
+function appraisalFrontmatter(a: StoredAppraisal): Record<string, unknown> {
+  const fm: Record<string, unknown> = { checked_at: a.checked_at };
+  if (a.estimate_eur)
+    fm.estimate_eur = {
+      low: cents(a.estimate_eur.low),
+      high: cents(a.estimate_eur.high),
+    };
+  fm.melt_state = a.melt.state;
+  if (a.melt.state === "defined") fm.melt_eur = cents(a.melt.eur);
+  fm.prices = {
+    sold: a.sold,
+    asking: a.asking,
+    ...(a.range
+      ? {
+          min_eur: a.range.min,
+          median_eur: a.range.median,
+          max_eur: a.range.max,
+        }
+      : {}),
+  };
+  return fm;
+}
+
+const money = (v: number, currency = "EUR"): string =>
+  new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(v);
+/** One list item: a single line. */
+const item = (s: string): string => text(s).replace(/\s*\n\s*/g, " ");
 
 const LABEL: Record<AppraisalPriceType, string> = {
   hammer: "Zuschlag",
@@ -230,15 +276,41 @@ const LABEL: Record<AppraisalPriceType, string> = {
   asking: "Angebot (nicht verkauft)",
 };
 
-function render(a: Appraisal, all: PriceStats | null, now: Date): string {
+function meltSentence(melt: Melt): string {
+  if (melt.state === "defined")
+    return `Der Metallwert beträgt ${money(cents(melt.eur))} und ist die Untergrenze jeder Schätzung.`;
+  if (melt.state === "below_threshold")
+    return "Der Metallwert ist nicht bestimmt – unter Schwelle: die Münze enthält kein Gold, Silber, Platin oder Palladium.";
+  return `Der Metallwert ist nicht bestimmbar: ${item(melt.reason).replace(/\.$/, "")}. Die Schätzung hat daher keine Untergrenze aus dem Metallwert.`;
+}
+
+function pricesParagraph(a: StoredAppraisal): string {
+  const n = a.prices.length;
+  if (!n)
+    return `Für genau diese Münze wurden keine Preise gefunden. ${meltSentence(a.melt)}`;
+  const found =
+    n === 1
+      ? "Gefunden wurde 1 Preis für genau diese Münze"
+      : `Gefunden wurden ${n} Preise für genau diese Münze`;
+  const range = a.range
+    ? ` Sie liegen zwischen ${money(a.range.min)} und ${money(a.range.max)}, im Median bei ${money(a.range.median)}.`
+    : "";
+  return `${found}, davon ${a.sold} aus abgeschlossenen Verkäufen und ${a.asking} aus Angeboten ohne bekannten Verkauf.${range} ${meltSentence(a.melt)}`;
+}
+
+function render(a: StoredAppraisal): string {
+  const note = a.grade_note.trim() ? ` ${text(a.grade_note)}` : "";
   const parts = [
     "## Marktpreis-Schätzung\n",
-    `**Erhaltung (nach Fotos):** ${text(a.grade)}  `,
-    `**Sichtbare Schäden:** ${a.damage.length ? a.damage.map(text).join("; ") : "keine erkennbar"}\n`,
+    `Nach den Fotos ist die Münze **${text(a.grade)}** erhalten.${note}\n`,
+    a.damage.length
+      ? `Sichtbare Schäden:\n\n${a.damage.map((d) => `- ${item(d)}`).join("\n")}\n`
+      : "Sichtbare Schäden: keine erkennbar.\n",
+    "### Vergleichspreise\n",
   ];
   if (a.prices.length)
     parts.push(
-      "| # | Datum | Plattform | Erhaltung | Preis | in EUR | Art | Link |",
+      "| # | Datum | Anbieter | Erhaltung | Preis | in EUR | Art | Link |",
       "| ---: | --- | --- | --- | ---: | ---: | --- | --- |",
       ...a.prices.map(
         (p, i) =>
@@ -246,20 +318,13 @@ function render(a: Appraisal, all: PriceStats | null, now: Date): string {
       ),
       "",
     );
-  if (a.melt.state === "defined")
-    parts.push(`**Metallwert (Untergrenze):** ${money(a.melt.eur)}  `);
-  if (all && a.estimate_eur)
-    parts.push(
-      `**Preisspanne der Quellen (n = ${all.n}):** Min ${money(all.min)} · Median ${money(all.median)} · Max ${money(all.max)}  `,
-      `**Schätzung für diese Münze:** ${money(a.estimate_eur.low)} – ${money(a.estimate_eur.high)}\n`,
-    );
-  else
-    parts.push(
-      `**Keine Schätzung:** weniger als ${PRICES.min} belegte Preise für genau diese Münze gefunden.\n`,
-    );
+  parts.push(`${pricesParagraph(a)}\n`, "### Schätzung\n");
   parts.push(
+    a.estimate_eur
+      ? `Für dieses Exemplar: **${money(cents(a.estimate_eur.low))} – ${money(cents(a.estimate_eur.high))}**.\n`
+      : `Keine Schätzung: weniger als ${PRICES.min} belegte Preise für genau diese Münze gefunden.\n`,
     `${text(a.reasoning)}\n`,
-    `_Geschätzt am ${isoLocal(now).slice(0, 10)} vom Agenten coin-appraiser._\n`,
+    `_Geschätzt am ${dateTimeDe(a.checked_at)} vom Agenten coin-appraiser._\n`,
   );
   return parts.join("\n");
 }

@@ -1,9 +1,15 @@
 import type { IdentifyResult } from "../../src/identify/result.ts";
-import YAML from "yaml";
-import { applyAppraisal } from "../../src/identify/appraisal.ts";
+import {
+  applyAppraisal,
+  storeAppraisal,
+} from "../../src/identify/appraisal.ts";
+import { isoLocal } from "../../src/store/markdown.ts";
 import type { Appraisal } from "../../src/identify/appraisal.ts";
 import { storeIdentification } from "../../src/identify/markdown.ts";
-import type { StoredIdentification } from "../../src/identify/record.ts";
+import type {
+  StoredAppraisal,
+  StoredIdentification,
+} from "../../src/identify/record.ts";
 import { buildListing } from "../../src/listing/format.ts";
 import type {
   Listing,
@@ -168,9 +174,15 @@ identification:
 # COIN-0001
 `;
 
+const APPRAISED_AT = new Date(2026, 9, 31, 12, 0, 0);
+
+/** appraisal.json of the coin in appraisedMd(). */
+export const appraisalSample = (now = APPRAISED_AT): StoredAppraisal =>
+  storeAppraisal(appraisal(), isoLocal(now));
+
 /** An identified and appraised coin's Markdown, as the CLIs leave it. */
-export const appraisedMd = (now = new Date(2026, 9, 31, 12, 0, 0)): string =>
-  applyAppraisal(IDENTIFIED_MD, appraisal(), now);
+export const appraisedMd = (now = APPRAISED_AT): string =>
+  applyAppraisal(IDENTIFIED_MD, appraisalSample(now));
 
 /** identification.json of the coin in appraisedMd(). */
 export const identificationSample = (): StoredIdentification =>
@@ -180,8 +192,7 @@ export const identificationSample = (): StoredIdentification =>
 export const listingSource = (): ListingSource => ({
   images: { av: "COIN-0001_av.jpg", rv: "COIN-0001_rv.jpg" },
   identification: identificationSample(),
-  appraisal: YAML.parse(/^---\n([\s\S]*?\n)---\n/.exec(appraisedMd())![1]!)
-    .appraisal,
+  appraisal: appraisalSample(),
 });
 
 /** The listing the coin-lister's write command builds for appraisedMd(). */

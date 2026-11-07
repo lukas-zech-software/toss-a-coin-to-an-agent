@@ -233,9 +233,16 @@ test("identifier → appraiser → lister: each step writes its part; the lister
     /coin-lister/,
   );
   assert.equal(existsSync(join(dir, "listing")), false);
+  assert.equal(existsSync(join(dir, "appraisal.json")), true);
+  const md = await readFile(join(dir, "COIN-0001.md"), "utf8");
+  assert.match(md, /melt_state: defined/);
+  assert.doesNotMatch(md, /price_type/);
 
   const intake = JSON.parse(await step(["describe", "COIN-0001"]));
-  assert.deepEqual(intake.condition.damage, appraisal().damage);
+  assert.deepEqual(intake.condition, {
+    grade: appraisal().grade,
+    damage: appraisal().damage,
+  });
   assert.match(intake.identification_section, /## Bestimmung/);
   assert.equal("views" in intake, false);
 
@@ -257,4 +264,6 @@ test("identifier → appraiser → lister: each step writes its part; the lister
   );
   assert.equal(listing.coin.title, identified().coin.title);
   assert.equal(listing.price.sources.length, 2);
+  assert.equal(listing.price.melt, 20);
+  assert.deepEqual(listing.price.estimate, appraisal().estimate_eur);
 });

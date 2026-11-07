@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
+import type { Appraisal, PriceStats } from "./appraisal.ts";
 import type { IdentifyResult } from "./result.ts";
 
 export const IDENTIFICATION_FILE = "identification.json";
@@ -94,3 +95,24 @@ export const readIdentification = async (
     IDENTIFICATION_FORMAT,
     "coin-identifier",
   )) as unknown as StoredIdentification;
+
+/** `appraisal.json`: the appraiser's validated result plus format, time of the check and the price statistics. */
+export type StoredAppraisal = Appraisal & {
+  format: typeof APPRAISAL_FORMAT;
+  checked_at: string;
+  range: PriceStats | null;
+  sold: number;
+  asking: number;
+};
+
+export const readAppraisal = async (
+  coinDir: string,
+  id: string,
+): Promise<StoredAppraisal> =>
+  (await readRecordFile(
+    coinDir,
+    id,
+    APPRAISAL_FILE,
+    APPRAISAL_FORMAT,
+    "coin-appraiser",
+  )) as unknown as StoredAppraisal;
