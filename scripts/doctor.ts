@@ -81,6 +81,17 @@ checks.push(
       },
 );
 
+// `open` starts the browser for the dashboard; optional.
+{
+  const ok = existsSync("/usr/bin/open");
+  checks.push({
+    name: "open",
+    ok: true,
+    warn: !ok,
+    detail: ok ? "/usr/bin/open" : "nicht gefunden (optional – Dashboard-URL manuell öffnen)",
+  });
+}
+
 // Sound is optional as well (audio spec §5): without afplay or a sound file the run stays silent.
 const sound = loadConfig().sound;
 const missingSounds = (["next", "flip", "problem", "look"] as const).filter(
