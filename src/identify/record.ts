@@ -111,6 +111,8 @@ export type StoredAppraisal = Appraisal & {
   estimate_basis?: EstimateBasis | null;
   sold: number;
   asking: number;
+  /** Set by `skip-appraisal`: no estimate possible (common coin), so re-appraisal runs leave the coin out. */
+  skip_reappraisal?: { reason: string; at: string };
 };
 
 export const readAppraisal = async (

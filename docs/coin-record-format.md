@@ -28,7 +28,7 @@ The agent's result (`IdentifyResult` in `src/identify/result.ts`) plus `format` 
 
 Confidence: a sold price counts 1 point, an asking price 0.5; 3+ points `high`, 2+ `medium`, else `low`; without any sold price never above `low` (basis `asking_only`).
 
-The agent's result (`Appraisal` in `src/identify/appraisal.ts`) plus `format`, `checked_at`, and the CLI's `range` (`{n, min, median, max}` in EUR, `null` without prices), `estimate_confidence` (`low` | `medium` | `high`) and `estimate_basis` (`sold` | `asking_only`) (both CLI-computed, `null` without estimate; absent in older files), `sold`, `asking`: `grade`, `grade_note`, `damage`, `prices` (each `url`, `venue`, `date`, `grade`, `price`, `currency`, `price_eur`, `price_type`), `melt`, `estimate_eur` (`{low, high}` or `null` without prices), `reasoning`.
+The agent's result (`Appraisal` in `src/identify/appraisal.ts`) plus `format`, `checked_at`, and the CLI's `range` (`{n, min, median, max}` in EUR, `null` without prices), `estimate_confidence` (`low` | `medium` | `high`) and `estimate_basis` (`sold` | `asking_only`) (both CLI-computed, `null` without estimate; absent in older files), `sold`, `asking`: `grade`, `grade_note`, `damage`, `prices` (each `url`, `venue`, `date`, `grade`, `price`, `currency`, `price_eur`, `price_type`), `melt`, `estimate_eur` (`{low, high}` or `null` without prices), `reasoning`. Optional `skip_reappraisal` (`{reason, at}`): set by `npm run identify -- skip-appraisal` on coins without estimate that are too common to price; `appraise` refuses them without `--force`, `pending-appraisal` leaves them out, and a new `write-appraisal` drops the mark.
 
 `melt` (metal value) is mandatory:
 

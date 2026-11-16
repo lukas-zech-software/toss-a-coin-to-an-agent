@@ -9,7 +9,14 @@ import {
   writeIdentification,
 } from "../identify/markdown.ts";
 import { validateResult } from "../identify/result.ts";
-import { readAppraisal, readIdentification } from "../identify/record.ts";
+import {
+  APPRAISAL_FILE,
+  readAppraisal,
+  readIdentification,
+  writeRecordFile,
+} from "../identify/record.ts";
+import { listCoinIds } from "../store/coins.ts";
+import { isoLocal } from "../store/markdown.ts";
 import { migrateCoin } from "../identify/migrate.ts";
 import type { StoredIdentification } from "../identify/record.ts";
 import type { Side } from "../types.ts";
@@ -50,7 +57,9 @@ export const USAGE = `Verwendung:
   npm run identify -- prepare <ID>
   npm run identify -- zoom <ID> <av|rv> <x> <y> <size> [--rotate <grad>] [--enhance]
   npm run identify -- write <ID> <result.json>
-  npm run identify -- appraise <ID>
+  npm run identify -- appraise <ID> [--force]
+  npm run identify -- pending-appraisal   (bestimmte Münzen ohne Schätzung, ohne Markierung "überspringen")
+  npm run identify -- skip-appraisal <ID> [<ID>…] [--reason <Text>]   (häufige Münze: keine erneute Schätzung)
   npm run identify -- write-appraisal <ID> <appraisal.json>
   npm run identify -- describe <ID>
   npm run identify -- write-listing <ID> <texts.json>
@@ -91,8 +100,11 @@ export async function identifyMain(
     if (cmd === "zoom" && id) return await zoom(id, rest, deps);
     if (cmd === "write" && id && rest.length === 1)
       return await write(id, rest[0]!, deps);
-    if (cmd === "appraise" && id && rest.length === 0)
-      return await appraise(id, deps);
+    if (cmd === "appraise" && id && rest.every((r) => r === "--force"))
+      return await appraise(id, deps, rest.length === 1);
+    if (cmd === "pending-appraisal" && !id) return await pendingAppraisal(deps);
+    if (cmd === "skip-appraisal" && id)
+      return await skipAppraisal([id, ...rest], deps);
     if (cmd === "write-appraisal" && id && rest.length === 1)
       return await writeAppraisalCmd(id, rest[0]!, deps);
     if (cmd === "describe" && id && rest.length === 0)
@@ -172,13 +184,24 @@ async function readJson(file: string): Promise<unknown> {
 }
 
 /** Intake for the coin-appraiser: the identified coin's facts plus the photo views. Refuses unidentified coins. */
-async function appraise(id: string, deps: IdentifyDeps): Promise<number> {
+async function appraise(
+  id: string,
+  deps: IdentifyDeps,
+  force = false,
+): Promise<number> {
   const coin = await loadCoin(deps.coinsRoot, id);
   const ident = coin.frontmatter.identification as
     Record<string, unknown> | undefined;
   if (ident?.state !== "identified") {
     deps.out(
       `Fehler: ${id} ist nicht bestimmt (identification.state: ${String(ident?.state ?? "fehlt")}) – geschätzt werden nur bestimmte Münzen. Erst den coin-identifier laufen lassen.`,
+    );
+    return 1;
+  }
+  const skipped = await skipMark(coin.dir, id);
+  if (skipped && !force) {
+    deps.out(
+      `Fehler: ${id} ist zum Überspringen markiert (${skipped.reason}, ${skipped.at.slice(0, 10)}) – nicht erneut schätzen. Trotzdem schätzen: appraise ${id} --force`,
     );
     return 1;
   }
@@ -201,6 +224,80 @@ async function appraise(id: string, deps: IdentifyDeps): Promise<number> {
       2,
     ),
   );
+  return 0;
+}
+
+const DEFAULT_SKIP_REASON = "häufige Umlaufmünze, keine Preise auffindbar";
+
+/** The coin's skip mark, or null (no appraisal.json, unreadable file or no mark). */
+async function skipMark(
+  dir: string,
+  id: string,
+): Promise<{ reason: string; at: string } | null> {
+  if (!existsSync(join(dir, APPRAISAL_FILE))) return null;
+  try {
+    return (await readAppraisal(dir, id)).skip_reappraisal ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Identified coins whose appraisal has no estimate and no skip mark: the ones an appraiser run should take. */
+async function pendingAppraisal(deps: IdentifyDeps): Promise<number> {
+  const pending: string[] = [];
+  for (const id of await listCoinIds(deps.coinsRoot)) {
+    const dir = join(deps.coinsRoot, id);
+    if (!existsSync(join(dir, "identification.json"))) continue;
+    if ((await readIdentification(dir, id)).state !== "identified") continue;
+    if (await skipMark(dir, id)) continue;
+    const a = existsSync(join(dir, APPRAISAL_FILE))
+      ? await readAppraisal(dir, id)
+      : null;
+    if (!a?.estimate_eur) pending.push(id);
+  }
+  deps.out(pending.length ? pending.join("\n") : "keine");
+  return 0;
+}
+
+/** Marks coins that have an appraisal without estimate so that re-appraisal runs skip them. */
+async function skipAppraisal(
+  args: string[],
+  deps: IdentifyDeps,
+): Promise<number> {
+  const at = args.indexOf("--reason");
+  if (at >= 0 && (at !== args.length - 2 || !args[at + 1]?.trim())) {
+    deps.out(USAGE);
+    return 2;
+  }
+  const reason = at >= 0 ? args[at + 1]!.trim() : DEFAULT_SKIP_REASON;
+  const ids = at >= 0 ? args.slice(0, at) : args;
+  if (!ids.length || ids.some((i) => !/^COIN-\d{4}$/.test(i))) {
+    deps.out(USAGE);
+    return 2;
+  }
+  // check all first, so a refused coin leaves nothing half-marked
+  const stored = new Map<string, Awaited<ReturnType<typeof readAppraisal>>>();
+  for (const id of ids) {
+    const dir = join(deps.coinsRoot, id);
+    const a = existsSync(join(dir, APPRAISAL_FILE))
+      ? await readAppraisal(dir, id)
+      : null;
+    if (!a)
+      throw new Error(`${id}: noch nicht geschätzt – nichts zu überspringen`);
+    if (a.estimate_eur)
+      throw new Error(
+        `${id}: hat eine Schätzung – nur Münzen ohne Schätzung markieren`,
+      );
+    stored.set(id, a);
+  }
+  const now = isoLocal(deps.now?.() ?? new Date());
+  for (const [id, a] of stored) {
+    await writeRecordFile(join(deps.coinsRoot, id), APPRAISAL_FILE, {
+      ...a,
+      skip_reappraisal: { reason, at: now },
+    });
+    deps.out(`${id}: markiert (${reason})`);
+  }
   return 0;
 }
 
