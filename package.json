@@ -17,6 +17,7 @@
     "listing": "node src/cli/listing.ts",
     "rotate": "node src/cli/rotate.ts",
     "dashboard": "node src/cli/dashboard.ts",
+    "showcase": "node scripts/build-showcase.ts",
     "test": "node --test \"test/**/*.test.ts\"",
     "lint": "prettier --write .",
     "typecheck": "tsc",

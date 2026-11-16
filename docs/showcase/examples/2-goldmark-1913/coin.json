@@ -1,0 +1,186 @@
+{
+  "key": "goldmark-1913",
+  "identification": {
+    "id": "COIN-9002",
+    "state": "identified",
+    "confidence": 97,
+    "observations": {
+      "obverse_image": "av",
+      "obverse": "Brustbild Kaiser Wilhelms II. in Uniform nach rechts. Umschrift Buchstabe für Buchstabe: WILHELM II DEUTSCHER KAISER KÖNIG VON PREUSSEN, unten mittig das Münzzeichen A (Berlin). Felder spiegelnd, Relief mattiert (deutlicher Kontrast zwischen Feld und Bild).",
+      "reverse": "Gekrönter Reichsadler mit Brustschild. Umschrift DEUTSCHES REICH 1913, unten 20 MARK zwischen zwei Sternchen. Jahreszahl 1913 vollständig und klar lesbar.",
+      "diameter_mm": null
+    },
+    "coin": {
+      "title": "Deutsches Kaiserreich, Preußen, 20 Mark 1913 A, Wilhelm II. in Uniform (J. 253)",
+      "issuer": "Königreich Preußen (Deutsches Kaiserreich)",
+      "denomination": "20 Mark",
+      "year": "1913",
+      "mint": "Berlin (Münzzeichen A)",
+      "catalog": [
+        "J. 253",
+        "KM# 537",
+        "Fr. 3833",
+        "AKS 125",
+        "Numista N# 21445"
+      ],
+      "material": "Gold 900/1000 (7,168 g Feingold)",
+      "precious_metals": ["gold"],
+      "weight_g": 7.965,
+      "diameter_mm": 22.5,
+      "production": "Porträttyp in Uniform, eingeführt 1913 zum 25. Regierungsjubiläum Wilhelms II., geprägt 1913–1915.",
+      "mintage": "6.102.730 Stück für 1913 A, beide Porträttypen zusammen (laut coinvarieties.com); Polierte Platten in kleiner Zahl",
+      "history": "Die 20-Mark-Stücke waren die große Goldmünze des Kaiserreichs. 1913, im 25. Jahr seiner Regierung, erhielt Wilhelm II. auf den preußischen Goldmünzen ein neues Bildnis in Uniform. Es blieb das letzte: Mit Beginn des Ersten Weltkriegs 1914 wurde die Einlösung von Banknoten in Gold aufgehoben, und 1915 endete die Prägung der Reichsgoldmünzen."
+    },
+    "reasoning": "Umschrift, Uniformbüste und Münzzeichen A bestimmen den Typ eindeutig als J. 253 aus Berlin; die Jahreszahl 1913 ist klar lesbar. Den Vorgängertyp J. 252 mit dem Kopf ohne Uniform, der 1913 ebenfalls geprägt wurde, schließt die Uniformbüste aus. Stil, Schrift und Adlerzeichnung entsprechen Originalen; Gewicht und Durchmesser konnten nicht gemessen werden. Auffällig sind die spiegelnden Felder mit mattiertem Relief: Das kann auf eine Polierte Platte hindeuten, ist auf Fotos aber nicht sicher von einem prägefrischen Stück mit Spiegelglanz zu unterscheiden.",
+    "summary": "",
+    "candidates": [
+      {
+        "title": "Preußen, 20 Mark 1913 A, J. 252 (Kopf ohne Uniform)",
+        "confidence": 1,
+        "reason": "Gleiches Jahr und Münzzeichen, aber anderes Porträt; hier ist die Uniform eindeutig zu sehen."
+      }
+    ],
+    "sources": [
+      {
+        "title": "Numista N# 21445 – 20 Mark Wilhelm II (Uniform), Preußen",
+        "url": "https://en.numista.com/21445",
+        "confirms": "Typ J. 253 / KM# 537, 7,965 g, 22,5 mm, Gold 900/1000, Prägejahre 1913–1915"
+      },
+      {
+        "title": "coinvarieties.com – Prussia 1913-A 20 mark",
+        "url": "https://coinvarieties.com/index.php/Prussia_1913-A_20_mark_Fr-3833",
+        "confirms": "Auflage 1913 A; Polierte Platten dieses Jahrgangs sind bekannt"
+      },
+      {
+        "title": "Künker, Auktion 339, Los 1500 – 20 Mark 1913 A, Kaiser in Uniform",
+        "url": "https://www.kuenker.de/de/archiv/stueck/270396",
+        "confirms": "Katalogisierung J. 253, 1913 A, Kaiser in Uniform"
+      }
+    ]
+  },
+  "appraisal": {
+    "id": "COIN-9002",
+    "grade": "st (MS-63), möglicherweise Polierte Platte",
+    "grade_note": "Auf den Fotos sind keine Kontaktmarken oder Kratzer erkennbar, die Prägung ist auch in Haar und Uniform voll ausgeprägt. Spiegelnde Felder mit mattiertem Relief: möglicherweise eine Polierte Platte (PP). Das lässt sich auf Fotos nicht sicher entscheiden – vor einem Verkauf von einem Prüfdienst begutachten lassen.",
+    "damage": [],
+    "prices": [
+      {
+        "url": "https://en.numista.com/21445",
+        "venue": "Heritage Auctions, Spotlight German States Showcase Auction 61634 (Los 25260)",
+        "date": "2026-05-26",
+        "grade": "NGC MS63",
+        "price": 1525,
+        "currency": "USD",
+        "price_eur": 1310.59,
+        "price_type": "incl_premium"
+      },
+      {
+        "url": "https://en.numista.com/21445",
+        "venue": "Heritage Auctions, Spotlight German States Showcase Auction 61585 (Los 22120)",
+        "date": "2026-01-20",
+        "grade": "NGC MS63",
+        "price": 1342,
+        "currency": "USD",
+        "price_eur": 1153.05,
+        "price_type": "incl_premium"
+      },
+      {
+        "url": "https://waigand-muenzen.de/artikel/20-mark-preussen-1913-14-wilhelm-ii-mit-uniform-j-253-vz-st/",
+        "venue": "WAIGAND Sammlerwelt (Online-Shop)",
+        "date": "2026-11",
+        "grade": "vz/st",
+        "price": 1450,
+        "currency": "EUR",
+        "price_eur": 1450,
+        "price_type": "asking"
+      },
+      {
+        "url": "https://spink.com/lot/23004000243",
+        "venue": "Spink, Auktion 23004 (Los 243)",
+        "date": "2023",
+        "grade": "fast st, Beutelspuren in glänzenden Feldern",
+        "price": 400,
+        "currency": "GBP",
+        "price_eur": 479.73,
+        "price_type": "sold"
+      },
+      {
+        "url": "https://www.kuenker.de/de/archiv/stueck/270396",
+        "venue": "Künker, Auktion 339 (Los 1500)",
+        "date": "2020",
+        "grade": "Prachtexemplar, fast Stempelglanz",
+        "price": 380,
+        "currency": "EUR",
+        "price_eur": 380,
+        "price_type": "hammer"
+      }
+    ],
+    "melt": { "state": "defined", "eur": 825.07 },
+    "estimate_eur": { "low": 1150, "high": 1450 },
+    "reasoning": "Der Goldwert liegt bei rund 825 € (7,168 g Feingold zum Goldpreis von Anfang November 2026). Stempelglänzende Stücke (NGC MS63) brachten bei Heritage 2026 zwischen 1.153 € und 1.311 € inklusive Aufgeld; ein Händler bietet vz/st für 1.450 € an. Die Zuschläge von 2020 (380 €) und 2023 (400 £) stammen aus Zeiten eines viel niedrigeren Goldpreises und zeigen vor allem, wie stark der Preis dieses Typs am Gold hängt. Schätzung als Stempelglanz: 1.150–1.450 €. Sollte sich die Polierte Platte bestätigen, wäre die Münze ein Mehrfaches wert: Künker verkaufte 2021 ein Stück in PP (NGC PF 64 Cameo) für 3.400 €."
+  },
+  "texts": {
+    "id": "COIN-9002",
+    "title": {
+      "de": "Preußen 20 Mark 1913 A Wilhelm II. Uniform J. 253 Gold st",
+      "en": "Prussia 20 Mark 1913 A Wilhelm II uniform J. 253 gold MS-63"
+    },
+    "summary": {
+      "de": "Goldmünze des Kaiserreichs mit dem Bildnis Wilhelms II. in Uniform, eingeführt 1913 zum 25. Regierungsjubiläum. Stempelglanz ohne erkennbare Kontaktmarken, spiegelnde Felder mit mattiertem Relief – möglicherweise Polierte Platte, auf Fotos nicht sicher bestimmbar. Nicht zertifiziert.",
+      "en": "Gold coin of the German Empire with Wilhelm II in uniform, introduced in 1913 for his 25th jubilee. Mint state without visible contact marks, mirrored fields with frosted devices – possibly a proof, which cannot be confirmed from photos. Not certified."
+    },
+    "specifics": {
+      "country": {
+        "de": "Deutsches Kaiserreich (Preußen)",
+        "en": "German Empire (Prussia)"
+      },
+      "denomination": { "de": "20 Mark", "en": "20 Mark" },
+      "year": { "de": "1913", "en": "1913" },
+      "mint": { "de": "Berlin (A)", "en": "Berlin (A)" },
+      "material": { "de": "Gold 900/1000", "en": "Gold .900" },
+      "grade": { "de": "st", "en": "MS-63" }
+    }
+  },
+  "descriptions": {
+    "de": "# Preußen 20 Mark 1913 A Wilhelm II. Uniform J. 253 Gold st\n\nAngeboten wird eine Reichsgoldmünze zu 20 Mark des Königreichs Preußen aus dem Jahr 1913 mit dem Bildnis Kaiser Wilhelms II. in Uniform, geprägt in Berlin (Münzzeichen A).\n\n## Daten\n\n- **Herausgeber:** Königreich Preußen (Deutsches Kaiserreich)\n- **Nominal:** 20 Mark\n- **Jahr:** 1913\n- **Münzstätte:** Berlin (A)\n- **Katalog:** J. 253, KM# 537, Fr. 3833, AKS 125\n- **Material:** Gold 900/1000 (7,168 g Feingold)\n- **Gewicht:** 7,965 g\n- **Durchmesser:** 22,5 mm\n\n## Vorderseite und Rückseite\n\n**Vorderseite:** Brustbild Wilhelms II. in Uniform nach rechts, Umschrift WILHELM II DEUTSCHER KAISER KÖNIG VON PREUSSEN, unten das Münzzeichen A.\n\n**Rückseite:** Gekrönter Reichsadler, Umschrift DEUTSCHES REICH 1913, unten 20 MARK.\n\n## Erhaltung\n\nDie Münze wurde mit **st (MS-63)** bewertet. Auf den Fotos sind keine Kontaktmarken erkennbar. Die Felder spiegeln, das Relief ist mattiert – möglicherweise handelt es sich um eine Polierte Platte; das lässt sich anhand von Fotos nicht sicher entscheiden. Die Münze ist nicht zertifiziert.\n\n## Geschichte\n\n1913, im 25. Jahr seiner Regierung, erhielt Wilhelm II. auf den preußischen Goldmünzen ein neues Bildnis in Uniform. Es blieb das letzte: Mit Beginn des Ersten Weltkriegs wurde die Goldeinlösung aufgehoben, 1915 endete die Prägung der Reichsgoldmünzen.\n\n## Fotos\n\nDie Fotos zeigen genau diese Münze.\n",
+    "en": "# Prussia 20 Mark 1913 A Wilhelm II uniform J. 253 gold MS-63\n\nOffered is a 20 Mark gold coin of the Kingdom of Prussia from 1913 showing Emperor Wilhelm II in uniform, struck in Berlin (mint mark A).\n\n## Details\n\n- **Issuer:** Kingdom of Prussia (German Empire)\n- **Denomination:** 20 Mark\n- **Year:** 1913\n- **Mint:** Berlin (A)\n- **Catalogue:** J. 253, KM# 537, Fr. 3833, AKS 125\n- **Material:** Gold .900 (7.168 g fine gold)\n- **Weight:** 7.965 g\n- **Diameter:** 22.5 mm\n\n## Obverse and reverse\n\n**Obverse:** Uniformed bust of Wilhelm II right, legend WILHELM II DEUTSCHER KAISER KÖNIG VON PREUSSEN, mint mark A below.\n\n**Reverse:** Crowned imperial eagle, legend DEUTSCHES REICH 1913, 20 MARK below.\n\n## Condition\n\nGraded **MS-63** from photos; not certified. No contact marks are visible. The fields are mirrored and the devices frosted, so this may be a proof, which cannot be confirmed from photos.\n\n## History\n\nIn 1913, the 25th year of his reign, Wilhelm II received a new uniformed portrait on Prussian gold coins. It was the last one: gold convertibility ended when the First World War began, and imperial gold coinage stopped in 1915.\n\n## Photos\n\nThe photos show the exact coin offered.\n"
+  },
+  "images": { "av": "av.jpg", "rv": "rv.jpg" },
+  "zooms": [
+    {
+      "side": "obverse",
+      "x": 0.5,
+      "y": 0.9,
+      "size": 0.2,
+      "label": "Münzzeichen A – Berlin"
+    },
+    {
+      "side": "reverse",
+      "x": 0.88,
+      "y": 0.47,
+      "size": 0.32,
+      "label": "Jahreszahl 1913"
+    },
+    {
+      "side": "obverse",
+      "x": 0.8,
+      "y": 0.42,
+      "size": 0.24,
+      "label": "Spiegelndes Feld, mattiertes Relief – Hinweis auf Polierte Platte?"
+    }
+  ],
+  "credits": [
+    {
+      "what": "av.jpg",
+      "author": "Reinhard Saczewski, Münzkabinett der Staatlichen Museen zu Berlin",
+      "source": "https://commons.wikimedia.org/wiki/File:Kaiserreich-_Preu%C3%9Fen_1913_-_M%C3%BCnzkabinett,_Berlin_-_5522444.jpg",
+      "license": "gemeinfrei (Public Domain), auf die Vorderseite zugeschnitten"
+    },
+    {
+      "what": "rv.jpg",
+      "author": "Reinhard Saczewski, Münzkabinett der Staatlichen Museen zu Berlin",
+      "source": "https://commons.wikimedia.org/wiki/File:Kaiserreich-_Preu%C3%9Fen_1913_-_M%C3%BCnzkabinett,_Berlin_-_5522444.jpg",
+      "license": "gemeinfrei (Public Domain), auf die Rückseite zugeschnitten"
+    }
+  ]
+}

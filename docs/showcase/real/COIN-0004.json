@@ -1,0 +1,32 @@
+{
+  "zooms": [
+    {
+      "side": "reverse",
+      "x": 0.235,
+      "y": 0.31,
+      "size": 0.2,
+      "rotate": 40,
+      "label": "AVST mit V – Hinweis auf eine Nachprägung"
+    },
+    {
+      "side": "obverse",
+      "x": 0.42,
+      "y": 0.62,
+      "size": 0.12,
+      "label": "Perlenbrosche mit neun Perlen",
+      "note": {
+        "text": "Genau hingeschaut: Der Agent schreibt, die Originale von 1780 hätten keine Perlen an der Brosche. Seine Quelle sagt das auch – nennt aber eine Ausnahme: eine spätere Wiener Prägung mit der Jahreszahl 1780 und fünf Perlen. Am Ergebnis „Nachprägung“ ändert das nichts, die Umschrift AVST spricht ohnehin dafür. Hier ist der Agent aber zu pauschal – und weil jede Quelle verlinkt ist, lässt sich das nachprüfen.",
+        "sources": [
+          {
+            "title": "theresia.name – Original und Nachprägung",
+            "url": "https://www.theresia.name/en/svergleich.html"
+          },
+          {
+            "title": "theresia.name – Beschreibung der Varianten",
+            "url": "https://www.theresia.name/en/svariants.html"
+          }
+        ]
+      }
+    }
+  ]
+}

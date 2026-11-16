@@ -1,0 +1,3121 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Meine Münzwerkstatt</title>
+    <meta name="claude:viewport-fit-sides" content="cover" />
+    <style>
+      /* Layout: one reading column on cool paper; coins sit on full-width velvet trays like in a coin cabinet. */
+      :root {
+        --paper: #eceeea;
+        --sheet: #f7f8f5;
+        --ink: #1b2220;
+        --muted: #59645f;
+        --line: #c6cdc8;
+        --tray: #1d3a40;
+        --tray-deep: #142a2f;
+        --tray-ink: #e3ebe7;
+        --tray-muted: #a9bab4;
+        --brass: #8a6220;
+        --brass-soft: #c9a25a;
+        --guide: #ff3030;
+        --warn-bg: #f6ead2;
+        --warn-ink: #6b4a10;
+        --ok: #2f6b4f;
+        --term-bg: #101615;
+        --term-ink: #d6e2dc;
+        --term-dim: #7f918a;
+        --term-ok: #7fd1a4;
+        --term-bad: #f0a35e;
+        --font-display:
+          "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L",
+          "Iowan Old Style", Georgia, serif;
+        --font-body:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        --font-term:
+          ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        --measure: 68ch;
+        --wide: 1120px;
+        --step: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --paper: #131917;
+          --sheet: #1a2120;
+          --ink: #e2e8e5;
+          --muted: #9aa8a2;
+          --line: #2e3a37;
+          --tray: #0f272c;
+          --tray-deep: #0a1c20;
+          --tray-ink: #e3ebe7;
+          --tray-muted: #9fb2ac;
+          --brass: #d8ab5f;
+          --brass-soft: #b98d45;
+          --warn-bg: #3a2f1a;
+          --warn-ink: #f0d39a;
+          --ok: #7fc7a1;
+          --term-bg: #0b1010;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --paper: #131917;
+        --sheet: #1a2120;
+        --ink: #e2e8e5;
+        --muted: #9aa8a2;
+        --line: #2e3a37;
+        --tray: #0f272c;
+        --tray-deep: #0a1c20;
+        --tray-ink: #e3ebe7;
+        --tray-muted: #9fb2ac;
+        --brass: #d8ab5f;
+        --brass-soft: #b98d45;
+        --warn-bg: #3a2f1a;
+        --warn-ink: #f0d39a;
+        --ok: #7fc7a1;
+        --term-bg: #0b1010;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 var(--step)/1.6 var(--font-body);
+      }
+      img {
+        max-width: 100%;
+        display: block;
+      }
+      a {
+        color: var(--brass);
+        text-underline-offset: 0.18em;
+      }
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 3px solid var(--brass-soft);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        line-height: 1.15;
+        text-wrap: balance;
+        margin: 0;
+      }
+      h2 {
+        font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem);
+      }
+      h3 {
+        font-size: 1.25rem;
+      }
+      p {
+        margin: 0;
+      }
+      .legend {
+        font-family: var(--font-display);
+        letter-spacing: 0.08em;
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .wrap {
+        max-width: var(--wide);
+        margin: 0 auto;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+      }
+      .text {
+        max-width: var(--measure);
+        display: grid;
+        gap: 0.9em;
+      }
+      section.chapter {
+        padding-block: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+        border-top: 1px solid var(--line);
+      }
+      section.chapter > .wrap {
+        display: grid;
+        gap: 1.6rem;
+      }
+      .step-of {
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        color: var(--brass);
+      }
+
+      /* Velvet tray: the one bold surface of the page. */
+      .tray {
+        background:
+          radial-gradient(
+            circle at 20% 15%,
+            rgba(255, 255, 255, 0.05),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 85% 90%,
+            rgba(0, 0, 0, 0.25),
+            transparent 50%
+          ),
+          repeating-linear-gradient(
+            115deg,
+            rgba(255, 255, 255, 0.018) 0 2px,
+            transparent 2px 5px
+          ),
+          var(--tray);
+        color: var(--tray-ink);
+        border-radius: 14px;
+        box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.45);
+        padding: clamp(14px, 3vw, 28px);
+      }
+      .tray a {
+        color: var(--brass-soft);
+      }
+      .tray .muted {
+        color: var(--tray-muted);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .small {
+        font-size: 0.875rem;
+      }
+
+      /* Hero */
+      header.hero {
+        padding-block: clamp(2rem, 1.5rem + 3vw, 4rem)
+          clamp(2rem, 1.6rem + 2vw, 3.2rem);
+      }
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        gap: clamp(1.5rem, 4vw, 3.5rem);
+        align-items: center;
+      }
+      .hero h1 {
+        font-size: clamp(2.4rem, 1.6rem + 4vw, 4.4rem);
+        letter-spacing: -0.01em;
+      }
+      .hero .lead {
+        font-size: 1.2em;
+        max-width: 34em;
+        margin-top: 1rem;
+      }
+      .path {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.4rem;
+        margin-top: 1.6rem;
+        padding: 0;
+        list-style: none;
+        counter-reset: path;
+      }
+      .path li {
+        counter-increment: path;
+      }
+      .path a {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.45em;
+        padding: 0.35em 0.8em;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--ink);
+        background: var(--sheet);
+      }
+      .path a::before {
+        content: counter(path);
+        font-family: var(--font-display);
+        color: var(--brass);
+        font-weight: 600;
+      }
+      .path li + li::before {
+        content: "→";
+        color: var(--muted);
+        margin-right: 0.4rem;
+      }
+      .hero-tray {
+        display: grid;
+        gap: 0.8rem;
+        justify-items: center;
+      }
+      .hero-tray .coin-flip {
+        width: min(100%, 360px);
+      }
+      .agent-box {
+        margin-top: 2rem;
+        background: var(--sheet);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        max-width: var(--measure);
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      /* Coin flip */
+      .coin-flip {
+        appearance: none;
+        border: 0;
+        padding: 0;
+        background: none;
+        cursor: pointer;
+        perspective: 1200px;
+        aspect-ratio: 1 / 1;
+        width: 100%;
+        max-width: 100%;
+        position: relative;
+        color: inherit;
+      }
+      .coin-flip .faces {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+        transition: transform 0.7s cubic-bezier(0.3, 0.7, 0.3, 1);
+      }
+      .coin-flip.flipped .faces {
+        transform: rotateY(180deg);
+      }
+      .coin-flip .face {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      .coin-flip .face.back {
+        transform: rotateY(180deg);
+      }
+      .coin-flip img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      }
+      .flip-hint {
+        font-size: 0.85rem;
+      }
+      .photo {
+        position: relative;
+        aspect-ratio: 1 / 1;
+      }
+      .photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+      }
+
+      /* Badges */
+      .badge {
+        display: inline-block;
+        font-size: 0.8rem;
+        padding: 0.15em 0.6em;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        white-space: nowrap;
+      }
+      .badge.real {
+        color: var(--ok);
+      }
+      .badge.example {
+        color: var(--brass);
+      }
+      .tray .badge.real {
+        color: #8fd8b0;
+      }
+      .tray .badge.example {
+        color: var(--brass-soft);
+      }
+
+      /* Rig diagram */
+      .rig {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 2rem;
+        align-items: start;
+      }
+      .rig svg {
+        width: 100%;
+        height: auto;
+      }
+      .rig svg text {
+        font-family: var(--font-body);
+        font-size: 15px;
+        fill: var(--ink);
+      }
+      .settings {
+        display: grid;
+        gap: 0.9rem;
+        margin: 0;
+      }
+      .settings div {
+        display: grid;
+        grid-template-columns: 7.5em minmax(0, 1fr);
+        gap: 0.8rem;
+      }
+      .settings dt {
+        font-family: var(--font-display);
+        font-weight: 600;
+      }
+      .settings dd {
+        margin: 0;
+      }
+      .modes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+      }
+      .mode {
+        background: var(--sheet);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+        display: grid;
+        gap: 0.35rem;
+        align-content: start;
+      }
+
+      /* Terminal */
+      .terminal {
+        background: var(--term-bg);
+        color: var(--term-ink);
+        border-radius: 10px;
+        font: 0.82rem/1.55 var(--font-term);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+      .terminal .bar {
+        display: flex;
+        gap: 6px;
+        padding: 9px 12px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .terminal .bar span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #3b4744;
+      }
+      .terminal pre {
+        margin: 0;
+        padding: 12px 14px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        min-height: 13.5em;
+      }
+      .terminal .l-status {
+        color: var(--term-dim);
+      }
+      .terminal .l-result {
+        color: var(--term-ink);
+      }
+      .terminal .l-bad {
+        color: var(--term-bad);
+      }
+      .terminal .l-prompt {
+        color: var(--brass-soft);
+      }
+      .terminal .l-human {
+        color: var(--term-dim);
+        font-style: italic;
+      }
+      .terminal .l-done {
+        color: var(--term-ok);
+      }
+      .replay {
+        display: grid;
+        gap: 0.8rem;
+      }
+      .replay-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .btn {
+        appearance: none;
+        font: inherit;
+        font-size: 0.95rem;
+        padding: 0.45em 0.95em;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 1px solid var(--line);
+        background: var(--sheet);
+        color: var(--ink);
+      }
+      .btn.primary {
+        background: var(--brass);
+        color: var(--sheet);
+        border-color: var(--brass);
+      }
+      .tray .btn {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--tray-ink);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+      .tray .btn[aria-pressed="true"],
+      .tray .btn[aria-selected="true"] {
+        background: var(--brass-soft);
+        color: var(--tray-deep);
+        border-color: var(--brass-soft);
+      }
+      .btn[aria-pressed="true"],
+      .btn[aria-selected="true"] {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+      .seg {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .checks {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+        gap: 0.8rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+      .checks li {
+        border-left: 3px solid var(--brass);
+        padding: 0.2rem 0 0.2rem 0.8rem;
+      }
+      .checks b {
+        display: block;
+        font-family: var(--font-display);
+      }
+
+      .crop-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 1.4rem;
+        align-items: start;
+      }
+      .crop-stage {
+        position: relative;
+      }
+      .crop-stage img {
+        border-radius: 8px;
+        width: 100%;
+      }
+      .crop-caption {
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .rot-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1.4rem;
+        align-items: start;
+      }
+      .stills {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 12px;
+      }
+      .stills figure {
+        margin: 0;
+        display: grid;
+        gap: 4px;
+      }
+      .stills figcaption {
+        color: var(--term-dim);
+        font-size: 0.78rem;
+      }
+      .term-text {
+        padding: 0 14px 12px;
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        color: var(--term-dim);
+        font-size: 0.78rem;
+      }
+      .term-head {
+        padding: 12px 14px 0;
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 0.8rem;
+      }
+      .replica {
+        display: grid;
+        gap: 0.8rem;
+      }
+      .replica-frame {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        border-radius: 8px;
+        background: #ddd;
+        touch-action: pan-y;
+      }
+      .replica-frame img {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        max-width: none;
+        transform-origin: 50% 50%;
+      }
+      .replica-frame .guide {
+        position: absolute;
+        background: var(--guide);
+        opacity: 0.8;
+        pointer-events: none;
+      }
+      .replica-frame .guide.v {
+        left: calc(50% - 1px);
+        top: 0;
+        bottom: 0;
+        width: 2px;
+      }
+      .replica-frame .guide.h {
+        top: calc(50% - 1px);
+        left: 0;
+        right: 0;
+        height: 2px;
+      }
+      .replica-read {
+        font: 0.85rem/1.5 var(--font-term);
+      }
+      .replica input[type="range"] {
+        width: 100%;
+        accent-color: var(--brass-soft);
+      }
+
+      .counts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+      .count {
+        background: var(--sheet);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+      }
+      .count b {
+        display: block;
+        font: 600 2.3rem/1.1 var(--font-display);
+      }
+      .file-list {
+        font: 0.85rem/1.7 var(--font-term);
+        margin: 0;
+        padding: 0.8rem 1rem;
+        background: var(--sheet);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        white-space: pre;
+        overflow-x: auto;
+      }
+
+      /* Coin switcher */
+      .switcher {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.6rem;
+      }
+      .switch {
+        appearance: none;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        display: grid;
+        grid-template-columns: 3rem minmax(0, 1fr);
+        gap: 0.6rem;
+        align-items: center;
+        padding: 0.5rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .switch img {
+        width: 3rem;
+        height: 3rem;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+      .switch span {
+        display: grid;
+        gap: 0.15rem;
+        min-width: 0;
+        justify-items: start;
+      }
+      .switch strong {
+        font-weight: 600;
+        font-size: 0.92rem;
+        line-height: 1.25;
+      }
+      .switch[aria-pressed="true"] {
+        border-color: var(--brass-soft);
+        background: rgba(201, 162, 90, 0.16);
+      }
+
+      .coin-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .coin-head h3 {
+        font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.6rem);
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+        gap: clamp(1rem, 3vw, 2rem);
+        align-items: start;
+      }
+      .marker {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        margin: -15px 0 0 -15px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        background: rgba(20, 42, 47, 0.75);
+        color: #fff;
+        font: 600 0.8rem/26px var(--font-body);
+        text-align: center;
+        cursor: pointer;
+        padding: 0;
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+      }
+      .marker.zoom {
+        border-color: var(--brass-soft);
+      }
+      .marker[aria-pressed="true"],
+      .marker.hot {
+        background: var(--brass-soft);
+        color: var(--tray-deep);
+      }
+      .side-tabs {
+        display: flex;
+        gap: 0.4rem;
+        margin-top: 0.7rem;
+        flex-wrap: wrap;
+      }
+      .panel {
+        display: grid;
+        gap: 1rem;
+        min-width: 0;
+      }
+      .steps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .step-body {
+        display: grid;
+        gap: 0.8rem;
+        min-height: 9rem;
+      }
+      .loupe {
+        display: grid;
+        grid-template-columns: 9rem minmax(0, 1fr);
+        gap: 1rem;
+        align-items: start;
+        background: rgba(0, 0, 0, 0.22);
+        border-radius: 10px;
+        padding: 0.8rem;
+      }
+      .loupe img {
+        width: 9rem;
+        height: 9rem;
+        object-fit: cover;
+        border-radius: 50%;
+        box-shadow: 0 0 0 3px var(--brass-soft);
+      }
+      .note {
+        border-left: 3px solid var(--brass-soft);
+        padding-left: 0.8rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+      .method {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem 0.5rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        font-size: 0.85rem;
+      }
+      .method li + li::before {
+        content: "→ ";
+        color: var(--tray-muted);
+      }
+      .meter {
+        position: relative;
+        height: 12px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .meter .fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        border-radius: 6px;
+        background: var(--brass-soft);
+      }
+      .meter .limit {
+        position: absolute;
+        top: -5px;
+        bottom: -5px;
+        width: 2px;
+        background: var(--tray-ink);
+      }
+      .meter-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        gap: 0.25rem 1rem;
+        margin: 0;
+      }
+      .kv dt {
+        color: var(--tray-muted);
+      }
+      .kv dd {
+        margin: 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .list {
+        margin: 0;
+        padding-left: 1.2rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      /* Appraiser */
+      .grade {
+        font: 600 clamp(1.6rem, 1.3rem + 1.4vw, 2.2rem)/1.1 var(--font-display);
+      }
+      .photos2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.8rem;
+      }
+      .damage-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.45rem;
+        counter-reset: dmg;
+      }
+      .damage-list li {
+        display: grid;
+        grid-template-columns: 1.8rem minmax(0, 1fr);
+        gap: 0.5rem;
+      }
+      .damage-list .n {
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: 50%;
+        border: 1px solid var(--tray-muted);
+        display: grid;
+        place-items: center;
+        font-size: 0.75rem;
+      }
+      .damage-list li.hot .n {
+        background: var(--brass-soft);
+        color: var(--tray-deep);
+        border-color: var(--brass-soft);
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table.prices {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.9rem;
+        min-width: 34rem;
+      }
+      table.prices th,
+      table.prices td {
+        text-align: left;
+        padding: 0.45rem 0.6rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        vertical-align: top;
+      }
+      table.prices th {
+        font-weight: 600;
+        color: var(--tray-muted);
+      }
+      table.prices td.r,
+      table.prices th.r {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .range svg {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+      .range text {
+        font: 12px var(--font-body);
+        fill: var(--tray-ink);
+      }
+      .estimate {
+        font: 600 1.5rem/1.2 var(--font-display);
+      }
+
+      /* Lister */
+      .lister-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: start;
+      }
+      .doc {
+        background: var(--sheet);
+        color: var(--ink);
+        border-radius: 8px;
+        padding: 1.1rem 1.25rem;
+        display: grid;
+        gap: 0.7rem;
+        max-height: 34rem;
+        overflow: auto;
+      }
+      .doc h1 {
+        font-size: 1.25rem;
+      }
+      .doc h2 {
+        font-size: 1.05rem;
+        margin-top: 0.4rem;
+      }
+      .doc ul {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+      .spec {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      .spec th,
+      .spec td {
+        text-align: left;
+        padding: 0.35rem 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        vertical-align: top;
+      }
+      .spec th {
+        color: var(--tray-muted);
+        font-weight: 400;
+        width: 38%;
+      }
+      .platform {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.2rem;
+        align-items: start;
+      }
+      .status {
+        display: inline-block;
+        padding: 0.3em 0.75em;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        font-weight: 600;
+      }
+      .warning {
+        background: var(--warn-bg);
+        color: var(--warn-ink);
+        border-radius: 8px;
+        padding: 0.7rem 0.9rem;
+      }
+      .steps-list {
+        margin: 0;
+        padding-left: 1.4rem;
+        display: grid;
+        gap: 0.3rem;
+      }
+      .card-frame {
+        width: 100%;
+        overflow: hidden;
+        border-radius: 6px;
+        background: #fff;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      }
+      .card-frame iframe {
+        border: 0;
+        width: 560px;
+        height: 794px;
+        transform-origin: 0 0;
+        display: block;
+        background: #fff;
+      }
+
+      .rules {
+        display: grid;
+        gap: 0.8rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        max-width: var(--measure);
+      }
+      .rules li {
+        padding-left: 1.1rem;
+        border-left: 3px solid var(--line);
+      }
+      .credits {
+        display: grid;
+        gap: 0.6rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        font-size: 0.9rem;
+        max-width: var(--measure);
+      }
+      footer {
+        padding-block: 2rem 3rem;
+        border-top: 1px solid var(--line);
+      }
+
+      @media (max-width: 860px) {
+        .hero-grid,
+        .rig,
+        .crop-grid,
+        .rot-grid,
+        .pair,
+        .lister-grid,
+        .platform {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .switcher {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .pair > .photo-col {
+          max-width: 420px;
+        }
+      }
+      @media (max-width: 520px) {
+        .modes,
+        .counts {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .settings div {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 0.1rem;
+        }
+        .loupe {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .coin-flip .faces {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <h1>Meine Münzwerkstatt</h1>
+          <p class="lead">
+            Ich lege eine Münze unter die Kamera. Alles Weitere erledigen mein
+            Programm und drei KI-Agenten: das Foto, die Bestimmung, die
+            Bewertung und am Ende ein fertiges Verkaufsangebot. Auf dieser Seite
+            zeige ich an einigen Münzen, wie das aussieht.
+          </p>
+          <ol class="path">
+            <li><a href="#aufbau">Fotografieren</a></li>
+            <li><a href="#bestimmer">Bestimmen</a></li>
+            <li><a href="#gutachter">Bewerten</a></li>
+            <li><a href="#verkaeufer">Anbieten</a></li>
+          </ol>
+          <div class="agent-box">
+            <h3>Was ist ein KI-Agent?</h3>
+            <p>
+              Ein KI-Agent ist ein Programm, das wie ein sehr fleißiger
+              Assistent am Schreibtisch arbeitet. Er schaut sich die Fotos an,
+              liest die Umschrift Buchstabe für Buchstabe, schlägt selbstständig
+              in Numista, in Katalogen und in Auktionsarchiven nach, vergleicht,
+              entscheidet und schreibt sein Ergebnis auf. Dabei hält er sich an
+              feste Regeln, die ich ihm vorgegeben habe, zum Beispiel: kein
+              Preis ohne Quelle, und unter 90 % Sicherheit gilt eine Münze als
+              nicht bestimmt.
+            </p>
+            <p class="muted small">
+              Ich habe drei solcher Agenten: den Bestimmer, den Gutachter und
+              den Verkäufer. Sie arbeiten nacheinander, jeder mit dem Ergebnis
+              des vorherigen.
+            </p>
+          </div>
+        </div>
+        <div class="tray hero-tray" id="hero-coin"></div>
+      </div>
+    </header>
+
+    <section class="chapter" id="aufbau">
+      <div class="wrap">
+        <p class="step-of">Schritt 1: Fotografieren</p>
+        <h2>Der Aufbau</h2>
+        <div class="rig">
+          <figure style="margin: 0">
+            <svg viewBox="0 0 540 470" role="img" aria-labelledby="rig-title">
+              <title id="rig-title">
+                Kamera am Stativ, senkrecht über einer Münze auf weißem Papier,
+                daneben eine Schreibtischlampe und ein Laptop
+              </title>
+              <rect
+                x="20"
+                y="410"
+                width="480"
+                height="14"
+                rx="3"
+                fill="var(--line)"
+              />
+              <rect
+                x="150"
+                y="396"
+                width="200"
+                height="14"
+                fill="var(--sheet)"
+                stroke="var(--line)"
+              />
+              <rect
+                x="180"
+                y="388"
+                width="140"
+                height="8"
+                rx="2"
+                fill="var(--brass-soft)"
+                opacity="0.55"
+              />
+              <circle cx="214" cy="391" r="5" fill="var(--muted)" />
+              <circle cx="237" cy="391" r="5" fill="var(--muted)" />
+              <circle cx="260" cy="391" r="5" fill="var(--brass)" />
+              <circle cx="283" cy="391" r="5" fill="var(--muted)" />
+              <circle cx="306" cy="391" r="5" fill="var(--muted)" />
+              <rect x="88" y="60" width="10" height="350" fill="var(--muted)" />
+              <rect
+                x="70"
+                y="398"
+                width="46"
+                height="12"
+                rx="3"
+                fill="var(--muted)"
+              />
+              <rect x="98" y="92" width="120" height="10" fill="var(--muted)" />
+              <rect
+                x="212"
+                y="58"
+                width="96"
+                height="70"
+                rx="10"
+                fill="var(--ink)"
+              />
+              <rect
+                x="228"
+                y="128"
+                width="64"
+                height="72"
+                rx="6"
+                fill="var(--ink)"
+                opacity="0.85"
+              />
+              <rect
+                x="236"
+                y="200"
+                width="48"
+                height="10"
+                rx="2"
+                fill="var(--brass)"
+              />
+              <path
+                d="M240 212 L196 388 M280 212 L324 388"
+                stroke="var(--brass)"
+                stroke-dasharray="4 5"
+                stroke-width="1.5"
+                fill="none"
+              />
+              <line
+                x1="372"
+                y1="210"
+                x2="372"
+                y2="388"
+                stroke="var(--ink)"
+                stroke-width="1"
+              />
+              <path
+                d="M366 216 L372 208 L378 216 M366 382 L372 390 L378 382"
+                fill="none"
+                stroke="var(--ink)"
+              />
+              <text x="382" y="320">ca. 40–45 cm</text>
+              <text x="304" y="168">Objektiv 135 mm</text>
+              <text x="316" y="88">Kamera, um 90° gedreht</text>
+              <text x="120" y="440">
+                Glasplatte mit fünf Plätzen auf weißem Papier
+              </text>
+              <path
+                d="M522 210 L486 244"
+                stroke="var(--muted)"
+                stroke-width="6"
+                stroke-linecap="round"
+              />
+              <path d="M470 236 L504 256 L480 288 Z" fill="var(--muted)" />
+              <path
+                d="M482 284 L420 372"
+                stroke="var(--brass-soft)"
+                stroke-width="1"
+                opacity="0.7"
+              />
+              <path
+                d="M522 210 L522 410"
+                stroke="var(--muted)"
+                stroke-width="6"
+              />
+              <text x="470" y="196">Lampe</text>
+              <rect
+                x="22"
+                y="352"
+                width="44"
+                height="30"
+                rx="3"
+                fill="var(--sheet)"
+                stroke="var(--ink)"
+              />
+              <path d="M16 382 h56 l4 8 h-64 Z" fill="var(--ink)" />
+              <path
+                d="M66 366 C 120 360, 170 120, 212 100"
+                stroke="var(--ink)"
+                stroke-width="1.3"
+                fill="none"
+                stroke-dasharray="2 3"
+              />
+              <text x="18" y="326">Rechner</text>
+              <text x="18" y="344">(USB)</text>
+            </svg>
+          </figure>
+          <div class="text">
+            <p>
+              Eine Spiegelreflexkamera hängt an einem Stativ und schaut
+              senkrecht nach unten auf weißes Papier. Sie ist per USB mit meinem
+              Rechner verbunden: Das Programm stellt die Kamera ein, löst aus
+              und holt die Bilder sofort ab. An der Kamera selbst drücke ich
+              keinen Knopf.
+            </p>
+            <dl class="settings">
+              <div>
+                <dt>Blende 8</dt>
+                <dd>Die ganze Münze ist scharf, vom Rand bis zur Mitte.</dd>
+              </div>
+              <div>
+                <dt>ISO 100</dt>
+                <dd>
+                  Feinste Bildqualität ohne Rauschen, wichtig für Kratzer und
+                  Münzzeichen.
+                </dd>
+              </div>
+              <div>
+                <dt>Weißabgleich</dt>
+                <dd>
+                  Auf das weiße Papier gemessen. So sieht Silber aus wie Silber
+                  und Gold wie Gold.
+                </dd>
+              </div>
+              <div>
+                <dt>Bildausschnitt</dt>
+                <dd>
+                  Auf dem Kameradisplay im Format 1:1. Dort sehe ich beim
+                  Einlegen genau, was aufgenommen wird.
+                </dd>
+              </div>
+              <div>
+                <dt>Zwei Dateien</dt>
+                <dd>
+                  Jedes Foto entsteht als JPG und als Rohdatei. Die Rohdatei
+                  hebe ich als „Negativ“ auf.
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+        <div class="modes">
+          <div class="mode">
+            <h3>Einzeln</h3>
+            <p>
+              Vorderseite aufnehmen, Münze umdrehen, Rückseite aufnehmen,
+              nächste Münze. Gut für große Stücke wie Taler.
+            </p>
+          </div>
+          <div class="mode">
+            <h3>Im Stapel</h3>
+            <p>
+              Bis zu fünf Münzen liegen nebeneinander auf einer leicht klebrigen
+              Glasplatte. Erst alle Vorderseiten, dann drehe ich die Platte um,
+              und das Programm nimmt die Rückseiten in derselben Reihenfolge
+              auf.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="aufnahme">
+      <div class="wrap">
+        <p class="step-of">Schritt 1: Fotografieren</p>
+        <h2>Die Aufnahme</h2>
+        <div class="text">
+          <p>
+            Nach jedem Foto prüft das Programm das Bild selbst, bevor es
+            weitergeht. Ist es unscharf oder falsch belichtet, fotografiert es
+            von sich aus noch einmal, mit Autofokus oder anderer Belichtung;
+            erst wenn das zweimal nicht hilft, fragt es mich. Liegt die Münze
+            ungünstig, etwa halb außerhalb des Bildes, meldet es sich sofort,
+            und ich lege sie neu hin. Solange es arbeitet, tickt es leise; wenn
+            es auf mich wartet, ertönt ein Glockenton. So muss ich nicht auf den
+            Bildschirm schauen.
+          </p>
+        </div>
+        <ul class="checks">
+          <li>
+            <b>Schärfe</b>Gemessen nur auf der Münze, nicht auf dem Papier.
+          </li>
+          <li>
+            <b>Belichtung</b>Nicht zu dunkel, keine ausgefressenen Glanzlichter.
+          </li>
+          <li>
+            <b>Münze gefunden</b>Der Rand wird erkannt, das Bild wird darauf
+            zugeschnitten.
+          </li>
+          <li>
+            <b>Keine Verwechslung</b>Die Rückseite darf nicht versehentlich noch
+            einmal die Vorderseite sein.
+          </li>
+        </ul>
+        <div class="replay">
+          <h3>So sieht es auf meinem Bildschirm aus</h3>
+          <div class="replay-controls">
+            <div
+              class="seg"
+              role="group"
+              aria-label="Aufnahme wählen"
+              id="replay-pick"
+            ></div>
+            <button class="btn primary" type="button" id="replay-play">
+              Abspielen
+            </button>
+            <button class="btn" type="button" id="replay-step">
+              Nächster Schritt
+            </button>
+          </div>
+          <div class="terminal" aria-live="polite">
+            <div class="bar"><span></span><span></span><span></span></div>
+            <pre id="replay-out"></pre>
+          </div>
+          <p class="muted small" id="replay-note"></p>
+        </div>
+        <div class="tray">
+          <div class="crop-grid">
+            <div class="crop-stage" id="crop-stage"></div>
+            <div class="crop-caption">
+              <h3 id="crop-title"></h3>
+              <div
+                class="seg"
+                role="group"
+                aria-label="Seite"
+                id="crop-side"
+              ></div>
+              <div
+                class="seg"
+                role="group"
+                aria-label="Bearbeitungsschritt"
+                id="crop-step"
+              ></div>
+              <p id="crop-text"></p>
+            </div>
+          </div>
+        </div>
+        <div class="text">
+          <h3>Gerade drehen</h3>
+          <p>
+            Münzen liegen selten gerade. Damit die Fotos in der Sammlung
+            einheitlich aussehen, drehe ich jede Seite nach der Aufnahme mit den
+            Pfeiltasten zurecht. Zwei rote Hilfslinien zeigen dabei die
+            Senkrechte und die Waagerechte. Gedreht wird nicht das
+            zugeschnittene Bild, sondern das Original, damit keine Ecken
+            abgeschnitten werden.
+          </p>
+        </div>
+        <div class="rot-grid">
+          <div class="terminal" id="rot-terminal"></div>
+          <div class="tray replica">
+            <div
+              class="seg"
+              role="group"
+              aria-label="Seite"
+              id="rot-side"
+            ></div>
+            <div
+              class="replica-frame"
+              id="rot-frame"
+              tabindex="0"
+              aria-label="Münze drehen: Pfeiltasten links und rechts, mit Umschalttaste in 10-Grad-Schritten, g blendet die Hilfslinien ein oder aus"
+            ></div>
+            <label class="small" for="rot-range">Drehung</label>
+            <input
+              type="range"
+              id="rot-range"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            />
+            <div class="replica-controls seg">
+              <button
+                class="btn"
+                type="button"
+                id="rot-guides"
+                aria-pressed="true"
+              >
+                Hilfslinien
+              </button>
+              <button class="btn" type="button" id="rot-mine">
+                Meinen Wert zeigen
+              </button>
+              <button class="btn" type="button" id="rot-zero">
+                Auf 0° zurück
+              </button>
+            </div>
+            <p class="replica-read" id="rot-read"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="sammlung">
+      <div class="wrap">
+        <h2>Die Sammlung</h2>
+        <div class="text">
+          <p>
+            Jede Münze bekommt eine Nummer und einen eigenen Ordner, ihre
+            „Akte“. Darin liegen die Fotos, die Rohdateien und später die
+            Ergebnisse der drei Agenten. Nichts geht verloren, und jede Angabe
+            lässt sich bis zur Quelle zurückverfolgen.
+          </p>
+        </div>
+        <div class="counts" id="counts"></div>
+        <pre class="file-list" id="file-list"></pre>
+      </div>
+    </section>
+
+    <section class="chapter" id="bestimmer">
+      <div class="wrap">
+        <p class="step-of">Schritt 2: Bestimmen</p>
+        <h2>Der Bestimmer</h2>
+        <div class="text">
+          <p>
+            Der erste Agent arbeitet wie ein Numismatiker: erst genau hinsehen,
+            dann eingrenzen, dann in den Katalogen nachschlagen und alles
+            abgleichen. Er sucht dabei aktiv nach Gründen, warum es doch eine
+            andere Münze sein könnte, eine Nachprägung oder eine Fälschung. Erst
+            wenn er über 90 % sicher ist, gilt die Münze als bestimmt.
+          </p>
+          <p class="muted small" id="unident-line"></p>
+        </div>
+        <div class="tray" style="display: grid; gap: 1.2rem">
+          <div class="switcher" data-switcher></div>
+          <div id="ident"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="gutachter">
+      <div class="wrap">
+        <p class="step-of">Schritt 3: Bewerten</p>
+        <h2>Der Gutachter</h2>
+        <div class="text">
+          <p>
+            Der zweite Agent bestimmt die Erhaltung nach den Fotos und notiert
+            jeden Kratzer, jeden Fleck und jede Randkerbe mit ihrer Lage auf dem
+            Zifferblatt. Dann sucht er echte Preise für genau diese Münze:
+            Zuschläge aus Auktionen, verkaufte Stücke und aktuelle Angebote,
+            jeweils als solche gekennzeichnet. Kein Preis ohne Quelle, die er
+            selbst geöffnet hat.
+          </p>
+        </div>
+        <div class="tray" style="display: grid; gap: 1.2rem">
+          <div class="switcher" data-switcher></div>
+          <div id="appraise"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="verkaeufer">
+      <div class="wrap">
+        <p class="step-of">Schritt 4: Anbieten</p>
+        <h2>Der Verkäufer</h2>
+        <div class="text">
+          <p>
+            Der dritte Agent schreibt aus Bestimmung und Gutachten ein fertiges
+            Angebot, auf Deutsch und auf Englisch. Er sieht dafür die Fotos
+            nicht an und erfindet nichts dazu: Er übernimmt nur, was die beiden
+            anderen festgestellt haben. Aus diesem einen Angebot bereitet das
+            Programm dann die Einstellung für verschiedene Marktplätze vor.
+          </p>
+        </div>
+        <div class="tray" style="display: grid; gap: 1.2rem">
+          <div class="switcher" data-switcher></div>
+          <div id="lister"></div>
+        </div>
+        <div class="text">
+          <p class="muted small">
+            Gesendet wird nichts, und mit den echten Marktplätzen ausprobiert
+            ist es noch nicht. Für eBay und Delcampe sind die Schritte
+            vorbereitet, die das Programm an den Marktplatz schicken würde;
+            dafür fehlen noch die genannten Zugänge. Die Infokarte zum
+            Ausdrucken funktioniert schon heute, etwa für einen Tauschtag oder
+            eine Vitrine.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="grenzen">
+      <div class="wrap">
+        <h2>Grenzen und Regeln</h2>
+        <ul class="rules">
+          <li>
+            Die Agenten sehen nur Fotos. Sie können nicht wiegen und kein Metall
+            prüfen; wo das wichtig ist, schreiben sie es dazu.
+          </li>
+          <li>
+            Sie können sich irren, und sie sagen, wie sicher sie sind. Unter 90
+            % gilt eine Münze als nicht bestimmt, mit einer Liste der möglichen
+            Kandidaten.
+          </li>
+          <li>
+            Jede Quelle und jeder Preis ist verlinkt. So lässt sich alles
+            nachprüfen, wie beim Hinweis zur Perlenbrosche des Talers.
+          </li>
+          <li>
+            Verkauft wird nichts von allein. Die Entscheidung treffe immer ich.
+          </li>
+          <li>
+            Drei der vier Münzen in den Kapiteln Bestimmen, Bewerten und
+            Anbieten sind Beispiele mit frei verfügbaren Fotos. Ihre Ergebnisse
+            sind im Format der Agenten nachgestellt; die Preise darin sind echte
+            Auktionsergebnisse und Angebote. Der Maria-Theresien-Taler und die
+            Münzen im Kapitel Aufnahme stammen aus meiner Sammlung, mit den
+            echten Ergebnissen der Agenten.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="chapter" id="bildnachweis">
+      <div class="wrap">
+        <h2>Bildnachweis</h2>
+        <ul class="credits" id="credits"></ul>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap"><p class="muted small" id="built"></p></div>
+    </footer>
+
+    <!--SHOWCASE_DATA-->
+    <script>
+      (function () {
+        "use strict";
+        var data = JSON.parse(
+          document.getElementById("showcase-data").textContent,
+        );
+
+        // ---------- helpers ----------
+        function h(tag, attrs) {
+          var el = document.createElement(tag);
+          if (attrs)
+            for (var k in attrs) {
+              var v = attrs[k];
+              if (v === null || v === undefined || v === false) continue;
+              if (k === "text") el.textContent = v;
+              else if (k === "class") el.className = v;
+              else if (k.slice(0, 2) === "on")
+                el.addEventListener(k.slice(2), v);
+              else el.setAttribute(k, v === true ? "" : v);
+            }
+          for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+          return el;
+        }
+        function add(el, c) {
+          if (c === null || c === undefined || c === false) return;
+          if (Array.isArray(c)) {
+            c.forEach(function (x) {
+              add(el, x);
+            });
+            return;
+          }
+          el.appendChild(
+            typeof c === "string" || typeof c === "number"
+              ? document.createTextNode(String(c))
+              : c,
+          );
+        }
+        function clear(el) {
+          while (el.firstChild) el.removeChild(el.firstChild);
+          return el;
+        }
+        function link(href, text) {
+          return h("a", {
+            href: href,
+            target: "_blank",
+            rel: "noopener noreferrer",
+            text: text,
+          });
+        }
+        var euro0 = new Intl.NumberFormat("de-DE", {
+          style: "currency",
+          currency: "EUR",
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        });
+        function eur(v) {
+          return euro0.format(v);
+        }
+        function money(v, cur) {
+          try {
+            return new Intl.NumberFormat("de-DE", {
+              style: "currency",
+              currency: cur,
+              minimumFractionDigits: v % 1 ? 2 : 0,
+              maximumFractionDigits: v % 1 ? 2 : 0,
+            }).format(v);
+          } catch (e) {
+            return v + " " + cur;
+          }
+        }
+        function dateDe(d) {
+          var p = String(d).split("-");
+          if (p.length === 3) return p[2] + "." + p[1] + "." + p[0];
+          if (p.length === 2) return p[1] + "/" + p[0];
+          return p[0];
+        }
+        function deg(d) {
+          return (d > 0 ? "+" : "") + d + "°";
+        }
+        var SIDE = { av: "Vorderseite", rv: "Rückseite" };
+        var NUM_SIDE = { obverse: "Vorderseite", reverse: "Rückseite" };
+        var PRICE_TYPE = {
+          hammer: "Zuschlag",
+          incl_premium: "inkl. Aufgeld",
+          fixed_price: "Festpreis, verkauft",
+          sold: "verkauft",
+          asking: "Angebot",
+        };
+        var CONF = { high: "hoch", medium: "mittel", low: "niedrig" };
+        var SHORT = {
+          "COIN-0004": "Maria-Theresien-Taler 1780",
+          tiberius: "Denar des Tiberius",
+          "goldmark-1913": "20 Mark 1913 A",
+          "double-eagle-1924s": "20 Dollar 1924 S",
+        };
+        function shortName(c) {
+          return SHORT[c.key] || c.identification.coin.title;
+        }
+        function badge(c, short) {
+          return h("span", {
+            class: "badge " + (c.real ? "real" : "example"),
+            text: short ? (c.real ? "echt" : "Beispiel") : c.label,
+          });
+        }
+
+        function flipCoin(front, back, label) {
+          var btn = h(
+            "button",
+            {
+              class: "coin-flip",
+              type: "button",
+              "aria-label": label + ": Münze umdrehen",
+              "aria-pressed": "false",
+            },
+            h(
+              "span",
+              { class: "faces" },
+              h(
+                "span",
+                { class: "face front" },
+                h("img", { src: front, alt: label + ", Vorderseite" }),
+              ),
+              h(
+                "span",
+                { class: "face back" },
+                h("img", { src: back, alt: label + ", Rückseite" }),
+              ),
+            ),
+          );
+          btn.addEventListener("click", function () {
+            var on = !btn.classList.contains("flipped");
+            btn.classList.toggle("flipped", on);
+            btn.setAttribute("aria-pressed", on ? "true" : "false");
+          });
+          return btn;
+        }
+        function seg(container, options, current, onPick, attr) {
+          clear(container);
+          options.forEach(function (o) {
+            var b = h("button", {
+              class: "btn",
+              type: "button",
+              text: o.label,
+            });
+            b.setAttribute(
+              attr || "aria-pressed",
+              o.value === current ? "true" : "false",
+            );
+            b.addEventListener("click", function () {
+              onPick(o.value);
+            });
+            container.appendChild(b);
+          });
+        }
+
+        // ---------- hero ----------
+        var real =
+          data.coins.filter(function (c) {
+            return c.real;
+          })[0] || data.coins[0];
+        (function () {
+          var el = document.getElementById("hero-coin");
+          add(
+            el,
+            flipCoin(real.images.obverse, real.images.reverse, shortName(real)),
+          );
+          add(
+            el,
+            h("p", {
+              class: "muted flip-hint",
+              text:
+                shortName(real) +
+                " aus meiner Sammlung. Antippen zum Umdrehen.",
+            }),
+          );
+        })();
+
+        // ---------- capture replay ----------
+        (function () {
+          var out = document.getElementById("replay-out");
+          var pick = document.getElementById("replay-pick");
+          var note = document.getElementById("replay-note");
+          // The note under the terminal is read from the recorded attempts, so it can never claim more than happened.
+          var DEFECT = {
+            blurry: "zu unscharf",
+            underexposed: "zu dunkel",
+            overexposed: "zu hell",
+            coin_cut_off: "Münze ragte über den Bildrand",
+            no_coin: "keine Münze erkannt",
+          };
+          function summary(lines) {
+            var sides = [],
+              cur = null;
+            lines.forEach(function (l) {
+              if (l.kind === "status") {
+                var side = l.text.split(" · ")[1];
+                if (!cur || cur.side !== side) {
+                  cur = { side: side, tries: [], relaid: false };
+                  sides.push(cur);
+                }
+              } else if (l.kind === "prompt" && cur) {
+                cur.relaid = true;
+              } else if (l.kind === "result" && cur) {
+                var m =
+                  /^Versuch (\d+):.*EV ([^ ]+) · ISO (\d+)( · AF)? → (.*)$/.exec(
+                    l.text,
+                  );
+                if (!m) return;
+                var outcome = m[5],
+                  code = outcome.split(":")[0];
+                var how = [];
+                if (cur.relaid)
+                  how.push("nachdem ich die Münze neu hingelegt hatte");
+                cur.relaid = false;
+                if (m[4]) how.push("mit Autofokus");
+                if (m[3] !== "100") how.push("mit ISO " + m[3]);
+                cur.tries.push({
+                  n: m[1],
+                  ok: outcome === "ok",
+                  what: DEFECT[code] || outcome,
+                  how: how.join(" und "),
+                });
+              }
+            });
+            return sides
+              .map(function (s) {
+                var parts = s.tries.map(function (t) {
+                  var head = "Versuch " + t.n + (t.how ? " (" + t.how + ")" : "");
+                  return head + (t.ok ? " gelungen" : ": " + t.what);
+                });
+                return s.side + ": " + parts.join(", ") + ".";
+              })
+              .join(" ");
+          }
+          var runs = [
+            {
+              value: "clean",
+              label: data.capture.id,
+              lines: data.capture.replay,
+              note: data.capture.title + ". " + summary(data.capture.replay),
+            },
+            {
+              value: "retake",
+              label: data.retake.id,
+              lines: data.retake.replay,
+              note: summary(data.retake.replay),
+            },
+          ];
+          var run = runs[0],
+            pos = 0,
+            timer = null;
+          function line(l) {
+            var cls =
+              l.kind === "status"
+                ? "l-status"
+                : l.kind === "done"
+                  ? "l-done"
+                  : l.kind === "prompt"
+                    ? "l-prompt"
+                    : / → ok$/.test(l.text)
+                      ? "l-result"
+                      : "l-bad";
+            var prefix =
+              l.kind === "done"
+                ? "✓ "
+                : l.kind === "result"
+                  ? "  "
+                  : l.kind === "prompt"
+                    ? "♪ "
+                    : "";
+            var spans = [
+              h("span", { class: cls, text: prefix + l.text + "\n" }),
+            ];
+            if (l.kind === "prompt")
+              spans.push(
+                h("span", {
+                  class: "l-human",
+                  text: "  (Glockenton – ich lege die Münze neu hin und drücke Enter)\n",
+                }),
+              );
+            return spans;
+          }
+          function render() {
+            clear(out);
+            run.lines.slice(0, pos).forEach(function (l) {
+              add(out, line(l));
+            });
+            if (pos === 0)
+              out.appendChild(
+                h("span", {
+                  class: "l-human",
+                  text: "(Ich lege die Münze ein und drücke Enter.)\n",
+                }),
+              );
+            note.textContent = run.note;
+            document.getElementById("replay-step").disabled =
+              pos >= run.lines.length;
+          }
+          function stop() {
+            if (timer) {
+              clearInterval(timer);
+              timer = null;
+            }
+            document.getElementById("replay-play").textContent = "Abspielen";
+          }
+          function choose(v) {
+            stop();
+            run = runs.filter(function (r) {
+              return r.value === v;
+            })[0];
+            pos = 0;
+            seg(pick, runs, v, choose);
+            render();
+          }
+          document
+            .getElementById("replay-step")
+            .addEventListener("click", function () {
+              stop();
+              if (pos < run.lines.length) {
+                pos++;
+                render();
+              }
+            });
+          document
+            .getElementById("replay-play")
+            .addEventListener("click", function () {
+              if (timer) {
+                stop();
+                return;
+              }
+              if (pos >= run.lines.length) pos = 0;
+              this.textContent = "Anhalten";
+              timer = setInterval(function () {
+                pos++;
+                render();
+                if (pos >= run.lines.length) stop();
+              }, 420);
+              render();
+            });
+          choose("clean");
+        })();
+
+        // ---------- crop steps ----------
+        (function () {
+          var side = "av",
+            step = "uncut";
+          var cap = data.capture;
+          var STEPS = [
+            { value: "uncut", label: "Was die Kamera sieht" },
+            { value: "final", label: "Zugeschnitten und gedreht" },
+          ];
+          var TEXT = {
+            uncut:
+              "Das ganze Kamerabild, so wie es ankommt. Den roten Kreis hat das Programm selbst gefunden: Es erkennt die Münze auf dem hellen Papier, misst Mittelpunkt und Radius und prüft genau dort Schärfe und Belichtung.",
+            final:
+              "Daraus schneidet es ein quadratisches Bild mit etwas Rand und dreht es so, wie ich es festgelegt habe. Dieses Bild landet in der Akte der Münze und ist die Grundlage für die Agenten.",
+          };
+          document.getElementById("crop-title").textContent =
+            cap.title + " (" + cap.id + ")";
+          function render() {
+            var s = cap.sides[side];
+            var stage = clear(document.getElementById("crop-stage"));
+            stage.appendChild(
+              h("img", {
+                src: step === "uncut" ? s.uncut : s.final,
+                alt:
+                  SIDE[side] +
+                  ", " +
+                  (step === "uncut"
+                    ? "ungeschnittenes Kamerabild mit erkannter Münze"
+                    : "fertiges Bild"),
+              }),
+            );
+            seg(
+              document.getElementById("crop-side"),
+              [
+                { value: "av", label: "Vorderseite" },
+                { value: "rv", label: "Rückseite" },
+              ],
+              side,
+              function (v) {
+                side = v;
+                render();
+              },
+            );
+            seg(
+              document.getElementById("crop-step"),
+              STEPS,
+              step,
+              function (v) {
+                step = v;
+                render();
+              },
+            );
+            document.getElementById("crop-text").textContent = TEXT[step];
+          }
+          render();
+        })();
+
+        // ---------- rotation ----------
+        (function () {
+          var cap = data.capture;
+          var side = "av",
+            d = 0,
+            guides = true;
+          var frame = document.getElementById("rot-frame");
+          var range = document.getElementById("rot-range");
+          var img = h("img", { alt: "" });
+          var gv = h("span", { class: "guide v" }),
+            gh = h("span", { class: "guide h" });
+          frame.appendChild(img);
+          frame.appendChild(gv);
+          frame.appendChild(gh);
+          function norm(x) {
+            var m = ((x % 360) + 360) % 360;
+            return m > 180 ? m - 360 : m;
+          }
+          function terminal() {
+            var r = cap.sides[side].rotation;
+            var t = clear(document.getElementById("rot-terminal"));
+            t.appendChild(
+              h("div", { class: "bar" }, h("span"), h("span"), h("span")),
+            );
+            t.appendChild(h("p", { class: "term-head", text: r.header }));
+            t.appendChild(
+              h(
+                "div",
+                { class: "stills" },
+                h(
+                  "figure",
+                  null,
+                  h("img", {
+                    src: r.still0,
+                    alt: SIDE[side] + " vor dem Drehen, mit Hilfslinien",
+                  }),
+                  h("figcaption", { text: "vorher: 0°" }),
+                ),
+                h(
+                  "figure",
+                  null,
+                  h("img", {
+                    src: r.stillDeg,
+                    alt:
+                      SIDE[side] +
+                      " gedreht um " +
+                      deg(r.deg) +
+                      ", mit Hilfslinien",
+                  }),
+                  h("figcaption", { text: "nachher: " + deg(r.deg) }),
+                ),
+              ),
+            );
+            t.appendChild(h("p", { class: "term-text", text: r.keyLine }));
+          }
+          function size() {
+            var r = cap.sides[side].rotation;
+            var w = frame.clientWidth * r.paddedRatio;
+            img.style.width = w + "px";
+            img.style.height = w + "px";
+          }
+          function apply() {
+            img.style.transform = "translate(-50%, -50%) rotate(" + d + "deg)";
+            gv.hidden = gh.hidden = !guides;
+            range.value = String(d);
+            document
+              .getElementById("rot-guides")
+              .setAttribute("aria-pressed", guides ? "true" : "false");
+            document.getElementById("rot-read").textContent =
+              cap.id +
+              " · " +
+              SIDE[side] +
+              " · Drehung: " +
+              deg(d) +
+              " (+ = im Uhrzeigersinn)";
+          }
+          function setSide(v) {
+            side = v;
+            d = 0;
+            img.src = cap.sides[side].rotation.padded;
+            seg(
+              document.getElementById("rot-side"),
+              [
+                { value: "av", label: "Vorderseite" },
+                { value: "rv", label: "Rückseite" },
+              ],
+              side,
+              setSide,
+            );
+            terminal();
+            size();
+            apply();
+          }
+          range.addEventListener("input", function () {
+            d = Number(range.value);
+            apply();
+          });
+          document
+            .getElementById("rot-guides")
+            .addEventListener("click", function () {
+              guides = !guides;
+              apply();
+            });
+          document
+            .getElementById("rot-mine")
+            .addEventListener("click", function () {
+              d = cap.sides[side].rotation.deg;
+              apply();
+            });
+          document
+            .getElementById("rot-zero")
+            .addEventListener("click", function () {
+              d = 0;
+              apply();
+            });
+          frame.addEventListener("keydown", function (e) {
+            var step = {
+              ArrowRight: 1,
+              ArrowLeft: -1,
+              ArrowUp: 90,
+              ArrowDown: -90,
+            }[e.key];
+            if (step !== undefined) {
+              if (e.shiftKey && Math.abs(step) === 1) step *= 10;
+              d = norm(d + step);
+              apply();
+              e.preventDefault();
+            } else if (e.key === "0") {
+              d = 0;
+              apply();
+            } else if (e.key === "g" || e.key === "G") {
+              guides = !guides;
+              apply();
+            }
+          });
+          window.addEventListener("resize", size);
+          setSide("av");
+        })();
+
+        // ---------- collection ----------
+        (function () {
+          var c = data.counts;
+          var el = document.getElementById("counts");
+          [
+            [c.captured, "Münzen fotografiert"],
+            [c.identified, "sicher bestimmt"],
+            [c.unidentifiable, "ehrlich als „nicht bestimmbar“ markiert"],
+          ].forEach(function (x) {
+            el.appendChild(
+              h(
+                "div",
+                { class: "count" },
+                h("b", { class: "num", text: String(x[0]) }),
+                h("span", { class: "muted", text: x[1] }),
+              ),
+            );
+          });
+          document.getElementById("file-list").textContent =
+            "Akte einer Münze\n" +
+            "  Vorderseite und Rückseite, fertige Bilder\n" +
+            "  ungeschnittene Fotos und Rohdateien\n" +
+            "  Aufnahmedaten: Einstellungen, Versuche, Messwerte\n" +
+            "  Ergebnis des Bestimmers\n" +
+            "  Ergebnis des Gutachters\n" +
+            "  Angebot auf Deutsch und Englisch\n" +
+            "  eine lesbare Zusammenfassung von allem";
+          document.getElementById("unident-line").textContent =
+            "Unter 90 % schreibt der Bestimmer „nicht bestimmbar“ und nennt seine Kandidaten. Das ist bisher bei " +
+            c.unidentifiable +
+            " meiner Münzen passiert.";
+        })();
+
+        // ---------- coin switcher (chapters 4–6) ----------
+        var current = 0;
+        var renderers = [];
+        function renderSwitchers() {
+          document.querySelectorAll("[data-switcher]").forEach(function (box) {
+            clear(box);
+            data.coins.forEach(function (c, i) {
+              var b = h(
+                "button",
+                {
+                  class: "switch",
+                  type: "button",
+                  "aria-pressed": i === current ? "true" : "false",
+                },
+                h("img", { src: c.images.obverse, alt: "" }),
+                h(
+                  "span",
+                  null,
+                  h("strong", { text: shortName(c) }),
+                  badge(c, true),
+                ),
+              );
+              b.addEventListener("click", function () {
+                current = i;
+                renderAll();
+              });
+              box.appendChild(b);
+            });
+          });
+        }
+        function renderAll() {
+          renderSwitchers();
+          renderers.forEach(function (r) {
+            r(data.coins[current]);
+          });
+        }
+
+        // photo with markers; returns { el, setSide }
+        function markedPhoto(c, markers, onPick, startSide) {
+          var side = startSide || "obverse";
+          var wrap = h("div", { class: "photo-col" });
+          var photo = h("div", { class: "photo" });
+          var tabs = h("div", { class: "side-tabs seg" });
+          wrap.appendChild(photo);
+          wrap.appendChild(tabs);
+          function render() {
+            clear(photo);
+            photo.appendChild(
+              h("img", {
+                src: c.images[side],
+                alt: shortName(c) + ", " + NUM_SIDE[side],
+              }),
+            );
+            markers.forEach(function (m, i) {
+              if (m.marker.side !== side) return;
+              var b = h("button", {
+                class: "marker" + (m.zoom ? " zoom" : ""),
+                type: "button",
+                text: String(i + 1),
+                "aria-label": "Stelle " + (i + 1) + ": " + m.marker.label,
+                "aria-pressed": m.active ? "true" : "false",
+              });
+              b.style.left = m.marker.x * 100 + "%";
+              b.style.top = m.marker.y * 100 + "%";
+              b.addEventListener("click", function () {
+                onPick(i);
+              });
+              photo.appendChild(b);
+            });
+            seg(
+              tabs,
+              [
+                { value: "obverse", label: "Vorderseite" },
+                { value: "reverse", label: "Rückseite" },
+              ],
+              side,
+              function (v) {
+                side = v;
+                render();
+              },
+            );
+          }
+          render();
+          return {
+            el: wrap,
+            setSide: function (v) {
+              side = v;
+              render();
+            },
+            refresh: render,
+          };
+        }
+
+        // ---------- identifier ----------
+        renderers.push(function (c) {
+          var el = clear(document.getElementById("ident"));
+          var id = c.identification,
+            coin = id.coin;
+          var step = "befund",
+            active = -1;
+          var markers = c.zooms.map(function (z) {
+            return { marker: z, zoom: true, active: false };
+          });
+          var loupe = h("div");
+          var photo = markedPhoto(c, markers, function (i) {
+            active = i;
+            markers.forEach(function (m, j) {
+              m.active = j === i;
+            });
+            photo.refresh();
+            showLoupe();
+          });
+          function showLoupe() {
+            clear(loupe);
+            if (active < 0) {
+              if (markers.length)
+                loupe.appendChild(
+                  h("p", {
+                    class: "muted small",
+                    text: "Die Ziffern auf dem Foto zeigen Stellen, die der Agent unter der Lupe angesehen hat. Antippen zum Vergrößern.",
+                  }),
+                );
+              return;
+            }
+            var m = markers[active].marker;
+            var body = h(
+              "div",
+              { style: "display:grid;gap:0.5rem;min-width:0" },
+              h("strong", { text: m.label }),
+            );
+            if (m.note) {
+              body.appendChild(
+                h(
+                  "div",
+                  { class: "note" },
+                  h("p", { text: m.note.text }),
+                  h(
+                    "p",
+                    { class: "small" },
+                    m.note.sources.map(function (s, i) {
+                      return [i ? " · " : "", link(s.url, s.title)];
+                    }),
+                  ),
+                ),
+              );
+            }
+            loupe.appendChild(
+              h(
+                "div",
+                { class: "loupe" },
+                h("img", { src: m.zoom, alt: "Lupe: " + m.label }),
+                body,
+              ),
+            );
+          }
+          showLoupe();
+          var stepsBox = h("div", {
+            class: "steps",
+            role: "tablist",
+            "aria-label": "Arbeitsschritte des Bestimmers",
+          });
+          var body = h("div", { class: "step-body" });
+          var STEPS = [
+            { value: "befund", label: "Befund" },
+            { value: "katalog", label: "Katalog und Quellen" },
+            { value: "begruendung", label: "Begründung" },
+            { value: "ergebnis", label: "Ergebnis" },
+          ];
+          function renderStep() {
+            seg(
+              stepsBox,
+              STEPS,
+              step,
+              function (v) {
+                step = v;
+                renderStep();
+              },
+              "aria-selected",
+            );
+            clear(body);
+            if (step === "befund") {
+              body.appendChild(
+                h("p", {
+                  class: "small muted",
+                  text: "Was der Agent auf den Fotos sieht, bevor er irgendetwas nachschlägt:",
+                }),
+              );
+              body.appendChild(
+                h(
+                  "dl",
+                  { class: "kv" },
+                  h("dt", { text: "Vorderseite" }),
+                  h("dd", { text: id.observations.obverse }),
+                  h("dt", { text: "Rückseite" }),
+                  h("dd", { text: id.observations.reverse }),
+                ),
+              );
+            } else if (step === "katalog") {
+              body.appendChild(
+                h(
+                  "dl",
+                  { class: "kv" },
+                  h("dt", { text: "Katalog" }),
+                  h("dd", { class: "legend", text: coin.catalog.join(", ") }),
+                  h("dt", { text: "Material" }),
+                  h("dd", { text: coin.material }),
+                  coin.weight_g
+                    ? [
+                        h("dt", { text: "Gewicht" }),
+                        h("dd", {
+                          text: String(coin.weight_g).replace(".", ",") + " g",
+                        }),
+                      ]
+                    : null,
+                  coin.diameter_mm
+                    ? [
+                        h("dt", { text: "Durchmesser" }),
+                        h("dd", {
+                          text:
+                            String(coin.diameter_mm).replace(".", ",") + " mm",
+                        }),
+                      ]
+                    : null,
+                  h("dt", { text: "Auflage" }),
+                  h("dd", { text: coin.mintage }),
+                ),
+              );
+              body.appendChild(
+                h(
+                  "ol",
+                  { class: "list" },
+                  id.sources.map(function (s) {
+                    return h(
+                      "li",
+                      null,
+                      link(s.url, s.title),
+                      s.confirms
+                        ? h("span", { class: "muted", text: ": " + s.confirms })
+                        : null,
+                    );
+                  }),
+                ),
+              );
+            } else if (step === "begruendung") {
+              if (id.reasoning)
+                body.appendChild(h("p", { text: id.reasoning }));
+              else
+                body.appendChild(
+                  h("p", {
+                    class: "muted",
+                    text: "Bei diesem frühen Ergebnis steht die Begründung noch direkt im Befund, zum Beispiel der Hinweis auf AVST und die Brosche.",
+                  }),
+                );
+              if (id.candidates && id.candidates.length) {
+                body.appendChild(
+                  h("p", {
+                    class: "small muted",
+                    text: "Geprüft und verworfen:",
+                  }),
+                );
+                body.appendChild(
+                  h(
+                    "ul",
+                    { class: "list" },
+                    id.candidates.map(function (k) {
+                      return h(
+                        "li",
+                        null,
+                        h("strong", { text: k.title }),
+                        " (" + k.confidence + " %): " + k.reason,
+                      );
+                    }),
+                  ),
+                );
+              }
+              body.appendChild(
+                h("p", {
+                  class: "small muted",
+                  text: "Seine feste Reihenfolge:",
+                }),
+              );
+              body.appendChild(
+                h(
+                  "ol",
+                  { class: "method" },
+                  [
+                    "Befund",
+                    "Eingrenzen",
+                    "Katalog",
+                    "Abgleich",
+                    "Ausschluss von Nachprägungen und Fälschungen",
+                    "Belege",
+                    "Sicherheit",
+                  ].map(function (t) {
+                    return h("li", { text: t });
+                  }),
+                ),
+              );
+            } else {
+              body.appendChild(
+                h("p", { class: "grade", text: id.confidence + " % sicher" }),
+              );
+              body.appendChild(
+                h(
+                  "div",
+                  {
+                    class: "meter",
+                    role: "img",
+                    "aria-label":
+                      "Sicherheit " + id.confidence + " %, Grenze 90 %",
+                  },
+                  h("span", {
+                    class: "fill",
+                    style: "width:" + id.confidence + "%",
+                  }),
+                  h("span", { class: "limit", style: "left:90%" }),
+                ),
+              );
+              body.appendChild(
+                h(
+                  "div",
+                  { class: "meter-labels muted" },
+                  h("span", { text: "Sicherheit: " + id.confidence + " %" }),
+                  h("span", { text: "Grenze: über 90 %" }),
+                ),
+              );
+              body.appendChild(h("p", { text: coin.history }));
+              body.appendChild(
+                h("p", { class: "small muted", text: coin.production }),
+              );
+            }
+          }
+          renderStep();
+          el.appendChild(
+            h(
+              "div",
+              { style: "display:grid;gap:1rem" },
+              h(
+                "div",
+                { class: "coin-head" },
+                h("h3", { text: coin.title }),
+                badge(c),
+              ),
+              h(
+                "div",
+                { class: "pair" },
+                photo.el,
+                h("div", { class: "panel" }, loupe, stepsBox, body),
+              ),
+            ),
+          );
+        });
+
+        // ---------- appraiser ----------
+        function rangeChart(a) {
+          var pts = a.prices.map(function (p) {
+            return { v: p.price_eur, ask: p.price_type === "asking" };
+          });
+          var vals = pts.map(function (p) {
+            return p.v;
+          });
+          if (a.estimate_eur)
+            vals.push(a.estimate_eur.low, a.estimate_eur.high);
+          if (a.melt && a.melt.state === "defined") vals.push(a.melt.eur);
+          var lo = Math.min.apply(null, vals),
+            hi = Math.max.apply(null, vals);
+          var log = hi / lo > 5;
+          var W = 600,
+            L = 20,
+            R = 580;
+          function x(v) {
+            if (hi === lo) return (L + R) / 2;
+            return log
+              ? L +
+                  ((Math.log(v) - Math.log(lo)) /
+                    (Math.log(hi) - Math.log(lo))) *
+                    (R - L)
+              : L + ((v - lo) / (hi - lo)) * (R - L);
+          }
+          var NS = "http://www.w3.org/2000/svg";
+          function s(tag, attrs, text) {
+            var e = document.createElementNS(NS, tag);
+            for (var k in attrs) e.setAttribute(k, attrs[k]);
+            if (text) e.textContent = text;
+            return e;
+          }
+          var svg = s("svg", {
+            viewBox: "0 0 " + W + " 96",
+            role: "img",
+            "aria-label":
+              "Preise von " +
+              eur(lo) +
+              " bis " +
+              eur(hi) +
+              (a.estimate_eur
+                ? ", Schätzung " +
+                  eur(a.estimate_eur.low) +
+                  " bis " +
+                  eur(a.estimate_eur.high)
+                : ""),
+          });
+          svg.appendChild(
+            s("line", {
+              x1: L,
+              x2: R,
+              y1: 52,
+              y2: 52,
+              stroke: "currentColor",
+              "stroke-opacity": "0.35",
+            }),
+          );
+          if (a.estimate_eur) {
+            var x1 = x(a.estimate_eur.low),
+              x2 = x(a.estimate_eur.high);
+            svg.appendChild(
+              s("rect", {
+                x: x1,
+                y: 42,
+                width: Math.max(4, x2 - x1),
+                height: 20,
+                rx: 4,
+                fill: "var(--brass-soft)",
+                "fill-opacity": "0.85",
+              }),
+            );
+            svg.appendChild(
+              s(
+                "text",
+                { x: (x1 + x2) / 2, y: 30, "text-anchor": "middle" },
+                "Schätzung",
+              ),
+            );
+          }
+          if (a.melt && a.melt.state === "defined") {
+            var mx = x(a.melt.eur);
+            svg.appendChild(
+              s("line", {
+                x1: mx,
+                x2: mx,
+                y1: 36,
+                y2: 68,
+                stroke: "currentColor",
+                "stroke-dasharray": "3 3",
+              }),
+            );
+            svg.appendChild(
+              s(
+                "text",
+                { x: mx, y: 92, "text-anchor": "middle" },
+                "Metallwert",
+              ),
+            );
+          }
+          pts.forEach(function (p) {
+            svg.appendChild(
+              s("circle", {
+                cx: x(p.v),
+                cy: 52,
+                r: 6,
+                fill: p.ask ? "none" : "currentColor",
+                stroke: "currentColor",
+                "stroke-width": "2",
+              }),
+            );
+          });
+          svg.appendChild(
+            s("text", { x: L, y: 82, "text-anchor": "start" }, eur(lo)),
+          );
+          svg.appendChild(
+            s("text", { x: R, y: 82, "text-anchor": "end" }, eur(hi)),
+          );
+          return h(
+            "div",
+            { class: "range" },
+            svg,
+            h("p", {
+              class: "small muted",
+              text:
+                "Punkte: gefundene Preise (ausgefüllt verkauft, hohl nur angeboten)" +
+                (log ? ", logarithmische Skala" : "") +
+                ".",
+            }),
+          );
+        }
+        renderers.push(function (c) {
+          var el = clear(document.getElementById("appraise"));
+          var a = c.appraisal;
+          var hot = -1;
+          var withMarker = c.damage
+            .map(function (d, i) {
+              return { d: d, i: i };
+            })
+            .filter(function (x) {
+              return x.d.marker;
+            });
+          function photos() {
+            var box = h("div", { class: "photos2" });
+            ["obverse", "reverse"].forEach(function (side) {
+              var p = h(
+                "div",
+                { class: "photo" },
+                h("img", {
+                  src: c.images[side],
+                  alt: shortName(c) + ", " + NUM_SIDE[side],
+                }),
+              );
+              withMarker.forEach(function (x) {
+                if (x.d.marker.side !== side) return;
+                var b = h("button", {
+                  class: "marker" + (hot === x.i ? " hot" : ""),
+                  type: "button",
+                  text: String(x.i + 1),
+                  "aria-label": "Mangel " + (x.i + 1) + ": " + x.d.marker.label,
+                });
+                b.style.left = x.d.marker.x * 100 + "%";
+                b.style.top = x.d.marker.y * 100 + "%";
+                b.addEventListener("click", function () {
+                  hot = x.i;
+                  draw();
+                });
+                p.appendChild(b);
+              });
+              box.appendChild(
+                h(
+                  "div",
+                  { style: "display:grid;gap:0.3rem" },
+                  p,
+                  h("span", { class: "small muted", text: NUM_SIDE[side] }),
+                ),
+              );
+            });
+            return box;
+          }
+          var holder = h("div", { style: "display:grid;gap:1.4rem" });
+          function draw() {
+            clear(holder);
+            var dmg = c.damage.length
+              ? h(
+                  "ol",
+                  { class: "damage-list" },
+                  c.damage.map(function (d, i) {
+                    return h(
+                      "li",
+                      { class: hot === i ? "hot" : "" },
+                      h("span", { class: "n", text: String(i + 1) }),
+                      h("span", {
+                        text: d.text,
+                      }),
+                    );
+                  }),
+                )
+              : h("p", {
+                  class: "muted",
+                  text: "Auf den Fotos keine Mängel erkennbar.",
+                });
+            holder.appendChild(
+              h(
+                "div",
+                { class: "pair" },
+                h("div", { style: "display:grid;gap:0.8rem" }, photos()),
+                h(
+                  "div",
+                  { class: "panel" },
+                  h("p", { class: "muted small", text: "Erhaltung" }),
+                  h("p", { class: "grade", text: a.grade }),
+                  a.grade_note ? h("p", { text: a.grade_note }) : null,
+                  h("p", {
+                    class: "muted small",
+                    text: "Mängel mit Lage auf dem Zifferblatt (12 Uhr = oben):",
+                  }),
+                  dmg,
+                ),
+              ),
+            );
+            var table = h(
+              "table",
+              { class: "prices" },
+              h(
+                "thead",
+                null,
+                h(
+                  "tr",
+                  null,
+                  h("th", { text: "Wo" }),
+                  h("th", { text: "Wann" }),
+                  h("th", { text: "Erhaltung" }),
+                  h("th", { class: "r", text: "Preis" }),
+                  h("th", { class: "r", text: "in Euro" }),
+                  h("th", { text: "Art" }),
+                ),
+              ),
+              h(
+                "tbody",
+                null,
+                a.prices.map(function (p) {
+                  return h(
+                    "tr",
+                    null,
+                    h("td", null, link(p.url, p.venue)),
+                    h("td", { class: "num", text: dateDe(p.date) }),
+                    h("td", { text: p.grade }),
+                    h("td", {
+                      class: "r num",
+                      text: money(p.price, p.currency),
+                    }),
+                    h("td", { class: "r num", text: eur(p.price_eur) }),
+                    h("td", { text: PRICE_TYPE[p.price_type] || p.price_type }),
+                  );
+                }),
+              ),
+            );
+            var est = a.estimate_eur
+              ? h("p", {
+                  class: "estimate num",
+                  text:
+                    "Schätzung: " +
+                    eur(a.estimate_eur.low) +
+                    " bis " +
+                    eur(a.estimate_eur.high),
+                })
+              : h("p", { class: "estimate", text: "Keine Schätzung möglich" });
+            var meta = [];
+            if (a.estimate_confidence)
+              meta.push(
+                "Sicherheit der Schätzung: " +
+                  (CONF[a.estimate_confidence] || a.estimate_confidence),
+              );
+            if (a.melt && a.melt.state === "defined")
+              meta.push("Metallwert: " + eur(a.melt.eur));
+            if (a.melt && a.melt.state === "unknown")
+              meta.push("Metallwert: nicht bestimmbar (" + a.melt.reason + ")");
+            holder.appendChild(
+              h(
+                "div",
+                { style: "display:grid;gap:0.9rem" },
+                h("h3", { text: "Gefundene Preise" }),
+                h("div", { class: "table-wrap" }, table),
+                rangeChart(a),
+                est,
+                meta.length
+                  ? h("p", {
+                      class: "small muted",
+                      text: meta.join(". ") + ".",
+                    })
+                  : null,
+                h("p", { text: a.reasoning }),
+              ),
+            );
+          }
+          draw();
+          el.appendChild(
+            h(
+              "div",
+              { style: "display:grid;gap:1rem" },
+              h(
+                "div",
+                { class: "coin-head" },
+                h("h3", { text: c.identification.coin.title }),
+                badge(c),
+              ),
+              holder,
+            ),
+          );
+        });
+
+        // ---------- lister ----------
+        function markdown(md) {
+          var box = h("div", { class: "doc", lang: "" });
+          var list = null,
+            para = [];
+          function inline(text) {
+            var parts = text.split(/\*\*(.+?)\*\*/g);
+            return parts.map(function (t, i) {
+              return i % 2 ? h("strong", { text: t }) : t;
+            });
+          }
+          function flushPara() {
+            if (para.length) {
+              box.appendChild(h("p", null, inline(para.join(" "))));
+              para = [];
+            }
+          }
+          md.split(/\r?\n/).forEach(function (raw) {
+            var line = raw.trimEnd();
+            var m;
+            if ((m = /^(#{1,3})\s+(.*)$/.exec(line))) {
+              flushPara();
+              list = null;
+              box.appendChild(
+                h(m[1].length === 1 ? "h1" : "h2", null, inline(m[2])),
+              );
+            } else if ((m = /^[-*]\s+(.*)$/.exec(line))) {
+              flushPara();
+              if (!list) {
+                list = h("ul");
+                box.appendChild(list);
+              }
+              list.appendChild(h("li", null, inline(m[1])));
+            } else if (line.trim() === "") {
+              flushPara();
+              list = null;
+            } else {
+              list = null;
+              para.push(line.trim());
+            }
+          });
+          flushPara();
+          return box;
+        }
+        var lang = "de",
+          platform = 0;
+        var SPEC = {
+          country: "Land",
+          denomination: "Nominal",
+          year: "Jahr",
+          mint: "Münzstätte",
+          material: "Material",
+          grade: "Erhaltung",
+        };
+        renderers.push(function (c) {
+          var el = clear(document.getElementById("lister"));
+          var L = c.listing;
+          var langBox = h("div", {
+            class: "seg",
+            role: "group",
+            "aria-label": "Sprache",
+          });
+          var textCol = h("div", {
+            style: "display:grid;gap:0.8rem;min-width:0",
+          });
+          var platBox = h("div", { style: "display:grid;gap:1rem" });
+          function renderTexts() {
+            seg(
+              langBox,
+              [
+                { value: "de", label: "Deutsch" },
+                { value: "en", label: "Englisch" },
+              ],
+              lang,
+              function (v) {
+                lang = v;
+                renderTexts();
+              },
+            );
+            clear(textCol);
+            textCol.appendChild(
+              h("p", {
+                class: "muted small",
+                text: "Titel (höchstens 80 Zeichen, so verlangt es eBay):",
+              }),
+            );
+            textCol.appendChild(
+              h("p", {
+                class: "grade",
+                style: "font-size:1.2rem",
+                lang: lang,
+                text: L.title[lang],
+              }),
+            );
+            textCol.appendChild(h("p", { lang: lang, text: L.summary[lang] }));
+            textCol.appendChild(
+              h(
+                "table",
+                { class: "spec" },
+                h(
+                  "tbody",
+                  null,
+                  Object.keys(SPEC).map(function (k) {
+                    return h(
+                      "tr",
+                      null,
+                      h("th", { text: SPEC[k] }),
+                      h("td", { lang: lang, text: L.specifics[k][lang] }),
+                    );
+                  }),
+                ),
+              ),
+            );
+            var doc = markdown(c.descriptions[lang]);
+            doc.setAttribute("lang", lang);
+            textCol.appendChild(
+              h("p", {
+                class: "muted small",
+                text: "Die ausführliche Beschreibung für Käufer:",
+              }),
+            );
+            textCol.appendChild(doc);
+          }
+          function renderPlatform() {
+            clear(platBox);
+            var tabs = h("div", {
+              class: "seg",
+              role: "tablist",
+              "aria-label": "Marktplatz",
+            });
+            seg(
+              tabs,
+              c.platforms.map(function (p, i) {
+                return { value: i, label: p.name };
+              }),
+              platform,
+              function (v) {
+                platform = v;
+                renderPlatform();
+              },
+              "aria-selected",
+            );
+            platBox.appendChild(tabs);
+            var p = c.platforms[platform];
+            if (p.cardHtml) {
+              var frameBox = h("div", { class: "card-frame" });
+              var iframe = h("iframe", {
+                title: "Infokarte A5 für " + shortName(c),
+                sandbox: "allow-scripts",
+              });
+              iframe.srcdoc = p.cardHtml;
+              frameBox.appendChild(iframe);
+              var fit = function () {
+                var s = Math.min(1, frameBox.clientWidth / 560);
+                iframe.style.transform = "scale(" + s + ")";
+                frameBox.style.height = Math.round(794 * s) + "px";
+              };
+              platBox.appendChild(
+                h(
+                  "div",
+                  { class: "platform" },
+                  h(
+                    "div",
+                    { style: "display:grid;gap:0.7rem" },
+                    h("p", {
+                      text: "Eine Karte im Format A5 zum Ausdrucken, mit Fotos, Daten, Erhaltung und Kurzbeschreibung. Sie entsteht aus demselben Angebot und funktioniert schon heute.",
+                    }),
+                    h("p", {
+                      class: "muted small",
+                      text: "Unten die Karte so, wie sie gedruckt wird (verkleinert).",
+                    }),
+                  ),
+                  frameBox,
+                ),
+              );
+              requestAnimationFrame(fit);
+              window.addEventListener("resize", fit);
+              return;
+            }
+            var left = h(
+              "div",
+              { style: "display:grid;gap:0.8rem;min-width:0" },
+              h("p", null, h("span", { class: "status", text: p.status })),
+              p.missing.length
+                ? [
+                    h("p", {
+                      class: "small muted",
+                      text: "Es fehlt noch:",
+                    }),
+                    h(
+                      "ul",
+                      { class: "list" },
+                      p.missing.map(function (m) {
+                        return h("li", { text: m });
+                      }),
+                    ),
+                  ]
+                : null,
+              p.warnings.map(function (w) {
+                return h("p", { class: "warning", text: w });
+              }),
+              p.steps.length
+                ? [
+                    h("p", {
+                      class: "small muted",
+                      text:
+                        "Was das Programm an " + p.name + " schicken würde:",
+                    }),
+                    h(
+                      "ol",
+                      { class: "steps-list" },
+                      p.steps.map(function (s) {
+                        return h("li", { text: s.replace(/^\d+\.\s*/, "") });
+                      }),
+                    ),
+                  ]
+                : null,
+            );
+            var right = h(
+              "table",
+              { class: "spec" },
+              h(
+                "tbody",
+                null,
+                p.fields.map(function (f) {
+                  return h(
+                    "tr",
+                    null,
+                    h("th", { text: f[0] }),
+                    h("td", { text: f[1] }),
+                  );
+                }),
+              ),
+            );
+            platBox.appendChild(
+              h(
+                "div",
+                { class: "platform" },
+                left,
+                h(
+                  "div",
+                  { style: "min-width:0" },
+                  h("p", {
+                    class: "small muted",
+                    text: "Angaben für " + p.name + ":",
+                  }),
+                  right,
+                ),
+              ),
+            );
+          }
+          renderTexts();
+          renderPlatform();
+          el.appendChild(
+            h(
+              "div",
+              { style: "display:grid;gap:1.4rem" },
+              h(
+                "div",
+                { class: "coin-head" },
+                h("h3", { text: c.identification.coin.title }),
+                badge(c),
+              ),
+              h(
+                "div",
+                { class: "lister-grid" },
+                h(
+                  "div",
+                  { style: "display:grid;gap:0.8rem;min-width:0" },
+                  langBox,
+                  textCol,
+                ),
+                platBox,
+              ),
+            ),
+          );
+        });
+
+        renderAll();
+
+        // ---------- credits ----------
+        (function () {
+          var el = document.getElementById("credits");
+          el.appendChild(
+            h("li", {
+              text:
+                "Maria-Theresien-Taler (" +
+                real.key +
+                "), " +
+                data.capture.title +
+                " (" +
+                data.capture.id +
+                ") und " +
+                data.retake.id +
+                ": eigene Aufnahmen.",
+            }),
+          );
+          data.coins.forEach(function (c) {
+            var seen = {};
+            c.credits.forEach(function (cr) {
+              var k = cr.author + cr.source + cr.license.split(",")[0];
+              if (seen[k]) return;
+              seen[k] = true;
+              el.appendChild(
+                h(
+                  "li",
+                  null,
+                  shortName(c) + ": " + cr.author + ", ",
+                  link(cr.source, "Quelle"),
+                  ", " +
+                    cr.license.split(",")[0] +
+                    ", für diese Seite in Vorder- und Rückseite geteilt.",
+                ),
+              );
+            });
+          });
+          var d = new Date(data.builtAt);
+          document.getElementById("built").textContent =
+            "Stand: " +
+            (isNaN(d)
+              ? data.builtAt
+              : d.toLocaleDateString("de-DE", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })) +
+            ". Jeder Preis trägt das Datum seiner Auktion oder seines Angebots; in Euro umgerechnet zu Kursen von Anfang November 2026.";
+        })();
+      })();
+    </script>
+  </body>
+</html>

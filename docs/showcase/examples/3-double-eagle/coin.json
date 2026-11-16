@@ -1,0 +1,184 @@
+{
+  "key": "double-eagle-1924s",
+  "identification": {
+    "id": "COIN-9003",
+    "state": "identified",
+    "confidence": 96,
+    "observations": {
+      "obverse_image": "av",
+      "obverse": "Stehende Liberty mit Fackel in der Rechten und Ölzweig in der Linken vor einem Strahlenkranz, links unten das Kapitol, Sternenkranz am Rand. Oben LIBERTY, rechts unten die Jahreszahl 1924. Unter der Jahreszahl, unter der Lupe klar erkennbar, das kleine Münzzeichen S (San Francisco).",
+      "reverse": "Fliegender Adler nach links vor der aufgehenden Sonne. Umschrift UNITED STATES OF AMERICA, darunter TWENTY DOLLARS, unten über der Sonne das Motto IN GOD WE TRUST (seit 1908 auf dieser Münze).",
+      "diameter_mm": null
+    },
+    "coin": {
+      "title": "USA, 20 Dollar 1924 S (Saint-Gaudens Double Eagle), San Francisco",
+      "issuer": "Vereinigte Staaten von Amerika",
+      "denomination": "20 Dollar (Double Eagle)",
+      "year": "1924",
+      "mint": "San Francisco (Münzzeichen S unter der Jahreszahl)",
+      "catalog": ["KM# 131", "PCGS# 9179", "Numista N# 23126"],
+      "material": "Gold 900/1000 (30,09 g Feingold)",
+      "precious_metals": ["gold"],
+      "weight_g": 33.43,
+      "diameter_mm": 34.1,
+      "production": "1924 in San Francisco geprägt. Entwurf von Augustus Saint-Gaudens (1907), mit dem Motto IN GOD WE TRUST seit 1908.",
+      "mintage": "2.927.500 Stück (laut PCGS CoinFacts); die meisten wurden nie ausgegeben und 1937 eingeschmolzen",
+      "history": "Präsident Theodore Roosevelt wollte amerikanische Münzen so schön machen wie antike griechische und beauftragte den Bildhauer Augustus Saint-Gaudens. Sein Double Eagle gilt vielen als die schönste Münze der USA. Von der Prägung 1924 in San Francisco wurde nur ein kleiner Teil exportiert; der Rest blieb in den Tresoren der Regierung und wurde 1937 eingeschmolzen. Bis in die 1950er Jahre galt die 1924-S als eine der seltensten Double Eagles überhaupt. Dann tauchten kleine Mengen aus europäischen Banken auf, in den 1960er Jahren noch einmal über hundert Stück. Fast alle bekannten Exemplare tragen deutliche Beutelspuren."
+    },
+    "reasoning": "Typ, Motto und Jahreszahl 1924 sind eindeutig. Entscheidend ist das kleine S unter der Jahreszahl: Es macht aus einem häufigen Jahrgang (1924 ohne Münzzeichen, Philadelphia) die viel seltenere Prägung aus San Francisco, die im Stempelglanz etwa das Zweieinhalbfache kostet. Bei seltenen Münzzeichen kommen nachträglich eingesetzte Buchstaben vor; Form, Lage und Übergang des S zum Feld sehen hier original aus, eine Prüfung durch einen Prüfdienst ist vor einem Verkauf trotzdem angeraten. Stil, Sterne, Schrift und Rand passen zu Originalen; das Gewicht konnte nicht gemessen werden.",
+    "summary": "",
+    "candidates": [
+      {
+        "title": "USA, 20 Dollar 1924 (Philadelphia, ohne Münzzeichen)",
+        "confidence": 2,
+        "reason": "Häufiger Jahrgang; ausgeschlossen, weil unter der Jahreszahl ein S steht."
+      },
+      {
+        "title": "USA, 20 Dollar 1924 D (Denver)",
+        "confidence": 1,
+        "reason": "Das Münzzeichen ist eindeutig ein S, kein D."
+      }
+    ],
+    "sources": [
+      {
+        "title": "PCGS CoinFacts – 1924-S $20",
+        "url": "https://www.pcgs.com/coinfacts/coin/1924-s-20/9179",
+        "confirms": "Auflage 2.927.500, Seltenheitsgeschichte, Funde aus Europa, typische Beutelspuren"
+      },
+      {
+        "title": "Stack's Bowers – 1924-S Saint-Gaudens Double Eagle",
+        "url": "https://stacksbowers.com/coin-resource-center/coin/1924-s-saint-gaudens-double-eagle/",
+        "confirms": "Großteil der Auflage 1937 eingeschmolzen, heute einige hundert Stück bekannt"
+      },
+      {
+        "title": "Numista N# 23126 – 20 Dollars (Saint-Gaudens, With motto)",
+        "url": "https://en.numista.com/23126",
+        "confirms": "33,43 g, 34,1 mm, Gold 900/1000, KM# 131"
+      }
+    ]
+  },
+  "appraisal": {
+    "id": "COIN-9003",
+    "grade": "vz-st (AU-58)",
+    "grade_note": "Volle Details an Liberty und Adler, Glanz in den Feldern weitgehend erhalten. Zahlreiche Beutelspuren und Haarkratzer in den Feldern, wie für diese Ausgabe typisch, dazu Flecken und eine kleine Randkerbe. Leichte Reibung auf den höchsten Stellen.",
+    "damage": [
+      "Vs.: zahlreiche feine Kratzer und kleine rotbraune Flecken im Feld links von Liberty bei ca. 8–9 Uhr",
+      "Vs.: kleine Randkerbe bei ca. 3 Uhr",
+      "Vs. (Liberty): verstreute Kontaktmarken auf Gewand und Beinen",
+      "Rs.: dunkle Verfärbungen und Flecken auf dem Flügel des Adlers bei ca. 1–2 Uhr",
+      "Rs.: Beutelspuren und Haarkratzer im Feld vor dem Kopf des Adlers bei ca. 9 Uhr"
+    ],
+    "prices": [
+      {
+        "url": "https://www.pcgs.com/auctionprices/details/1924-s-ms/9179",
+        "venue": "Heritage Auctions, Summer FUN Signature Auction #1394 (Los 3318)",
+        "date": "2026-07",
+        "grade": "NGC MS63",
+        "price": 10370,
+        "currency": "USD",
+        "price_eur": 9258.93,
+        "price_type": "incl_premium"
+      },
+      {
+        "url": "https://www.pcgs.com/auctionprices/details/1924-s-ms/9179",
+        "venue": "Heritage Auctions, CSNS Signature Auction #1393 (Los 4243)",
+        "date": "2026-05",
+        "grade": "PCGS MS63",
+        "price": 10980,
+        "currency": "USD",
+        "price_eur": 9803.57,
+        "price_type": "incl_premium"
+      },
+      {
+        "url": "https://www.pcgs.com/auctionprices/details/1924-s-ms/9179",
+        "venue": "Heritage Auctions, GACC Signature Auction #1386 (Los 3211)",
+        "date": "2025-10",
+        "grade": "NGC MS62",
+        "price": 9600,
+        "currency": "USD",
+        "price_eur": 8571.43,
+        "price_type": "incl_premium"
+      },
+      {
+        "url": "https://www.pcgs.com/auctionprices/details/1924-s-ms/9179",
+        "venue": "Stack's Bowers, Summer 2025 Global Showcase Auction (Los 6480)",
+        "date": "2025-09",
+        "grade": "PCGS MS62",
+        "price": 7800,
+        "currency": "USD",
+        "price_eur": 6964.29,
+        "price_type": "incl_premium"
+      },
+      {
+        "url": "https://www.pcgs.com/auctionprices/details/1924-s-ms/9179",
+        "venue": "Heritage Auctions, CSNS Signature Auction #1383 (Los 4403)",
+        "date": "2025-05",
+        "grade": "PCGS Genuine (Erhaltung mit Mängeln)",
+        "price": 5520,
+        "currency": "USD",
+        "price_eur": 4928.57,
+        "price_type": "incl_premium"
+      }
+    ],
+    "melt": { "state": "defined", "eur": 3463.66 },
+    "estimate_eur": { "low": 5800, "high": 7200 },
+    "reasoning": "Bei dieser Ausgabe zählt jede Erhaltungsstufe: MS62 brachte 2025 zwischen 7.800 $ und 9.600 $, MS63 in den Jahren 2025/26 rund 10.400–11.000 $ (alle inklusive Aufgeld, Heritage und Stack's Bowers, laut PCGS-Auktionsarchiv; umgerechnet zum Kurs von Anfang November 2026). Ein Stück, das der Prüfdienst nur als echt, aber mit Mängeln bewertete („Genuine“), brachte 5.520 $. Dieses Exemplar liegt mit AU-58 knapp unter Stempelglanz und hat Flecken und eine Randkerbe. Daraus ergeben sich 5.800–7.200 €. Zum Vergleich: Ohne das S (1924 Philadelphia) läge der Wert nahe am Goldwert von rund 3.460 €."
+  },
+  "texts": {
+    "id": "COIN-9003",
+    "title": {
+      "de": "USA 20 Dollar 1924 S Saint-Gaudens Double Eagle San Francisco Gold vz-st",
+      "en": "USA 1924-S $20 Saint-Gaudens Double Eagle San Francisco gold AU-58"
+    },
+    "summary": {
+      "de": "Seltene Ausgabe aus San Francisco: Von 2.927.500 geprägten Stücken wurden die meisten 1937 eingeschmolzen, bis in die 1950er Jahre galt die 1924-S als eine der seltensten Double Eagles. Erhaltung vz-st (AU-58) mit Beutelspuren, Flecken und einer kleinen Randkerbe. Nicht zertifiziert.",
+      "en": "Scarce San Francisco issue: most of the 2,927,500 coins struck were melted in 1937, and until the 1950s the 1924-S was thought to be one of the rarest double eagles. Grade AU-58 with bag marks, spots and a small rim nick. Not certified."
+    },
+    "specifics": {
+      "country": { "de": "USA", "en": "United States" },
+      "denomination": {
+        "de": "20 Dollar (Double Eagle)",
+        "en": "20 Dollars (Double Eagle)"
+      },
+      "year": { "de": "1924", "en": "1924" },
+      "mint": { "de": "San Francisco (S)", "en": "San Francisco (S)" },
+      "material": { "de": "Gold 900/1000", "en": "Gold .900" },
+      "grade": { "de": "vz-st", "en": "AU-58" }
+    }
+  },
+  "descriptions": {
+    "de": "# USA 20 Dollar 1924 S Saint-Gaudens Double Eagle San Francisco Gold vz-st\n\nAngeboten wird ein Double Eagle zu 20 Dollar nach dem Entwurf von Augustus Saint-Gaudens, geprägt 1924 in San Francisco (Münzzeichen S unter der Jahreszahl).\n\n## Daten\n\n- **Herausgeber:** Vereinigte Staaten von Amerika\n- **Nominal:** 20 Dollar (Double Eagle)\n- **Jahr:** 1924\n- **Münzstätte:** San Francisco (S)\n- **Katalog:** KM# 131, PCGS# 9179\n- **Material:** Gold 900/1000 (30,09 g Feingold)\n- **Gewicht:** 33,43 g\n- **Durchmesser:** 34,1 mm\n- **Auflage:** 2.927.500 Stück, die meisten 1937 eingeschmolzen\n\n## Vorderseite und Rückseite\n\n**Vorderseite:** Stehende Liberty mit Fackel und Ölzweig vor einem Strahlenkranz, links das Kapitol, oben LIBERTY, rechts die Jahreszahl 1924 mit dem Münzzeichen S darunter.\n\n**Rückseite:** Fliegender Adler vor der aufgehenden Sonne, Umschrift UNITED STATES OF AMERICA und TWENTY DOLLARS, unten IN GOD WE TRUST.\n\n## Erhaltung\n\nDie Münze wurde mit **vz-st (AU-58)** bewertet. Die Erhaltung wurde anhand von Fotos beurteilt, die Münze ist nicht zertifiziert. Folgende Mängel sind vorhanden:\n\n- Vorderseite: zahlreiche feine Kratzer und kleine rotbraune Flecken im Feld links von Liberty bei ca. 8–9 Uhr\n- Vorderseite: kleine Randkerbe bei ca. 3 Uhr\n- Vorderseite: verstreute Kontaktmarken auf Gewand und Beinen der Liberty\n- Rückseite: dunkle Verfärbungen und Flecken auf dem Flügel des Adlers bei ca. 1–2 Uhr\n- Rückseite: Beutelspuren und Haarkratzer im Feld vor dem Kopf des Adlers bei ca. 9 Uhr\n\n## Geschichte\n\nDer Double Eagle von Augustus Saint-Gaudens entstand auf Wunsch von Präsident Theodore Roosevelt und gilt vielen als die schönste Münze der USA. Von der Prägung 1924 in San Francisco wurde der größte Teil 1937 eingeschmolzen. Bis in die 1950er Jahre galt die 1924-S als große Seltenheit, dann tauchten kleine Mengen aus europäischen Banken auf.\n\n## Fotos\n\nDie Fotos zeigen genau diese Münze.\n",
+    "en": "# USA 1924-S $20 Saint-Gaudens Double Eagle San Francisco gold AU-58\n\nOffered is a $20 double eagle designed by Augustus Saint-Gaudens, struck in 1924 in San Francisco (S mint mark below the date).\n\n## Details\n\n- **Issuer:** United States of America\n- **Denomination:** 20 Dollars (Double Eagle)\n- **Year:** 1924\n- **Mint:** San Francisco (S)\n- **Catalogue:** KM# 131, PCGS# 9179\n- **Material:** Gold .900 (30.09 g fine gold)\n- **Weight:** 33.43 g\n- **Diameter:** 34.1 mm\n- **Mintage:** 2,927,500, most melted in 1937\n\n## Obverse and reverse\n\n**Obverse:** Standing Liberty with torch and olive branch before a sunburst, the Capitol at left, LIBERTY above, date 1924 at right with the S mint mark below.\n\n**Reverse:** Eagle in flight before the rising sun, legends UNITED STATES OF AMERICA and TWENTY DOLLARS, IN GOD WE TRUST below.\n\n## Condition\n\nGraded **AU-58** from photos; not certified. Flaws:\n\n- Obverse: many fine scratches and small reddish-brown spots in the field left of Liberty at about 8–9 o'clock\n- Obverse: small rim nick at about 3 o'clock\n- Obverse: scattered contact marks on Liberty's gown and legs\n- Reverse: dark toning spots on the eagle's wing at about 1–2 o'clock\n- Reverse: bag marks and hairlines in the field before the eagle's head at about 9 o'clock\n\n## History\n\nSaint-Gaudens designed the double eagle at the request of President Theodore Roosevelt, and many consider it the most beautiful US coin. Most of the 1924-S mintage was melted in 1937; until the 1950s the issue was regarded as a great rarity, when small numbers surfaced from European banks.\n\n## Photos\n\nThe photos show the exact coin offered.\n"
+  },
+  "images": { "av": "av.jpg", "rv": "rv.jpg" },
+  "zooms": [
+    {
+      "side": "obverse",
+      "x": 0.72,
+      "y": 0.69,
+      "size": 0.18,
+      "label": "Das kleine S unter der Jahreszahl – San Francisco"
+    },
+    {
+      "side": "reverse",
+      "x": 0.5,
+      "y": 0.82,
+      "size": 0.38,
+      "label": "Motto IN GOD WE TRUST – erst ab 1908"
+    }
+  ],
+  "credits": [
+    {
+      "what": "av.jpg",
+      "author": "unbekannt (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:USA-1924-Coin-20.jpg",
+      "license": "gemeinfrei (Public Domain), auf die Vorderseite zugeschnitten"
+    },
+    {
+      "what": "rv.jpg",
+      "author": "unbekannt (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:USA-1924-Coin-20.jpg",
+      "license": "gemeinfrei (Public Domain), auf die Rückseite zugeschnitten"
+    }
+  ]
+}
