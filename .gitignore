@@ -20,3 +20,6 @@ samples/*
 
 # Git worktrees of other Claude sessions
 .claude/worktrees/
+
+# Brainstorming companion sessions
+.superpowers/

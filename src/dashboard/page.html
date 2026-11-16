@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Münzsammlung</title>
+    <style>
+      :root {
+        --bg: #f6f3ec;
+        --panel: #fffdf8;
+        --ink: #231f18;
+        --muted: #7a7164;
+        --line: #e2dccd;
+        --accent: #8a5a12;
+        --badge: #231f18;
+        --badge-ink: #f6f3ec;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #15130f;
+          --panel: #1e1b15;
+          --ink: #efe9dc;
+          --muted: #9a9080;
+          --line: #332e24;
+          --accent: #e0b25a;
+          --badge: #e0b25a;
+          --badge-ink: #15130f;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      header {
+        padding: 20px 24px 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 32px;
+        align-items: baseline;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0;
+      }
+      .totals {
+        color: var(--muted);
+      }
+      .totals b {
+        color: var(--accent);
+        font-size: 18px;
+      }
+      nav {
+        padding: 12px 24px 0;
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--line);
+      }
+      nav button {
+        background: none;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 8px 14px;
+        font: inherit;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      nav button.on {
+        color: var(--ink);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .bar {
+        padding: 14px 24px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .bar input,
+      .bar select {
+        font: inherit;
+        padding: 6px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--ink);
+      }
+      h2 {
+        margin: 8px 24px;
+        font-size: 16px;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 22px;
+        padding: 8px 24px 40px;
+      }
+      .tile {
+        text-align: center;
+        cursor: pointer;
+        position: relative;
+      }
+      .tile .coin {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        box-shadow: 0 6px 18px #0004;
+        transition: transform 0.15s;
+        background: var(--line);
+      }
+      .tile:hover .coin {
+        transform: scale(1.04);
+      }
+      .badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--badge);
+        color: var(--badge-ink);
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .tile .t {
+        margin-top: 8px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .tile .s {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .empty {
+        padding: 24px;
+        color: var(--muted);
+      }
+      #ov {
+        position: fixed;
+        inset: 0;
+        background: #000b;
+        display: none;
+        z-index: 10;
+        overflow: auto;
+      }
+      #ov.open {
+        display: block;
+      }
+      .sheet {
+        background: var(--panel);
+        max-width: 1280px;
+        margin: 24px auto;
+        border-radius: 14px;
+        padding: 20px;
+        position: relative;
+      }
+      .sheet .nav {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        display: flex;
+        gap: 6px;
+      }
+      .sheet .nav button {
+        font: inherit;
+        padding: 4px 12px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--ink);
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .sheet h3 {
+        margin: 0 150px 4px 0;
+        font-size: 20px;
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 24px;
+        margin-top: 12px;
+      }
+      @media (max-width: 900px) {
+        .cols {
+          grid-template-columns: 1fr;
+        }
+      }
+      .photos {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-content: start;
+      }
+      .photos figure {
+        margin: 0;
+        text-align: center;
+      }
+      .photos .frame {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        overflow: hidden;
+        cursor: zoom-in;
+        background: var(--line);
+        box-shadow: 0 6px 18px #0004;
+      }
+      .photos img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.2s;
+        transform-origin: var(--x, 50%) var(--y, 50%);
+      }
+      .frame.zoom {
+        cursor: zoom-out;
+      }
+      .frame.zoom img {
+        transform: scale(2.6);
+      }
+      .photos figcaption {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      .flip {
+        grid-column: 1 / -1;
+        text-align: center;
+      }
+      .flip button {
+        font: inherit;
+        padding: 4px 12px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--ink);
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .photos.flipped {
+        direction: rtl;
+      }
+      .photos.flipped figure {
+        direction: ltr;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+      }
+      td,
+      th {
+        text-align: left;
+        padding: 4px 8px 4px 0;
+        vertical-align: top;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        color: var(--muted);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      h4 {
+        margin: 18px 0 6px;
+        font-size: 14px;
+        color: var(--accent);
+      }
+      p {
+        margin: 6px 0;
+      }
+      ul {
+        margin: 4px 0;
+        padding-left: 20px;
+      }
+      a {
+        color: var(--accent);
+      }
+      .big {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .err {
+        color: #c0392b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Münzsammlung</h1>
+      <div class="totals" id="totals"></div>
+    </header>
+    <nav>
+      <button data-tab="coll" class="on">Sammlung</button>
+      <button data-tab="open">Unbestimmt</button>
+    </nav>
+    <div class="bar" id="bar"></div>
+    <div id="main"></div>
+    <div id="ov"><div class="sheet" id="sheet"></div></div>
+
+    <script>
+      const $ = (s) => document.querySelector(s);
+      const esc = (v) =>
+        String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const eur = (n) =>
+        new Intl.NumberFormat("de-DE", {
+          style: "currency",
+          currency: "EUR",
+          maximumFractionDigits: 2,
+        }).format(n);
+      const num = (n) => new Intl.NumberFormat("de-DE").format(n);
+      let coins = [];
+      let tab = "coll";
+      let shown = []; // ids in the current overlay order
+      const f = { q: "", sort: "value", material: "", issuer: "" };
+
+      async function load() {
+        coins = await (await fetch("/api/coins")).json();
+        renderTotals();
+        render();
+      }
+
+      function renderTotals() {
+        const ap = coins.filter((c) => c.kind === "appraised");
+        const sum = ap.reduce((s, c) => s + (c.estimate?.mid ?? 0), 0);
+        $("#totals").innerHTML =
+          `${ap.length} bestimmte Münzen · geschätzter Gesamtwert <b>${eur(sum)}</b> · ${coins.length - ap.length} unbestimmt`;
+      }
+
+      function tile(c) {
+        const range = c.estimate
+          ? c.estimate.low === c.estimate.high
+            ? eur(c.estimate.low)
+            : `${num(c.estimate.low)}–${num(c.estimate.high)} €`
+          : "";
+        const title =
+          c.title ??
+          (c.kind === "unidentifiable"
+            ? "Nicht bestimmbar"
+            : c.kind === "error"
+              ? "Fehler"
+              : "Noch nicht bestimmt");
+        const sub =
+          c.kind === "appraised"
+            ? [c.year, c.material].filter(Boolean).join(" · ")
+            : c.id;
+        return `<div class="tile" data-id="${c.id}">
+          ${range ? `<span class="badge">${esc(range)}</span>` : ""}
+          ${c.kind === "error" ? `<span class="badge err">Fehler</span>` : ""}
+          <img class="coin" loading="lazy" src="/img/${c.id}/av" alt="${c.id}" />
+          <div class="t">${esc(title)}</div><div class="s">${esc(sub)}</div></div>`;
+      }
+
+      function uniq(key) {
+        return [
+          ...new Set(
+            coins.filter((c) => c.kind === "appraised").map((c) => c[key]),
+          ),
+        ]
+          .filter(Boolean)
+          .sort();
+      }
+
+      function renderBar() {
+        if (tab !== "coll") return ($("#bar").innerHTML = "");
+        const opts = (key, label) =>
+          `<select data-f="${key}"><option value="">${label}</option>${uniq(key)
+            .map(
+              (v) =>
+                `<option ${f[key] === v ? "selected" : ""} value="${esc(v)}">${esc(v)}</option>`,
+            )
+            .join("")}</select>`;
+        $("#bar").innerHTML =
+          `<input data-f="q" placeholder="Suchen …" value="${esc(f.q)}" />
+          <select data-f="sort">${[
+            ["value", "Wert (hoch → niedrig)"],
+            ["year", "Jahr"],
+            ["id", "ID"],
+          ]
+            .map(
+              ([v, l]) =>
+                `<option value="${v}" ${f.sort === v ? "selected" : ""}>${l}</option>`,
+            )
+            .join("")}</select>
+          ${opts("material", "Alle Materialien")}${opts("issuer", "Alle Länder")}`;
+      }
+
+      function render() {
+        const main = $("#main");
+        if (tab === "coll") {
+          let list = coins.filter((c) => c.kind === "appraised");
+          const q = f.q.toLowerCase();
+          list = list.filter(
+            (c) =>
+              (!f.material || c.material === f.material) &&
+              (!f.issuer || c.issuer === f.issuer) &&
+              (!q ||
+                `${c.id} ${c.title} ${c.year} ${c.material} ${c.issuer}`
+                  .toLowerCase()
+                  .includes(q)),
+          );
+          if (f.sort === "year")
+            list.sort((a, b) => parseInt(a.year) - parseInt(b.year) || 0);
+          if (f.sort === "id") list.sort((a, b) => a.id.localeCompare(b.id));
+          shown = list.map((c) => c.id);
+          main.innerHTML = list.length
+            ? `<div class="grid">${list.map(tile).join("")}</div>`
+            : `<div class="empty">Keine Münzen gefunden.</div>`;
+        } else {
+          const un = coins.filter(
+            (c) => c.kind === "unidentifiable" || c.kind === "error",
+          );
+          const pe = coins.filter((c) => c.kind === "pending");
+          shown = [...un, ...pe].map((c) => c.id);
+          const sec = (t, l) =>
+            l.length
+              ? `<h2>${t} (${l.length})</h2><div class="grid">${l.map(tile).join("")}</div>`
+              : "";
+          main.innerHTML =
+            sec("Nicht bestimmbar", un) + sec("Noch nicht bestimmt", pe) ||
+            `<div class="empty">Alles bestimmt.</div>`;
+          if (!shown.length)
+            main.innerHTML = `<div class="empty">Alles bestimmt.</div>`;
+        }
+      }
+
+      document.addEventListener("input", (e) => {
+        const k = e.target.dataset?.f;
+        if (!k) return;
+        f[k] = e.target.value;
+        render();
+      });
+      document.querySelectorAll("nav button").forEach((b) =>
+        b.addEventListener("click", () => {
+          tab = b.dataset.tab;
+          document
+            .querySelectorAll("nav button")
+            .forEach((x) => x.classList.toggle("on", x === b));
+          renderBar();
+          render();
+        }),
+      );
+      $("#main").addEventListener("click", (e) => {
+        const t = e.target.closest(".tile");
+        if (t) openCoin(t.dataset.id);
+      });
+
+      // ---- overlay ----
+      let current = null;
+      const row = (k, v) =>
+        v || v === 0 ? `<tr><th>${k}</th><td>${esc(v)}</td></tr>` : "";
+      const link = (u, t) =>
+        `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t)}</a>`;
+
+      async function openCoin(id) {
+        current = id;
+        $("#ov").classList.add("open");
+        $("#sheet").innerHTML = `<p>Lade …</p>`;
+        let d;
+        try {
+          d = await (await fetch(`/api/coins/${id}`)).json();
+        } catch (err) {
+          $("#sheet").innerHTML = `<p class="err">${esc(err.message)}</p>`;
+          return;
+        }
+        if (current !== id) return;
+        const i = d.identification;
+        const a = d.appraisal;
+        const c = i?.coin;
+        const obvAv = !i || i.observations.obverse_image === "av";
+        const sides = [
+          ["av", obvAv ? "Vorderseite" : "Rückseite"],
+          ["rv", obvAv ? "Rückseite" : "Vorderseite"],
+        ];
+        const photos = `<div class="photos" id="photos">${sides
+          .map(
+            ([s, l]) =>
+              `<figure><div class="frame" data-s="${s}"><img src="/img/${id}/${s}" alt="${l}" /></div><figcaption>${l}</figcaption></figure>`,
+          )
+          .join(
+            "",
+          )}<div class="flip"><button id="flip">⇄ Seiten tauschen</button></div></div>`;
+        let info = "";
+        if (c) {
+          info += `<table>${row("Land", c.issuer)}${row("Nominal", c.denomination)}${row("Jahr", c.year)}${row("Münzstätte", c.mint)}${row("Katalog", c.catalog.join(", "))}${row("Material", c.material)}${row("Gewicht", c.weight_g != null ? num(c.weight_g) + " g" : "")}${row("Durchmesser", c.diameter_mm != null ? num(c.diameter_mm) + " mm" : "")}${row("Auflage", c.mintage)}${row("Konfidenz", i.confidence + " %")}</table>`;
+        }
+        if (a) {
+          const e = a.estimate_eur;
+          info =
+            `<div class="big">${e ? (e.low === e.high ? eur(e.low) : `${num(e.low)}–${num(e.high)} €`) : "keine Schätzung"}</div>` +
+            `<table>${row("Erhaltung", a.grade + (a.grade_note ? " – " + a.grade_note : ""))}${
+              a.melt?.state === "defined"
+                ? row("Materialwert", eur(a.melt.eur))
+                : ""
+            }${a.range ? row("Preisspanne", `${num(a.range.min)} / ${num(a.range.median)} / ${num(a.range.max)} € (min/Median/max)`) : ""}${row("Schätzsicherheit", a.estimate_confidence)}</table>` +
+            info;
+          if (a.reasoning)
+            info += `<h4>Begründung der Schätzung</h4><p>${esc(a.reasoning)}</p>`;
+          if (a.damage?.length)
+            info += `<h4>Schäden</h4><ul>${a.damage.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+          if (a.prices?.length)
+            info += `<h4>Vergleichspreise</h4><table>${a.prices
+              .map(
+                (p) =>
+                  `<tr><td>${esc(p.date)}</td><td>${link(p.url, p.venue)}</td><td>${esc(p.grade)}</td><td>${num(p.price_eur)} €</td><td>${esc(p.price_type)}</td></tr>`,
+              )
+              .join("")}</table>`;
+        }
+        if (i) {
+          if (!c) {
+            info += `<p>${esc(i.summary)}</p><p>Beste Kandidaten-Konfidenz: ${i.confidence} %</p>`;
+            if (i.observations.diameter_mm)
+              info += `<p>Durchmesser (Foto): ${num(i.observations.diameter_mm)} mm</p>`;
+          }
+          info += `<h4>Beobachtungen</h4><p><b>Vorderseite:</b> ${esc(i.observations.obverse)}</p><p><b>Rückseite:</b> ${esc(i.observations.reverse)}</p>`;
+          if (c?.history) info += `<h4>Geschichte</h4><p>${esc(c.history)}</p>`;
+          if (i.reasoning)
+            info += `<h4>Begründung der Bestimmung</h4><p>${esc(i.reasoning)}</p>`;
+          if (i.candidates?.length)
+            info += `<h4>Kandidaten</h4><table>${i.candidates.map((k) => `<tr><td>${esc(k.title)}</td><td>${k.confidence} %</td><td>${esc(k.reason)}</td></tr>`).join("")}</table>`;
+          if (i.sources?.length)
+            info += `<h4>Quellen</h4><ul>${i.sources.map((s) => `<li>${link(s.url, s.title)}${s.confirms ? " – " + esc(s.confirms) : ""}</li>`).join("")}</ul>`;
+        } else {
+          info += `<p>Noch nicht bestimmt. Die Fotos sind erfasst, die Bestimmung steht aus.</p>`;
+        }
+        $("#sheet").innerHTML =
+          `<div class="nav"><button id="prev">←</button><button id="next">→</button><button id="close">✕</button></div>
+          <h3>${esc(c?.title ?? (i ? "Nicht bestimmbar" : "Noch nicht bestimmt"))}</h3>
+          <div class="s" style="color:var(--muted)">${id}</div>
+          <div class="cols">${photos}<div>${info}</div></div>`;
+        $("#close").onclick = closeOv;
+        $("#prev").onclick = () => step(-1);
+        $("#next").onclick = () => step(1);
+        $("#flip").onclick = () => $("#photos").classList.toggle("flipped");
+        document.querySelectorAll(".frame").forEach((fr) => {
+          fr.addEventListener("click", () => fr.classList.toggle("zoom"));
+          fr.addEventListener("mousemove", (ev) => {
+            const r = fr.getBoundingClientRect();
+            fr.style.setProperty(
+              "--x",
+              ((ev.clientX - r.left) / r.width) * 100 + "%",
+            );
+            fr.style.setProperty(
+              "--y",
+              ((ev.clientY - r.top) / r.height) * 100 + "%",
+            );
+          });
+        });
+      }
+      function closeOv() {
+        $("#ov").classList.remove("open");
+        current = null;
+      }
+      function step(d) {
+        const i = shown.indexOf(current);
+        if (i < 0 || !shown.length) return;
+        openCoin(shown[(i + d + shown.length) % shown.length]);
+      }
+      $("#ov").addEventListener("click", (e) => {
+        if (e.target.id === "ov") closeOv();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (!current) return;
+        if (e.key === "Escape") closeOv();
+        if (e.key === "ArrowLeft") step(-1);
+        if (e.key === "ArrowRight") step(1);
+      });
+
+      renderBar();
+      load();
+    </script>
+  </body>
+</html>

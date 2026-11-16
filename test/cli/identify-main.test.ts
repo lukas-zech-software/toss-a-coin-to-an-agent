@@ -298,3 +298,59 @@ test("migrate converts an old-format coin, reports each coin, and needs an ID", 
   assert.equal(lines[0], "COIN-0001: schon im neuen Format – übersprungen");
   assert.equal(await identifyMain(["migrate"], deps), 2);
 });
+
+test("skip-appraisal marks coins without estimate; pending-appraisal and appraise then leave them out", async () => {
+  const { deps, lines, dir, root } = await setup();
+  const run = async (args: string[], code = 0) => {
+    assert.equal(await identifyMain(args, deps), code, lines.join("\n"));
+    return lines.splice(0).join("\n");
+  };
+  const result = join(root, "result.json");
+  await writeFile(result, JSON.stringify(identified()));
+  await run(["write", "COIN-0001", result]);
+  assert.equal(await run(["pending-appraisal"]), "COIN-0001"); // identified, no appraisal yet
+  assert.match(
+    await run(["skip-appraisal", "COIN-0001"], 1),
+    /noch nicht geschätzt/,
+  );
+
+  const file = join(root, "appraisal.json");
+  await writeFile(
+    file,
+    JSON.stringify({ ...appraisal(), prices: [], estimate_eur: null }),
+  );
+  await run(["write-appraisal", "COIN-0001", file]);
+  assert.equal(await run(["pending-appraisal"]), "COIN-0001"); // appraised, but no estimate
+
+  assert.match(
+    await run(["skip-appraisal", "COIN-0001", "--reason"], 2),
+    /Verwendung/,
+  );
+  assert.match(
+    await run(["skip-appraisal", "COIN-0001"]),
+    /COIN-0001: markiert/,
+  );
+  const stored = JSON.parse(
+    await readFile(join(dir, "appraisal.json"), "utf8"),
+  );
+  assert.equal(stored.skip_reappraisal.at, "2026-10-31T10:00:00+01:00");
+  assert.equal(await run(["pending-appraisal"]), "keine");
+  assert.match(
+    await run(["appraise", "COIN-0001"], 1),
+    /zum Überspringen markiert/,
+  );
+  assert.equal(
+    JSON.parse(await run(["appraise", "COIN-0001", "--force"])).id,
+    "COIN-0001",
+  );
+
+  // a new appraisal replaces the file and drops the mark
+  await writeFile(file, JSON.stringify(appraisal()));
+  await run(["write-appraisal", "COIN-0001", file]);
+  const again = JSON.parse(await readFile(join(dir, "appraisal.json"), "utf8"));
+  assert.equal("skip_reappraisal" in again, false);
+  assert.match(
+    await run(["skip-appraisal", "COIN-0001"], 1),
+    /hat eine Schätzung/,
+  );
+});

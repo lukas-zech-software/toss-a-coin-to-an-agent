@@ -1,0 +1,187 @@
+{
+  "key": "tiberius",
+  "identification": {
+    "id": "COIN-9001",
+    "state": "identified",
+    "confidence": 95,
+    "observations": {
+      "obverse_image": "av",
+      "obverse": "Lorbeerbekränzter Kopf des Tiberius nach rechts, Bänder im Nacken. Umschrift Buchstabe für Buchstabe: rechts …DIVI·AVG·F…, links absteigend AVGVSTVS; der Anfang TI CAESAR liegt teilweise außerhalb des unregelmäßigen, leicht ovalen Schrötlings. Perlkreis nur teilweise sichtbar. Sehr plastischer, feiner Porträtstil, gleichmäßige graue Tönung.",
+      "reverse": "Weibliche Sitzfigur nach rechts (Livia als Pax) auf einem Stuhl mit schlichten, unverzierten Beinen über doppelter Standlinie; in der Rechten ein langes Zepter, in der Linken ein Zweig. Umschrift links MAXIM, rechts PONTIF – zusammen PONTIF MAXIM. Schlichte Stuhlbeine und doppelte Linie sind das entscheidende Merkmal für RIC 26; die Variante mit verzierten Beinen (RIC 30) ist damit ausgeschlossen.",
+      "diameter_mm": null
+    },
+    "coin": {
+      "title": "Römisches Reich, Tiberius (14–37 n. Chr.), Denar „Zinsgroschen“, Lugdunum, RIC I 26",
+      "issuer": "Römisches Kaiserreich, Kaiser Tiberius",
+      "denomination": "Denar",
+      "year": "um 15–18 n. Chr. (frühe Gruppe)",
+      "mint": "Lugdunum (Lyon)",
+      "catalog": ["RIC I 26", "RSC 16", "BMCRE 34", "Numista N# 247273"],
+      "material": "Silber",
+      "precious_metals": ["silver"],
+      "weight_g": null,
+      "diameter_mm": null,
+      "production": "Geprägt in Lugdunum (Lyon), wo unter Augustus und Tiberius die Gold- und Silbermünzen des Reiches entstanden; frühe Gruppe um 15–18 n. Chr.",
+      "mintage": "unbekannt (antike Prägung, keine Auflagenzahlen überliefert)",
+      "history": "Der Denar mit der sitzenden Figur ist der häufigste Silbertyp des Tiberius. Er gilt traditionell als der „Zinsgroschen“ aus dem Neuen Testament: Auf die Frage, ob man dem Kaiser Steuern zahlen solle, ließ sich Jesus einen Denar zeigen und antwortete „Gebt dem Kaiser, was des Kaisers ist, und Gott, was Gottes ist“ (Markus 12,13–17). Die Sitzfigur wird meist als Livia, die Mutter des Tiberius, in der Rolle der Friedensgöttin Pax gedeutet. Frühe Stücke wie dieses zeigen einen Stuhl mit schlichten Beinen."
+    },
+    "reasoning": "Porträt, Umschrift (DIVI·AVG·F / AVGVSTVS) und die Rückseite PONTIF MAXIM mit sitzender Pax passen nur auf den Denar des Tiberius aus Lugdunum. Innerhalb dieses Typs unterscheiden die Kataloge nach den Stuhlbeinen: Hier sind sie schlicht und stehen über einer doppelten Linie – das ist RIC I 26, wie bei den Vergleichsstücken bei Spink und in der Beschreibung bei Wildwinds. Stil und Schrötlingsform sprechen für eine antike Prägung; Fälschungen dieses beliebten Typs sind bekannt, wirken aber meist flau oder gegossen. Gewicht und Durchmesser konnten nicht gemessen werden, deshalb 95 % und nicht mehr.",
+    "summary": "",
+    "candidates": [
+      {
+        "title": "Tiberius, Denar, Lugdunum, RIC I 30 (verzierte Stuhlbeine)",
+        "confidence": 3,
+        "reason": "Gleicher Typ, aber mit verzierten Stuhlbeinen über einfacher Linie; hier sind die Beine schlicht."
+      },
+      {
+        "title": "Moderne Fälschung des Zinsgroschens",
+        "confidence": 2,
+        "reason": "Häufig gefälschter Typ; Stil, Schrötling und Prägebild sprechen dagegen. Vor einem Verkauf wiegen lassen."
+      }
+    ],
+    "sources": [
+      {
+        "title": "Numista N# 247273 – Denarius Tiberius (Pax, Lugdunum)",
+        "url": "https://en.numista.com/247273",
+        "confirms": "Typ, Münzstätte Lugdunum, RIC I 26, RSC 16"
+      },
+      {
+        "title": "Wildwinds – Tiberius RIC 26",
+        "url": "https://mail.wildwinds.com/coins/ric/tiberius/RIC_0026.txt",
+        "confirms": "Typbeschreibung: Livia als Pax auf schlichtem Stuhl, PONTIF MAXIM"
+      },
+      {
+        "title": "Spink, Auktion 16004, Los 1131 – Tiberius, Denar, RIC 26",
+        "url": "https://www.spink.com/lot/16004001131",
+        "confirms": "Schlichte Stuhlbeine über doppelter Linie = RIC 26"
+      },
+      {
+        "title": "Wikimedia Commons – Tiberius, Denar, Lyon (CNG)",
+        "url": "https://commons.wikimedia.org/wiki/File:Tiberius,_Denar,_Lyon,_CNG.jpg",
+        "confirms": "Vergleichsstück der Gruppe 1 (15–18 n. Chr.): RIC I 26, RSC 16, BMCRE 34"
+      }
+    ]
+  },
+  "appraisal": {
+    "id": "COIN-9001",
+    "grade": "vz (EF)",
+    "grade_note": "Haar, Lorbeerblätter und Gewandfalten der Pax sind bis in die Feinheiten erhalten, nur die höchsten Stellen leicht berieben. Porträt von besonders schönem Stil, gleichmäßige graue Tönung, keine Reinigungsspuren erkennbar. Abwertend: Die Umschrift liegt teilweise außerhalb des Schrötlings.",
+    "damage": [
+      "Vs.: Umschrift TI CAESAR bei ca. 11–12 Uhr teilweise außerhalb des Schrötlings (unregelmäßiger, leicht ovaler Schrötling, typisch für die Zeit)",
+      "Rs.: Perlkreis bei ca. 4–6 Uhr schwach ausgeprägt",
+      "Vs.: höchste Stellen von Wange und Lorbeerkranz leicht berieben"
+    ],
+    "prices": [
+      {
+        "url": "https://www.kuenker.de/muenzen-der-roemischen-kaiserzeit-tiberius-14-37.-ar-denar-lugdunum/689074",
+        "venue": "Künker, Frühjahrs-Auktion 438 (Los 558)",
+        "date": "2026-03-16",
+        "grade": "vz, Prachtexemplar von feinstem Stil",
+        "price": 4600,
+        "currency": "EUR",
+        "price_eur": 4600,
+        "price_type": "hammer"
+      },
+      {
+        "url": "https://en.numista.com/247273",
+        "venue": "Heritage Auctions, CCE World Coins Signature Auction 3064 (Los 30264)",
+        "date": "2018-04-20",
+        "grade": "NGC MS, Strike 5/5, Surface 3/5",
+        "price": 5040,
+        "currency": "USD",
+        "price_eur": 4093.49,
+        "price_type": "incl_premium"
+      },
+      {
+        "url": "https://www.spink.com/lot/16004001131",
+        "venue": "Spink, Auktion 16004 (Los 1131)",
+        "date": "2016",
+        "grade": "vz (EF)",
+        "price": 800,
+        "currency": "GBP",
+        "price_eur": 959.46,
+        "price_type": "sold"
+      },
+      {
+        "url": "https://spink.com/lot/15007000567",
+        "venue": "Spink, Auktion 15007 (Los 567)",
+        "date": "2015",
+        "grade": "gutes ss (gVF)",
+        "price": 580,
+        "currency": "GBP",
+        "price_eur": 695.61,
+        "price_type": "sold"
+      },
+      {
+        "url": "https://www.spink.com/lot/16004001130",
+        "venue": "Spink, Auktion 16004 (Los 1130)",
+        "date": "2016",
+        "grade": "ss (VF)",
+        "price": 230,
+        "currency": "GBP",
+        "price_eur": 275.85,
+        "price_type": "sold"
+      }
+    ],
+    "melt": {
+      "state": "unknown",
+      "reason": "Gewicht nicht gemessen, und der Feingehalt antiker Denare schwankt; der Metallwert läge ohnehin nur bei wenigen Euro."
+    },
+    "estimate_eur": { "low": 1400, "high": 2200 },
+    "reasoning": "Bei diesem Typ hängt der Preis stark an Erhaltung und Stil. Stücke in ss brachten bei Spink 230–580 £, ein vz-Stück 800 £ (2015/16, zum Kurs von Anfang November 2026 umgerechnet). Herausragende Exemplare erzielen deutlich mehr: 4.600 € Zuschlag bei Künker im März 2026 (Prachtexemplar von feinstem Stil, Provenienz bis 1984) und 5.040 $ bei Heritage 2018 (NGC MS). Dieses Stück ist vz und hat einen sehr schönen Porträtstil, die teilweise fehlende Umschrift drückt aber den Preis. Seit 2016 ist der Markt für schöne Zinsgroschen deutlich gestiegen. Schätzung daher 1.400–2.200 €."
+  },
+  "texts": {
+    "id": "COIN-9001",
+    "title": {
+      "de": "Röm. Kaiserzeit Tiberius Denar Zinsgroschen Lugdunum RIC 26 Silber vz",
+      "en": "Roman Empire Tiberius denarius Tribute Penny Lugdunum RIC 26 silver EF"
+    },
+    "summary": {
+      "de": "Der berühmte „Zinsgroschen“ aus dem Neuen Testament: Silberdenar des Kaisers Tiberius, geprägt um 15–18 n. Chr. in Lugdunum (Lyon), frühe Variante mit schlichten Stuhlbeinen (RIC I 26). Vorzüglich erhalten, mit Porträt von schönem Stil; Umschrift teilweise außerhalb des Schrötlings. Nicht zertifiziert.",
+      "en": "The famous Tribute Penny of the New Testament: silver denarius of Emperor Tiberius, struck c. AD 15–18 at Lugdunum (Lyon), early variety with plain chair legs (RIC I 26). Extremely fine, with a portrait of fine style; legend partly off flan. Not certified."
+    },
+    "specifics": {
+      "country": { "de": "Römisches Reich", "en": "Roman Empire" },
+      "denomination": { "de": "Denar", "en": "Denarius" },
+      "year": { "de": "um 15–18 n. Chr.", "en": "c. AD 15–18" },
+      "mint": { "de": "Lugdunum (Lyon)", "en": "Lugdunum (Lyon)" },
+      "material": { "de": "Silber", "en": "Silver" },
+      "grade": { "de": "vz", "en": "EF" }
+    }
+  },
+  "descriptions": {
+    "de": "# Röm. Kaiserzeit Tiberius Denar Zinsgroschen Lugdunum RIC 26 Silber vz\n\nAngeboten wird ein Silberdenar des Kaisers Tiberius aus der Münzstätte Lugdunum (Lyon), der sogenannte „Zinsgroschen“. Es handelt sich um die frühe Variante mit schlichten Stuhlbeinen über doppelter Standlinie (RIC I 26).\n\n## Daten\n\n- **Herausgeber:** Römisches Kaiserreich, Kaiser Tiberius\n- **Nominal:** Denar\n- **Prägezeit:** um 15–18 n. Chr. (frühe Gruppe)\n- **Münzstätte:** Lugdunum (Lyon)\n- **Katalog:** RIC I 26, RSC 16, BMCRE 34, Numista N# 247273\n- **Material:** Silber\n\n## Vorderseite und Rückseite\n\n**Vorderseite:** Lorbeerbekränzter Kopf des Tiberius nach rechts, Umschrift TI CAESAR DIVI AVG F AVGVSTVS, teilweise außerhalb des Schrötlings.\n\n**Rückseite:** Livia als Friedensgöttin Pax auf einem Stuhl mit schlichten Beinen nach rechts sitzend, mit langem Zepter und Zweig. Umschrift PONTIF MAXIM.\n\n## Erhaltung\n\nDie Münze wurde mit **vz (EF)** bewertet. Das Porträt zeigt einen besonders schönen Stil, die Münze hat eine gleichmäßige graue Tönung. Die Erhaltung wurde anhand von Fotos beurteilt, die Münze ist nicht zertifiziert. Folgende Mängel sind vorhanden:\n\n- Vorderseite: Umschrift TI CAESAR bei ca. 11–12 Uhr teilweise außerhalb des Schrötlings (unregelmäßiger Schrötling, typisch für die Zeit)\n- Rückseite: Perlkreis bei ca. 4–6 Uhr schwach ausgeprägt\n- Vorderseite: höchste Stellen von Wange und Lorbeerkranz leicht berieben\n\n## Geschichte\n\nDieser Denar gilt traditionell als die Münze, die Jesus sich auf die Frage nach der Steuer an den Kaiser zeigen ließ: „Gebt dem Kaiser, was des Kaisers ist, und Gott, was Gottes ist“ (Markus 12,13–17). Die Sitzfigur wird meist als Livia, die Mutter des Tiberius, gedeutet.\n\n## Fotos\n\nDie Fotos zeigen genau diese Münze.\n",
+    "en": "# Roman Empire Tiberius denarius Tribute Penny Lugdunum RIC 26 silver EF\n\nOffered is a silver denarius of Emperor Tiberius from the Lugdunum (Lyon) mint, the so-called Tribute Penny. It is the early variety with plain chair legs on a double exergual line (RIC I 26).\n\n## Details\n\n- **Issuer:** Roman Empire, Emperor Tiberius\n- **Denomination:** Denarius\n- **Struck:** c. AD 15–18 (early group)\n- **Mint:** Lugdunum (Lyon)\n- **Catalogue:** RIC I 26, RSC 16, BMCRE 34, Numista N# 247273\n- **Material:** Silver\n\n## Obverse and reverse\n\n**Obverse:** Laureate head of Tiberius right, legend TI CAESAR DIVI AVG F AVGVSTVS, partly off flan.\n\n**Reverse:** Livia as Pax seated right on a chair with plain legs, holding a long sceptre and a branch. Legend PONTIF MAXIM.\n\n## Condition\n\nGraded **EF** from photos; not certified. The portrait is of particularly fine style, with even grey toning. Flaws:\n\n- Obverse: legend TI CAESAR partly off flan at about 11–12 o'clock (irregular flan, typical of the period)\n- Reverse: weak beaded border at about 4–6 o'clock\n- Obverse: light wear on the highest points of cheek and wreath\n\n## History\n\nThis denarius is traditionally identified with the coin Jesus asked to be shown when questioned about paying taxes to the emperor: \"Render unto Caesar the things that are Caesar's\" (Mark 12:13–17). The seated figure is usually interpreted as Livia, the mother of Tiberius.\n\n## Photos\n\nThe photos show the exact coin offered.\n"
+  },
+  "images": { "av": "av.jpg", "rv": "rv.jpg" },
+  "zooms": [
+    {
+      "side": "reverse",
+      "x": 0.33,
+      "y": 0.76,
+      "size": 0.32,
+      "label": "Schlichte Stuhlbeine über doppelter Linie – das Merkmal für RIC 26"
+    },
+    {
+      "side": "obverse",
+      "x": 0.13,
+      "y": 0.42,
+      "size": 0.34,
+      "label": "Umschrift AVGVSTVS, Buchstabe für Buchstabe gelesen"
+    }
+  ],
+  "credits": [
+    {
+      "what": "av.jpg",
+      "author": "Classical Numismatic Group, Inc. (cngcoins.com)",
+      "source": "https://commons.wikimedia.org/wiki/File:Tiberius,_Denar,_Lyon,_CNG.jpg",
+      "license": "CC BY-SA 3.0, auf die Vorderseite zugeschnitten"
+    },
+    {
+      "what": "rv.jpg",
+      "author": "Classical Numismatic Group, Inc. (cngcoins.com)",
+      "source": "https://commons.wikimedia.org/wiki/File:Tiberius,_Denar,_Lyon,_CNG.jpg",
+      "license": "CC BY-SA 3.0, auf die Rückseite zugeschnitten"
+    }
+  ]
+}
